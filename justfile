@@ -27,14 +27,9 @@ build: install
     npm run build
 
 # Run repo:list command to list GitHub repositories
-repo-list USERNAME LIMIT="10": build
+repo-list USERNAME LIMIT="10" *FLAGS="": build
     @echo "🔍 Listing GitHub repositories for {{USERNAME}}..."
-    ./bin/run.js repo:list --user {{USERNAME}} --limit {{LIMIT}}
-
-# Run repo:list command with JSON output
-repo-list-json USERNAME LIMIT="10": build
-    @echo "🔍 Listing GitHub repositories for {{USERNAME}} as JSON..."
-    ./bin/run.js repo:list --user {{USERNAME}} --limit {{LIMIT}} --json
+    ./bin/run.js repo:list --user {{USERNAME}} --limit {{LIMIT}} {{FLAGS}}
 
 # Run all checks, continuing even if some fail
 precommit:
