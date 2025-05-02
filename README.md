@@ -1,20 +1,21 @@
-aggregator-creator
-=================
+# aggregator-creator
 
 CLI for managing Maven repositories and creating aggregator POMs
-
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
 [![Version](https://img.shields.io/npm/v/aggregator-creator.svg)](https://npmjs.org/package/aggregator-creator)
 [![Downloads/week](https://img.shields.io/npm/dw/aggregator-creator.svg)](https://npmjs.org/package/aggregator-creator)
 
-
 <!-- toc -->
-* [Usage](#usage)
-* [Commands](#commands)
+
+- [Usage](#usage)
+- [Commands](#commands)
 <!-- tocstop -->
+
 # Usage
+
 <!-- usage -->
+
 ```sh-session
 $ npm install -g aggregator-creator
 $ aggregator COMMAND
@@ -26,22 +27,26 @@ USAGE
   $ aggregator COMMAND
 ...
 ```
+
 <!-- usagestop -->
+
 # Commands
+
 <!-- commands -->
-* [`aggregator hello PERSON`](#aggregator-hello-person)
-* [`aggregator hello world`](#aggregator-hello-world)
-* [`aggregator help [COMMAND]`](#aggregator-help-command)
-* [`aggregator plugins`](#aggregator-plugins)
-* [`aggregator plugins add PLUGIN`](#aggregator-plugins-add-plugin)
-* [`aggregator plugins:inspect PLUGIN...`](#aggregator-pluginsinspect-plugin)
-* [`aggregator plugins install PLUGIN`](#aggregator-plugins-install-plugin)
-* [`aggregator plugins link PATH`](#aggregator-plugins-link-path)
-* [`aggregator plugins remove [PLUGIN]`](#aggregator-plugins-remove-plugin)
-* [`aggregator plugins reset`](#aggregator-plugins-reset)
-* [`aggregator plugins uninstall [PLUGIN]`](#aggregator-plugins-uninstall-plugin)
-* [`aggregator plugins unlink [PLUGIN]`](#aggregator-plugins-unlink-plugin)
-* [`aggregator plugins update`](#aggregator-plugins-update)
+
+- [`aggregator hello PERSON`](#aggregator-hello-person)
+- [`aggregator hello world`](#aggregator-hello-world)
+- [`aggregator help [COMMAND]`](#aggregator-help-command)
+- [`aggregator plugins`](#aggregator-plugins)
+- [`aggregator plugins add PLUGIN`](#aggregator-plugins-add-plugin)
+- [`aggregator plugins:inspect PLUGIN...`](#aggregator-pluginsinspect-plugin)
+- [`aggregator plugins install PLUGIN`](#aggregator-plugins-install-plugin)
+- [`aggregator plugins link PATH`](#aggregator-plugins-link-path)
+- [`aggregator plugins remove [PLUGIN]`](#aggregator-plugins-remove-plugin)
+- [`aggregator plugins reset`](#aggregator-plugins-reset)
+- [`aggregator plugins uninstall [PLUGIN]`](#aggregator-plugins-uninstall-plugin)
+- [`aggregator plugins unlink [PLUGIN]`](#aggregator-plugins-unlink-plugin)
+- [`aggregator plugins update`](#aggregator-plugins-update)
 
 ## `aggregator hello PERSON`
 
@@ -394,4 +399,5 @@ DESCRIPTION
 ```
 
 _See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.36/src/commands/plugins/update.ts)_
+
 <!-- commandsstop -->
