@@ -40,7 +40,7 @@ static override flags = {
     }
   }
 
-  private async validateMavenRepo(repoPath: string, verbose = false): Promise<boolean> {
+  public async validateMavenRepo(repoPath: string, verbose = false): Promise<boolean> {
     const absolutePath = path.resolve(repoPath)
     if (verbose) this.log(`Validating Maven repo at: ${absolutePath}`)
 
