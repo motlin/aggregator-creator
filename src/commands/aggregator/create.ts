@@ -16,7 +16,10 @@ export default class AggregatorCreate extends Command {
     '<%= config.bin %> <%= command.id %> ./maven-repos',
     '<%= config.bin %> <%= command.id %> ./maven-repos --groupId org.example',
     '<%= config.bin %> <%= command.id %> ./maven-repos --artifactId custom-aggregator --pomVersion 2.0.0',
+    '<%= config.bin %> <%= command.id %> ./maven-repos --json',
   ]
+
+  static override enableJsonFlag = true
 
   static override flags = {
     groupId: Flags.string({
@@ -44,7 +47,7 @@ export default class AggregatorCreate extends Command {
       return await execa(command, args, options)
     } catch (error: any) {
       this.error(`Command execution failed: ${error.message}`, {exit: 1})
-      throw error // Needed for TypeScript even though this line is unreachable
+      throw error
     }
   }
 
@@ -93,7 +96,27 @@ export default class AggregatorCreate extends Command {
     return pom.end({prettyPrint: true})
   }
 
-  public async run(): Promise<void> {
+  public async run(): Promise<{
+    success: boolean;
+    pomPath: string;
+    modules: {
+      path: string;
+      valid: boolean;
+      reason?: string;
+    }[];
+    stats: {
+      totalScanned: number;
+      validRepositories: number;
+      skippedRepositories: number;
+      elapsedTimeMs: number;
+    };
+    mavenCoordinates: {
+      groupId: string;
+      artifactId: string;
+      version: string;
+    };
+  }> {
+    const startTime = Date.now()
     const {args, flags} = await this.parse(AggregatorCreate)
     const directoryPath = path.resolve(args.directory)
 
@@ -106,42 +129,108 @@ export default class AggregatorCreate extends Command {
 
     this.log(chalk.blue(`🔍 Scanning for Maven repositories in ${directoryPath}...`))
 
-    // Read all subdirectories
-    const entries = await fs.readdir(directoryPath)
-    const directories: string[] = []
+    // Find all potential Maven repositories (considering possible nesting like owner/repo structure)
+    const mavenRepos: {path: string; relativePath: string}[] = []
+    const skippedRepos: {path: string; relativePath: string; reason: string}[] = []
+    let totalScanned = 0
     
-    // Check which entries are directories
+    // First level directories (could be either Maven repos or owner directories)
+    const entries = await fs.readdir(directoryPath)
+    
+    // Filter out non-directories and pom.xml
+    const firstLevelEntries = []
     for (const entry of entries) {
+      if (entry === 'pom.xml') continue
+      
       const entryPath = path.join(directoryPath, entry)
       const stats = await fs.stat(entryPath)
+      
       if (stats.isDirectory()) {
-        directories.push(entry)
+        firstLevelEntries.push(entry)
       }
     }
-
-    if (directories.length === 0) {
-      this.error('No subdirectories found. The directory should contain Maven repositories.', {exit: 1})
-    }
-
-    // Validate each directory as a Maven repository
-    const validModules: string[] = []
-    const invalidRepos: string[] = []
-
-    for (const dir of directories) {
-      const repoPath = path.join(directoryPath, dir)
-      const isValid = await this.validateMavenRepo(repoPath)
-
-      if (isValid) {
-        validModules.push(dir)
-        this.log(chalk.green(`✅ Found valid Maven repository: ${dir}`))
-      } else {
-        invalidRepos.push(dir)
-        this.log(chalk.yellow(`⚠️ Invalid Maven repository (no pom.xml): ${dir}`))
+    
+    this.log(chalk.blue(`Found ${firstLevelEntries.length} potential repository containers to scan`))
+    
+    for (const entry of firstLevelEntries) {
+      this.log(chalk.dim(`⏳ Examining: ${entry}`))
+      
+      const entryPath = path.join(directoryPath, entry)
+      const stats = await fs.stat(entryPath)
+      
+      // This should always be a directory since we filtered above
+      if (!stats.isDirectory()) {
+        continue
+      }
+      
+      totalScanned++
+      
+      // Check if this is a Maven repo
+      const hasPom = await this.validateMavenRepo(entryPath)
+      if (hasPom) {
+        mavenRepos.push({
+          path: entryPath,
+          relativePath: entry
+        })
+        continue
+      }
+      
+      // If not a Maven repo, check if it contains Maven repos (owner/repo structure)
+      try {
+        const subEntries = await fs.readdir(entryPath)
+        for (const subEntry of subEntries) {
+          const subEntryPath = path.join(entryPath, subEntry)
+          const subStats = await fs.stat(subEntryPath)
+          
+          if (!subStats.isDirectory()) continue
+          
+          totalScanned++
+          const hasSubPom = await this.validateMavenRepo(subEntryPath)
+          if (hasSubPom) {
+            mavenRepos.push({
+              path: subEntryPath,
+              relativePath: path.join(entry, subEntry)
+            })
+          } else {
+            skippedRepos.push({
+              path: subEntryPath,
+              relativePath: path.join(entry, subEntry),
+              reason: 'Missing pom.xml'
+            })
+          }
+        }
+      } catch (error) {
+        // Skip if we can't read the directory
+        skippedRepos.push({
+          path: entryPath,
+          relativePath: entry,
+          reason: `Error reading directory: ${(error as Error).message}`
+        })
       }
     }
+    
+    if (mavenRepos.length === 0) {
+      this.error('No Maven repositories found. Each repository must contain a pom.xml file.', {exit: 1})
+    }
 
-    if (validModules.length === 0) {
-      this.error('No valid Maven repositories found. Each repository must contain a pom.xml file.', {exit: 1})
+    // Map found repos to modules for POM file
+    const validModules = mavenRepos.map(repo => repo.relativePath)
+    
+    // Log found repositories
+    for (const repo of mavenRepos) {
+      this.log(chalk.green(`✅ Found valid Maven repository: ${repo.relativePath}`))
+    }
+    
+    // Log summary
+    this.log(chalk.blue('\n📊 Repository scan summary:'))
+    this.log(chalk.green(`✅ Found ${mavenRepos.length} valid Maven repositories`))
+    if (skippedRepos.length > 0) {
+      this.log(chalk.yellow(`⚠️ Skipped ${skippedRepos.length} repositories`))
+      for (const repo of skippedRepos) {
+        if (repo.reason === 'Missing pom.xml') {
+          this.log(chalk.yellow(`  → ${repo.relativePath}: Missing pom.xml file`))
+        }
+      }
     }
 
     // Generate the aggregator POM
@@ -159,11 +248,40 @@ export default class AggregatorCreate extends Command {
       this.log(chalk.green(`\n✅ Created aggregator POM at ${pomPath}`))
       this.log(chalk.blue(`📋 Included ${validModules.length} modules`))
       
-      if (invalidRepos.length > 0) {
-        this.log(chalk.yellow(`⚠️ Skipped ${invalidRepos.length} invalid repositories`))
+      // Calculate elapsed time
+      const elapsedTimeMs = Date.now() - startTime
+      this.log(chalk.dim(`⏱️ Operation completed in ${elapsedTimeMs}ms`))
+      
+      // Return structured output for JSON flag
+      return {
+        success: true,
+        pomPath,
+        modules: [
+          ...mavenRepos.map(repo => ({
+            path: repo.relativePath,
+            valid: true
+          })),
+          ...skippedRepos.map(repo => ({
+            path: repo.relativePath,
+            valid: false,
+            reason: repo.reason
+          }))
+        ],
+        stats: {
+          totalScanned,
+          validRepositories: mavenRepos.length,
+          skippedRepositories: skippedRepos.length,
+          elapsedTimeMs
+        },
+        mavenCoordinates: {
+          groupId: flags.groupId,
+          artifactId: flags.artifactId,
+          version: flags.pomVersion
+        }
       }
     } catch (error: any) {
       this.error(`Failed to write aggregator POM: ${error.message}`, {exit: 1})
+      throw error
     }
   }
 }
