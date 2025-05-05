@@ -68,6 +68,9 @@
       },
       "repo": {
         "description": "Repository management commands"
+      },
+      "aggregator": {
+        "description": "Maven aggregator POM management"
       }
     }
   },
