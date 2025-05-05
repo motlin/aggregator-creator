@@ -62,82 +62,112 @@ export default class RepoClone extends Command {
     
     // Check if stdin is available (being piped)
     if (!process.stdin.isTTY) {
-      const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-        terminal: false
-      })
+      this.log(`Cloning repositories into ${path.resolve(targetDirectory)}...`)
       
       let successCount = 0
       let errorCount = 0
       const errors: {repo: string; error: string}[] = []
       
-      this.log(`Cloning repositories into ${path.resolve(targetDirectory)}...`)
-      
-      // Process input line by line
-      for await (const line of rl) {
-        const trimmedLine = line.trim()
-        if (!trimmedLine) continue
-        
-        try {
-          // Check if the input is JSON
-          try {
-            const jsonData = JSON.parse(trimmedLine)
-            
-            // Handle JSON array from repo:list command
-            if (Array.isArray(jsonData)) {
-              for (const repo of jsonData) {
-                if (repo.owner?.login && repo.name) {
-                  const repoFullName = `${repo.owner.login}/${repo.name}`
-                  await this.cloneRepository(repoFullName, targetDirectory)
-                  successCount++
-                }
-              }
-              continue
-            } else if (jsonData.owner?.login && jsonData.name) {
-              // Handle single JSON object
-              const repoFullName = `${jsonData.owner.login}/${jsonData.name}`
-              await this.cloneRepository(repoFullName, targetDirectory)
-              successCount++
-              continue
-            }
-          } catch (e) {
-            // Not JSON, continue with normal processing
-          }
-          
-          // Validate repository format
-          try {
-            this.repoNameSchema.parse(trimmedLine)
-          } catch (error) {
-            if (error instanceof z.ZodError) {
-              this.warn(`Invalid repository format: ${trimmedLine} - must be in format "owner/repo"`)
-              errorCount++
-              errors.push({repo: trimmedLine, error: 'Invalid format'})
-              continue
-            }
-            throw error
-          }
-          
-          await this.cloneRepository(trimmedLine, targetDirectory)
-          successCount++
-        } catch (error) {
-          errorCount++
-          errors.push({
-            repo: trimmedLine,
-            error: (error as Error).message
-          })
-        }
+      // Collect all input first
+      let fullInput = ''
+      for await (const chunk of process.stdin) {
+        fullInput += chunk
       }
       
-      // Output summary
-      this.log('\nCloning summary:')
-      this.log(`✅ Successfully cloned: ${successCount}`)
-      
-      if (errorCount > 0) {
-        this.log(`❌ Failed to clone: ${errorCount}`)
-        this.log('\nErrors:')
-        for (const {repo, error} of errors) {
-          this.log(`- ${repo}: ${error}`)
+      // Try to parse as JSON first (for the case of --json output from repo:list)
+      try {
+        const jsonData = JSON.parse(fullInput)
+        
+        // Handle JSON array from repo:list command
+        if (Array.isArray(jsonData)) {
+          for (const repo of jsonData) {
+            if (repo.owner?.login && repo.name) {
+              try {
+                const repoFullName = `${repo.owner.login}/${repo.name}`
+                await this.cloneRepository(repoFullName, targetDirectory)
+                successCount++
+              } catch (error) {
+                errorCount++
+                errors.push({
+                  repo: `${repo.owner.login}/${repo.name}`,
+                  error: (error as Error).message
+                })
+              }
+            }
+          }
+          
+          // Output summary and return since we've handled the input
+          this.log('\nCloning summary:')
+          this.log(`✅ Successfully cloned: ${successCount}`)
+          
+          if (errorCount > 0) {
+            this.log(`❌ Failed to clone: ${errorCount}`)
+            this.log('\nErrors:')
+            for (const {repo, error} of errors) {
+              this.log(`- ${repo}: ${error}`)
+            }
+          }
+          
+          return
+        } else if (jsonData.owner?.login && jsonData.name) {
+          // Handle single JSON object
+          try {
+            const repoFullName = `${jsonData.owner.login}/${jsonData.name}`
+            await this.cloneRepository(repoFullName, targetDirectory)
+            this.log('\nCloning summary:')
+            this.log(`✅ Successfully cloned: 1`)
+          } catch (error) {
+            this.log('\nCloning summary:')
+            this.log(`✅ Successfully cloned: 0`)
+            this.log(`❌ Failed to clone: 1`)
+            this.log('\nErrors:')
+            this.log(`- ${jsonData.owner.login}/${jsonData.name}: ${(error as Error).message}`)
+          }
+          return
+        }
+      } catch (e) {
+        // Not valid JSON, process line by line
+        const lines = fullInput.split('\n')
+        
+        for (const line of lines) {
+          const trimmedLine = line.trim()
+          if (!trimmedLine) continue
+          
+          try {
+            // Validate repository format
+            try {
+              this.repoNameSchema.parse(trimmedLine)
+            } catch (error) {
+              if (error instanceof z.ZodError) {
+                this.warn(`Invalid repository format: ${trimmedLine} - must be in format "owner/repo"`)
+                errorCount++
+                errors.push({repo: trimmedLine, error: 'Invalid format'})
+                continue
+              }
+              throw error
+            }
+            
+            await this.cloneRepository(trimmedLine, targetDirectory)
+            successCount++
+          } catch (error) {
+            errorCount++
+            errors.push({
+              repo: trimmedLine,
+              error: (error as Error).message
+            })
+          }
+        }
+        
+        // Output summary
+        this.log('\nCloning summary:')
+        this.log(`✅ Successfully cloned: ${successCount}`)
+        
+        if (errorCount > 0) {
+          this.log(`❌ Failed to clone: ${errorCount}`)
+          this.log('\nErrors:')
+          for (const {repo, error} of errors) {
+            this.log(`- ${repo}: ${error}`)
+          }
         }
       }
     } else {

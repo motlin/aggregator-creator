@@ -11,12 +11,13 @@ export default class RepoList extends Command {
     '<%= config.bin %> <%= command.id %> --user motlin --topic maven --language Java --json',
   ]
   
+  static override enableJsonFlag = true
+  
   static override flags = {
     user: Flags.string({char: 'u', description: 'GitHub username/org'}),
     topic: Flags.string({char: 't', description: 'Topic filter', multiple: true}),
     language: Flags.string({char: 'g', description: 'Language filter', default: 'Java'}),
-    limit: Flags.integer({char: 'l', description: 'Max repositories', required: true, default: 100}),
-    json: Flags.boolean({description: 'Output result as JSON'})
+    limit: Flags.integer({char: 'l', description: 'Max repositories', required: true, default: 100})
   }
 
   // Repository schema for validation
@@ -70,7 +71,7 @@ export default class RepoList extends Command {
     }
   }
 
-  public async run(): Promise<void> {
+  public async run(): Promise<z.infer<typeof this.repositoriesSchema>> {
     const {flags} = await this.parse(RepoList)
     
     // Validate that GitHub CLI is installed
@@ -101,25 +102,24 @@ export default class RepoList extends Command {
       
       if (repositories.length === 0) {
         this.log('No repositories found matching the criteria.')
-        return
+        return []
       }
       
-      if (flags.json) {
-        // Output as JSON to stdout
-        process.stdout.write(JSON.stringify(repositories, null, 2))
-      } else {
-        // Format and display repositories
-        this.log(`Found ${repositories.length} repositories:`)
-        for (const repo of repositories) {
-          const topicsStr = repo.topics && repo.topics.length > 0 
-            ? `[${repo.topics.join(', ')}]` 
-            : ''
-          
-          this.log(`- ${repo.owner.login}/${repo.name} (${repo.language || 'No language'}) ${topicsStr}`)
-        }
+      // Display human-readable output if not in JSON mode
+      this.log(`Found ${repositories.length} repositories:`)
+      for (const repo of repositories) {
+        const topicsStr = repo.topics && repo.topics.length > 0 
+          ? `[${repo.topics.join(', ')}]` 
+          : ''
+        
+        this.log(`- ${repo.owner.login}/${repo.name} (${repo.language || 'No language'}) ${topicsStr}`)
       }
+      
+      // Return the repositories which will be output as JSON when --json flag is used
+      return repositories
     } catch (error) {
       this.error(`Error: ${(error as Error).message}`, {exit: 1})
+      return [] // TypeScript needs this even though we'll never reach here
     }
   }
 }
