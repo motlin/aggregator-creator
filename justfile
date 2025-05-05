@@ -2,15 +2,15 @@
 default:
     @just --list --unsorted
 
-# `npm run typecheck`
+# Build project (serves as typecheck)
 typecheck: install
-    npm run typecheck
+    npm run build
 
-# `npm run lint`
+# Run eslint
 lint: install
     npm run lint
 
-# `npm run lint:fix`
+# Run eslint with auto-fixing
 lint-fix: install
     npm run lint:fix
 
@@ -26,6 +26,14 @@ install:
 build: install
     npm run build
 
+# `npm run prepack`
+manifest: install
+    npm run prepack
+
+# `npm test`
+test: build
+    npm test
+
 # Run repo:list command to list GitHub repositories
 repo-list USERNAME LIMIT="10" *FLAGS="": build
     @echo "🔍 Listing GitHub repositories for {{USERNAME}}..."
@@ -34,7 +42,12 @@ repo-list USERNAME LIMIT="10" *FLAGS="": build
 # Run all checks, continuing even if some fail
 precommit:
     @echo "🔍 Running pre-commit checks..."
-    @just typecheck || (echo "❌ Typecheck failed but continuing...")
-    @just lint-fix || (echo "❌ Lint-fix failed but continuing...")
+    @just build || (echo "❌ Build failed but continuing...")
+    @just lint || (echo "❌ Lint failed but continuing...")
     @just format || (echo "❌ Format failed but continuing...")
     @echo "✅ Pre-commit checks completed. Review any errors above."
+
+# Run everything
+all: install build lint format test manifest
+    @echo "✅ All checks and steps completed successfully."
+

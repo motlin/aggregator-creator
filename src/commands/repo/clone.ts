@@ -62,11 +62,10 @@ export default class RepoClone extends Command {
     
     // Check if stdin is available (being piped)
     if (!process.stdin.isTTY) {
-      this.log(`Cloning repositories into ${path.resolve(targetDirectory)}...`)
+      const resolvedPath = path.resolve(targetDirectory)
+      this.log(`Cloning repositories into ${resolvedPath}...`)
       
       let successCount = 0
-      let errorCount = 0
-      const errors: {repo: string; error: string}[] = []
       
       // Collect all input first
       let fullInput = ''
@@ -80,102 +79,67 @@ export default class RepoClone extends Command {
         
         // Handle JSON array from repo:list command
         if (Array.isArray(jsonData)) {
-          for (const repo of jsonData) {
-            if (repo.owner?.login && repo.name) {
-              try {
-                const repoFullName = `${repo.owner.login}/${repo.name}`
-                await this.cloneRepository(repoFullName, targetDirectory)
-                successCount++
-              } catch (error) {
-                errorCount++
-                errors.push({
-                  repo: `${repo.owner.login}/${repo.name}`,
-                  error: (error as Error).message
-                })
-              }
-            }
+          // Filter out only valid repositories with owner and name
+          const validRepos = jsonData.filter(repo => repo.owner?.login && repo.name);
+          const total = validRepos.length;
+          
+          for (let i = 0; i < validRepos.length; i++) {
+            const repo = validRepos[i];
+            const repoFullName = `${repo.owner.login}/${repo.name}`;
+            await this.cloneRepository(repoFullName, targetDirectory, i + 1, total);
+            successCount++;
           }
           
-          // Output summary and return since we've handled the input
+          // Output summary (this will only be reached if no error occurred)
           this.log('\nCloning summary:')
           this.log(`✅ Successfully cloned: ${successCount}`)
-          
-          if (errorCount > 0) {
-            this.log(`❌ Failed to clone: ${errorCount}`)
-            this.log('\nErrors:')
-            for (const {repo, error} of errors) {
-              this.log(`- ${repo}: ${error}`)
-            }
-          }
-          
-          return
+          return;
         } else if (jsonData.owner?.login && jsonData.name) {
           // Handle single JSON object
-          try {
-            const repoFullName = `${jsonData.owner.login}/${jsonData.name}`
-            await this.cloneRepository(repoFullName, targetDirectory)
-            this.log('\nCloning summary:')
-            this.log(`✅ Successfully cloned: 1`)
-          } catch (error) {
-            this.log('\nCloning summary:')
-            this.log(`✅ Successfully cloned: 0`)
-            this.log(`❌ Failed to clone: 1`)
-            this.log('\nErrors:')
-            this.log(`- ${jsonData.owner.login}/${jsonData.name}: ${(error as Error).message}`)
-          }
-          return
+          const repoFullName = `${jsonData.owner.login}/${jsonData.name}`;
+          await this.cloneRepository(repoFullName, targetDirectory, 1, 1);
+          
+          this.log('\nCloning summary:')
+          this.log(`✅ Successfully cloned: 1`)
+          return;
         }
       } catch (e) {
         // Not valid JSON, process line by line
         const lines = fullInput.split('\n')
+        // Filter out empty lines and collect valid repos
+        const validLines = lines
+          .map(line => line.trim())
+          .filter(line => line.length > 0);
         
-        for (const line of lines) {
-          const trimmedLine = line.trim()
-          if (!trimmedLine) continue
+        const total = validLines.length;
+        
+        for (let i = 0; i < validLines.length; i++) {
+          const trimmedLine = validLines[i];
           
+          // Validate repository format
           try {
-            // Validate repository format
-            try {
-              this.repoNameSchema.parse(trimmedLine)
-            } catch (error) {
-              if (error instanceof z.ZodError) {
-                this.warn(`Invalid repository format: ${trimmedLine} - must be in format "owner/repo"`)
-                errorCount++
-                errors.push({repo: trimmedLine, error: 'Invalid format'})
-                continue
-              }
-              throw error
-            }
-            
-            await this.cloneRepository(trimmedLine, targetDirectory)
-            successCount++
+            this.repoNameSchema.parse(trimmedLine)
           } catch (error) {
-            errorCount++
-            errors.push({
-              repo: trimmedLine,
-              error: (error as Error).message
-            })
+            if (error instanceof z.ZodError) {
+              this.error(`Invalid repository format: ${trimmedLine} - must be in format "owner/repo"`, {exit: 1})
+            }
+            throw error
           }
+          
+          await this.cloneRepository(trimmedLine, targetDirectory, i + 1, total)
+          successCount++
         }
         
-        // Output summary
+        // Output summary (only reached if all operations succeeded)
         this.log('\nCloning summary:')
         this.log(`✅ Successfully cloned: ${successCount}`)
-        
-        if (errorCount > 0) {
-          this.log(`❌ Failed to clone: ${errorCount}`)
-          this.log('\nErrors:')
-          for (const {repo, error} of errors) {
-            this.log(`- ${repo}: ${error}`)
-          }
-        }
       }
     } else {
       this.error('No input provided. This command expects repository data from stdin.', {exit: 1})
     }
   }
   
-  private async cloneRepository(repoName: string, targetDirectory: string): Promise<void> {
+  private async cloneRepository(repoName: string, targetDirectory: string, index: number, total: number): Promise<void> {
     const [owner, repo] = repoName.split('/')
     const repoDir = path.join(targetDirectory, owner, repo)
     
@@ -193,13 +157,15 @@ export default class RepoClone extends Command {
       // Directory doesn't exist, which is fine
     }
     
-    this.log(`📦 Cloning ${repoName} into ${repoDir}...`)
+    const relativeRepoDir = path.relative(targetDirectory, repoDir)
+    this.log(`📦 Cloning ${repoName} into ${relativeRepoDir}... (${index}/${total})`)
     
     try {
       await this.execute('gh', ['repo', 'clone', repoName, repoDir])
       this.log(`✅ Successfully cloned ${repoName}`)
     } catch (error) {
-      this.error(`❌ Failed to clone ${repoName}: ${(error as Error).message}`)
+      this.error(`❌ Failed to clone ${repoName}: ${(error as Error).message}`, {exit: 1})
+      // With exit: 1, we won't reach here, but TypeScript needs this for type safety
       throw error
     }
   }
