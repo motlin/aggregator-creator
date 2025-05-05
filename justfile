@@ -43,11 +43,11 @@ repo-list USERNAME LIMIT="10" *FLAGS="": build
 precommit:
     @echo "🔍 Running pre-commit checks..."
     @just build || (echo "❌ Build failed but continuing...")
-    @just lint || (echo "❌ Lint failed but continuing...")
+    @just lint-fix || (echo "❌ Lint-fix failed but continuing...")
     @just format || (echo "❌ Format failed but continuing...")
     @echo "✅ Pre-commit checks completed. Review any errors above."
 
 # Run everything
-all: install build lint format test manifest
+all: install build lint-fix format test manifest
     @echo "✅ All checks and steps completed successfully."
 
