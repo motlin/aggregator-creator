@@ -14,9 +14,9 @@ lint: install
 lint-fix: install
     npm run lint:fix
 
-# `npx prettier --write ...`
+# `npm run format`
 format: install
-    npx prettier --write "**/*.{ts,json,yaml,yml,md}"
+    npm run format
 
 # `npm install`
 install:
@@ -51,11 +51,11 @@ repo-list USERNAME *FLAGS="": build
     ./bin/run.js repo:list --user {{USERNAME}} {{FLAGS}}
 
 # Run all checks, continuing even if some fail
-precommit:
+precommit: install
     @echo "🔍 Running pre-commit checks..."
-    @just build || (echo "❌ Build failed but continuing...")
-    @just lint-fix || (echo "❌ Lint-fix failed but continuing...")
-    @just format || (echo "❌ Format failed but continuing...")
+    npm run build || (echo "❌ Build failed but continuing...")
+    npm run lint:fix || (echo "❌ Lint-fix failed but continuing...")
+    npm run format || (echo "❌ Format failed but continuing...")
     @echo "✅ Pre-commit checks completed. Review any errors above."
 
 # Run everything
