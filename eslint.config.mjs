@@ -25,7 +25,8 @@ export default [
         'ignoreDestructuring': true
       }],
       '@stylistic/lines-between-class-members': 'off',
-      '@stylistic/padding-line-between-statements': 'off'
+      '@stylistic/padding-line-between-statements': 'off',
+      'max-params': 'off'
     }
   }
 ]
