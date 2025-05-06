@@ -1,8 +1,8 @@
 import {runCommand} from '@oclif/test'
 import {expect} from 'chai'
 import * as fs from 'fs-extra'
-import * as path from 'path'
-import * as os from 'os'
+import * as path from 'node:path'
+import * as os from 'node:os'
 import sinon from 'sinon'
 
 describe('aggregator:create', () => {
@@ -11,16 +11,16 @@ describe('aggregator:create', () => {
   beforeEach(async () => {
     // Create a temporary directory for testing
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aggregator-test-'))
-    
+
     // Create sample Maven repository structures
     const validRepo1 = path.join(tempDir, 'valid-repo1')
     const validRepo2 = path.join(tempDir, 'valid-repo2')
     const invalidRepo = path.join(tempDir, 'invalid-repo')
-    
+
     await fs.ensureDir(validRepo1)
     await fs.ensureDir(validRepo2)
     await fs.ensureDir(invalidRepo)
-    
+
     // Create pom.xml files in valid repos
     await fs.writeFile(path.join(validRepo1, 'pom.xml'), '<project><modelVersion>4.0.0</modelVersion></project>')
     await fs.writeFile(path.join(validRepo2, 'pom.xml'), '<project><modelVersion>4.0.0</modelVersion></project>')
@@ -44,16 +44,16 @@ describe('aggregator:create', () => {
 
   it('creates an aggregator POM with default values', async () => {
     const {stdout} = await runCommand(`aggregator:create ${tempDir}`)
-    
+
     expect(stdout).to.contain('Found valid Maven repository: valid-repo1')
     expect(stdout).to.contain('Found valid Maven repository: valid-repo2')
     expect(stdout).to.contain('Invalid Maven repository (no pom.xml): invalid-repo')
     expect(stdout).to.contain('Created aggregator POM')
-    
+
     // Check if pom.xml was created
     const pomPath = path.join(tempDir, 'pom.xml')
     expect(fs.existsSync(pomPath)).to.be.true
-    
+
     const pomContent = await fs.readFile(pomPath, 'utf8')
     expect(pomContent).to.contain('<groupId>com.example</groupId>')
     expect(pomContent).to.contain('<artifactId>aggregator</artifactId>')
@@ -64,11 +64,11 @@ describe('aggregator:create', () => {
 
   it('creates an aggregator POM with custom values', async () => {
     const {stdout} = await runCommand(
-      `aggregator:create ${tempDir} --groupId org.test --artifactId custom-agg --pomVersion 2.0.0`
+      `aggregator:create ${tempDir} --groupId org.test --artifactId custom-agg --pomVersion 2.0.0`,
     )
-    
+
     expect(stdout).to.contain('Created aggregator POM')
-    
+
     // Check if pom.xml was created with custom values
     const pomPath = path.join(tempDir, 'pom.xml')
     const pomContent = await fs.readFile(pomPath, 'utf8')

@@ -8,12 +8,12 @@ import * as sinon from 'sinon'
 describe('repo:validate', () => {
   let tempDir: string
   let sandbox: sinon.SinonSandbox
-  
+
   beforeEach(() => {
     tempDir = path.join(process.cwd(), 'test-temp-dir')
     sandbox = sinon.createSandbox()
   })
-  
+
   afterEach(async () => {
     sandbox.restore()
     if (fs.existsSync(tempDir)) {
@@ -23,7 +23,7 @@ describe('repo:validate', () => {
 
   it('should fail when directory does not exist', async () => {
     const nonExistentPath = path.join(tempDir, 'non-existent')
-    
+
     try {
       await runCommand(`repo:validate ${nonExistentPath}`)
       throw new Error('Command should have failed')
@@ -36,7 +36,7 @@ describe('repo:validate', () => {
 
   it('should fail when no pom.xml exists', async () => {
     await fs.ensureDir(tempDir)
-    
+
     try {
       await runCommand(`repo:validate ${tempDir}`)
       throw new Error('Command should have failed')
@@ -50,7 +50,7 @@ describe('repo:validate', () => {
   it('should succeed for valid Maven repo', async () => {
     await fs.ensureDir(tempDir)
     await fs.writeFile(path.join(tempDir, 'pom.xml'), '<project></project>')
-    
+
     // Mock mvn command execution
     sandbox.stub(execa, 'command').resolves({
       command: 'mvn help:effective-pom',
@@ -62,7 +62,7 @@ describe('repo:validate', () => {
       stdout: 'effective-pom',
       timedOut: false,
     })
-    
+
     const {stdout} = await runCommand(`repo:validate ${tempDir}`)
     expect(stdout).to.contain('valid Maven project')
   })

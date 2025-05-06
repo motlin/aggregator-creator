@@ -9,14 +9,14 @@ describe('repo:list', () => {
   beforeEach(() => {
     // Stub execa to prevent actual GitHub API calls during tests
     execaStub = sinon.stub(execa, 'execa')
-    
+
     // Default stub for gh --version check
     execaStub.withArgs('gh', ['--version']).resolves({
       stdout: 'gh version 2.0.0',
       stderr: '',
       exitCode: 0,
     })
-    
+
     // Default stub for gh auth status check
     execaStub.withArgs('gh', ['auth', 'status']).resolves({
       stdout: 'Logged in to github.com as username',

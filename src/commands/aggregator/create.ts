@@ -1,6 +1,6 @@
 import {Args, Command, Flags} from '@oclif/core'
 import fs from 'fs-extra'
-import * as path from 'path'
+import * as path from 'node:path'
 import {execa} from 'execa'
 import {create} from 'xmlbuilder2'
 import chalk from 'chalk'
@@ -67,12 +67,8 @@ export default class AggregatorCreate extends Command {
   /**
    * Create the aggregator POM XML
    */
-  private createAggregatorPom(
-    groupId: string,
-    artifactId: string,
-    version: string,
-    modules: string[],
-  ): string {
+  private createAggregatorPom(groupId: string, artifactId: string, version: string, modules: string[]): string {
+    // prettier-ignore
     const pom = create({version: '1.0'})
       .ele('project', {
         'xmlns': 'http://maven.apache.org/POM/4.0.0',
@@ -97,24 +93,24 @@ export default class AggregatorCreate extends Command {
   }
 
   public async run(): Promise<{
-    success: boolean;
-    pomPath: string;
+    success: boolean
+    pomPath: string
     modules: {
-      path: string;
-      valid: boolean;
-      reason?: string;
-    }[];
+      path: string
+      valid: boolean
+      reason?: string
+    }[]
     stats: {
-      totalScanned: number;
-      validRepositories: number;
-      skippedRepositories: number;
-      elapsedTimeMs: number;
-    };
+      totalScanned: number
+      validRepositories: number
+      skippedRepositories: number
+      elapsedTimeMs: number
+    }
     mavenCoordinates: {
-      groupId: string;
-      artifactId: string;
-      version: string;
-    };
+      groupId: string
+      artifactId: string
+      version: string
+    }
   }> {
     const startTime = Date.now()
     const {args, flags} = await this.parse(AggregatorCreate)
@@ -133,69 +129,69 @@ export default class AggregatorCreate extends Command {
     const mavenRepos: {path: string; relativePath: string}[] = []
     const skippedRepos: {path: string; relativePath: string; reason: string}[] = []
     let totalScanned = 0
-    
+
     // First level directories (could be either Maven repos or owner directories)
     const entries = await fs.readdir(directoryPath)
-    
+
     // Filter out non-directories and pom.xml
     const firstLevelEntries = []
     for (const entry of entries) {
       if (entry === 'pom.xml') continue
-      
+
       const entryPath = path.join(directoryPath, entry)
       const stats = await fs.stat(entryPath)
-      
+
       if (stats.isDirectory()) {
         firstLevelEntries.push(entry)
       }
     }
-    
+
     this.log(chalk.blue(`Found ${firstLevelEntries.length} potential repository containers to scan`))
-    
+
     for (const entry of firstLevelEntries) {
       this.log(chalk.dim(`⏳ Examining: ${entry}`))
-      
+
       const entryPath = path.join(directoryPath, entry)
       const stats = await fs.stat(entryPath)
-      
+
       // This should always be a directory since we filtered above
       if (!stats.isDirectory()) {
         continue
       }
-      
+
       totalScanned++
-      
+
       // Check if this is a Maven repo
       const hasPom = await this.validateMavenRepo(entryPath)
       if (hasPom) {
         mavenRepos.push({
           path: entryPath,
-          relativePath: entry
+          relativePath: entry,
         })
         continue
       }
-      
+
       // If not a Maven repo, check if it contains Maven repos (owner/repo structure)
       try {
         const subEntries = await fs.readdir(entryPath)
         for (const subEntry of subEntries) {
           const subEntryPath = path.join(entryPath, subEntry)
           const subStats = await fs.stat(subEntryPath)
-          
+
           if (!subStats.isDirectory()) continue
-          
+
           totalScanned++
           const hasSubPom = await this.validateMavenRepo(subEntryPath)
           if (hasSubPom) {
             mavenRepos.push({
               path: subEntryPath,
-              relativePath: path.join(entry, subEntry)
+              relativePath: path.join(entry, subEntry),
             })
           } else {
             skippedRepos.push({
               path: subEntryPath,
               relativePath: path.join(entry, subEntry),
-              reason: 'Missing pom.xml'
+              reason: 'Missing pom.xml',
             })
           }
         }
@@ -204,23 +200,23 @@ export default class AggregatorCreate extends Command {
         skippedRepos.push({
           path: entryPath,
           relativePath: entry,
-          reason: `Error reading directory: ${(error as Error).message}`
+          reason: `Error reading directory: ${(error as Error).message}`,
         })
       }
     }
-    
+
     if (mavenRepos.length === 0) {
       this.error('No Maven repositories found. Each repository must contain a pom.xml file.', {exit: 1})
     }
 
     // Map found repos to modules for POM file
-    const validModules = mavenRepos.map(repo => repo.relativePath)
-    
+    const validModules = mavenRepos.map((repo) => repo.relativePath)
+
     // Log found repositories
     for (const repo of mavenRepos) {
       this.log(chalk.green(`✅ Found valid Maven repository: ${repo.relativePath}`))
     }
-    
+
     // Log summary
     this.log(chalk.blue('\n📊 Repository scan summary:'))
     this.log(chalk.green(`✅ Found ${mavenRepos.length} valid Maven repositories`))
@@ -234,12 +230,7 @@ export default class AggregatorCreate extends Command {
     }
 
     // Generate the aggregator POM
-    const pomXml = this.createAggregatorPom(
-      flags.groupId,
-      flags.artifactId,
-      flags.pomVersion,
-      validModules,
-    )
+    const pomXml = this.createAggregatorPom(flags.groupId, flags.artifactId, flags.pomVersion, validModules)
 
     // Write the aggregator POM
     const pomPath = path.join(directoryPath, 'pom.xml')
@@ -247,37 +238,37 @@ export default class AggregatorCreate extends Command {
       await fs.writeFile(pomPath, pomXml)
       this.log(chalk.green(`\n✅ Created aggregator POM at ${pomPath}`))
       this.log(chalk.blue(`📋 Included ${validModules.length} modules`))
-      
+
       // Calculate elapsed time
       const elapsedTimeMs = Date.now() - startTime
       this.log(chalk.dim(`⏱️ Operation completed in ${elapsedTimeMs}ms`))
-      
+
       // Return structured output for JSON flag
       return {
         success: true,
         pomPath,
         modules: [
-          ...mavenRepos.map(repo => ({
+          ...mavenRepos.map((repo) => ({
             path: repo.relativePath,
-            valid: true
+            valid: true,
           })),
-          ...skippedRepos.map(repo => ({
+          ...skippedRepos.map((repo) => ({
             path: repo.relativePath,
             valid: false,
-            reason: repo.reason
-          }))
+            reason: repo.reason,
+          })),
         ],
         stats: {
           totalScanned,
           validRepositories: mavenRepos.length,
           skippedRepositories: skippedRepos.length,
-          elapsedTimeMs
+          elapsedTimeMs,
         },
         mavenCoordinates: {
           groupId: flags.groupId,
           artifactId: flags.artifactId,
-          version: flags.pomVersion
-        }
+          version: flags.pomVersion,
+        },
       }
     } catch (error: any) {
       this.error(`Failed to write aggregator POM: ${error.message}`, {exit: 1})

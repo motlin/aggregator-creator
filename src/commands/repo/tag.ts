@@ -13,12 +13,12 @@ export default class RepoTag extends Command {
   }
 
   static override description = 'Tag valid Maven repositories with GitHub topics'
-  
+
   static override examples = [
     '<%= config.bin %> <%= command.id %> ./repos-dir --topic maven',
     '<%= config.bin %> <%= command.id %> ./repos-dir --topic maven --dry-run',
   ]
-  
+
   static override flags = {
     topic: Flags.string({
       char: 't',
@@ -50,49 +50,42 @@ export default class RepoTag extends Command {
     try {
       const absolutePath = path.resolve(directory)
       const entries = await fs.readdir(absolutePath, {withFileTypes: true})
-      
+
       // Filter for directories only
-      const dirs = entries
-        .filter(entry => entry.isDirectory())
-        .map(entry => entry.name)
-      
+      const dirs = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name)
+
       this.log(`Found ${dirs.length} directories to check`)
 
       for (const repoDir of dirs) {
         const repoPath = path.join(absolutePath, repoDir)
         await this.processRepository(repoPath, topic, dryRun, verbose)
       }
-      
+
       this.log(chalk.green('✅ Repository tagging process completed'))
     } catch (error) {
       this.error(`Failed to process repositories: ${error}`, {exit: 1})
     }
   }
 
-  private async processRepository(
-    repoPath: string, 
-    topic: string, 
-    dryRun: boolean, 
-    verbose: boolean
-  ): Promise<void> {
+  private async processRepository(repoPath: string, topic: string, dryRun: boolean, verbose: boolean): Promise<void> {
     try {
       this.log(`Processing repository: ${path.basename(repoPath)}`)
-      
+
       // Check if it's a git repository
-      if (!await this.isGitRepository(repoPath)) {
+      if (!(await this.isGitRepository(repoPath))) {
         this.log(chalk.yellow(`Skipping ${path.basename(repoPath)} - not a git repository`))
         return
       }
-      
+
       // Validate as Maven repository
       const isValid = await this.validateMavenRepo(repoPath, verbose)
-      
+
       if (isValid) {
         this.log(chalk.green(`✓ Valid Maven repository: ${path.basename(repoPath)}`))
-        
+
         // Get repository owner and name from remote URL
         const {owner, name} = await this.getRepoOwnerAndName(repoPath)
-        
+
         if (owner && name) {
           if (dryRun) {
             this.log(chalk.blue(`[DRY RUN] Would tag ${owner}/${name} with topic: ${topic}`))
@@ -123,20 +116,20 @@ export default class RepoTag extends Command {
   private async getRepoOwnerAndName(repoPath: string): Promise<{owner: string; name: string}> {
     try {
       const {stdout} = await execa('git', ['-C', repoPath, 'remote', 'get-url', 'origin'])
-      
+
       // Handle SSH and HTTPS remote URLs
       const sshMatch = stdout.match(/git@github\.com:([^/]+)\/([^.]+)\.git/)
       const httpsMatch = stdout.match(/https:\/\/github\.com\/([^/]+)\/([^.]+)\.git/)
-      
+
       const match = sshMatch || httpsMatch
-      
+
       if (match && match.length >= 3) {
         return {
           owner: match[1],
           name: match[2],
         }
       }
-      
+
       return {owner: '', name: ''}
     } catch {
       return {owner: '', name: ''}
@@ -147,22 +140,24 @@ export default class RepoTag extends Command {
     try {
       await execa('gh', ['api', `repos/${owner}/${name}/topics`, '--method', 'GET'], {
         reject: false,
-      }).then(async result => {
+      }).then(async (result) => {
         if (result.exitCode === 0) {
           try {
             const topicsData = JSON.parse(result.stdout)
             const topics = topicsData.names || []
 
-            if (!topics.includes(topic)) {
+            if (topics.includes(topic)) {
+              this.log(chalk.blue(`Topic ${topic} already exists on ${owner}/${name}`))
+            } else {
               topics.push(topic)
               await execa('gh', [
-                'api', 
-                `repos/${owner}/${name}/topics`, 
-                '--method', 'PUT', 
-                '-f', `names[]=${topics.join('&names[]=')}`
+                'api',
+                `repos/${owner}/${name}/topics`,
+                '--method',
+                'PUT',
+                '-f',
+                `names[]=${topics.join('&names[]=')}`,
               ])
-            } else {
-              this.log(chalk.blue(`Topic ${topic} already exists on ${owner}/${name}`))
             }
           } catch (error) {
             this.log(chalk.red(`Error updating topics: ${error}`))

@@ -11,12 +11,12 @@ export default class RepoValidate extends Command {
       required: true,
     }),
   }
-static override description = 'Validates if a directory is a valid Maven repository'
-static override examples = [
+  static override description = 'Validates if a directory is a valid Maven repository'
+  static override examples = [
     '<%= config.bin %> <%= command.id %> ./path/to/repo',
     '<%= config.bin %> <%= command.id %> /absolute/path/to/repo',
   ]
-static override flags = {
+  static override flags = {
     verbose: Flags.boolean({
       char: 'v',
       description: 'Show verbose output during validation',
@@ -30,7 +30,7 @@ static override flags = {
     this.log(`Validating Maven repository at: ${repoPath}`)
 
     const isValid = await this.validateMavenRepo(repoPath, flags.verbose)
-    
+
     if (isValid) {
       this.log(chalk.green(`✅ Repository is a valid Maven project: ${repoPath}`))
       process.exit(0)
