@@ -1,14 +1,14 @@
 import {runCommand} from '@oclif/test'
 import {expect} from 'chai'
-import sinon from 'sinon'
+import {match, restore, SinonStub, stub} from 'sinon'
 import * as execa from 'execa'
 
 describe('repo:list', () => {
-  let execaStub: sinon.SinonStub
+  let execaStub: SinonStub
 
   beforeEach(() => {
     // Stub execa to prevent actual GitHub API calls during tests
-    execaStub = sinon.stub(execa, 'execa')
+    execaStub = stub(execa, 'execa')
 
     // Default stub for gh --version check
     execaStub.withArgs('gh', ['--version']).resolves({
@@ -26,7 +26,7 @@ describe('repo:list', () => {
   })
 
   afterEach(() => {
-    sinon.restore()
+    restore()
   })
 
   it('should show error when no user flag is provided', async () => {
@@ -35,7 +35,7 @@ describe('repo:list', () => {
 
   it('should fetch repositories for specified user', async () => {
     // Stub GitHub API call
-    execaStub.withArgs('gh', sinon.match.array).resolves({
+    execaStub.withArgs('gh', match.array).resolves({
       stdout: JSON.stringify([
         {
           name: 'repo1',
@@ -53,6 +53,35 @@ describe('repo:list', () => {
     const {stdout} = await runCommand('repo:list --user testuser')
     expect(stdout).to.contain('testuser/repo1')
     expect(stdout).to.contain('Java')
+    expect(stdout).to.contain('Topics: [maven]')
+  })
+
+  it('should support multiple language filters', async () => {
+    // Stub GitHub API call
+    execaStub.withArgs('gh', match.array).resolves({
+      stdout: JSON.stringify([
+        {
+          name: 'repo1',
+          owner: {login: 'testuser'},
+          language: 'Java',
+          topics: ['maven'],
+        },
+        {
+          name: 'repo2',
+          owner: {login: 'testuser'},
+          language: 'TypeScript',
+          topics: ['webpack'],
+        },
+      ]),
+      stderr: '',
+      exitCode: 0,
+    })
+
+    const {stdout} = await runCommand('repo:list --user testuser --language Java --language TypeScript')
+    expect(stdout).to.contain('testuser/repo1')
+    expect(stdout).to.contain('testuser/repo2')
+    expect(stdout).to.contain('Java')
+    expect(stdout).to.contain('TypeScript')
   })
 
   it('should output JSON when --json flag is provided', async () => {
@@ -69,7 +98,7 @@ describe('repo:list', () => {
     ]
 
     // Stub GitHub API call to return sample repositories
-    execaStub.withArgs('gh', sinon.match.array).resolves({
+    execaStub.withArgs('gh', match.array).resolves({
       stdout: JSON.stringify(sampleRepos),
       stderr: '',
       exitCode: 0,
