@@ -15,6 +15,10 @@ export default [
       'perfectionist/sort-object-types': 'off',
       'perfectionist/sort-objects': 'off',
       'perfectionist/sort-classes': 'off',
+      'camelcase': ['error', {
+        'properties': 'never',
+        'ignoreDestructuring': true
+      }]
     }
   }
 ]
