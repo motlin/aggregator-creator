@@ -16,7 +16,7 @@ lint-fix: install
 
 # `npx prettier --write ...`
 format: install
-    npx prettier --write "**/*.{json,yaml,yml,md}"
+    npx prettier --write "**/*.{ts,json,yaml,yml,md}"
 
 # `npm install`
 install:
@@ -50,4 +50,3 @@ precommit:
 # Run everything
 all: install build lint-fix format test manifest
     @echo "✅ All checks and steps completed successfully."
-
