@@ -1,12 +1,12 @@
 import {runCommand} from '@oclif/test'
 import {expect} from 'chai'
-import sinon from 'sinon'
+import {createSandbox} from 'sinon'
 import fs from 'fs-extra'
 import path from 'node:path'
-import {execa} from 'execa'
+import {execa, type Result} from 'execa'
 
 describe('repo:tag', () => {
-  const sandbox = sinon.createSandbox()
+  const sandbox = createSandbox()
 
   beforeEach(() => {
     // Stub fs.readdir to return a mock repository structure
@@ -30,22 +30,22 @@ describe('repo:tag', () => {
     sandbox.stub(execa).callsFake(async (cmd, args) => {
       if (cmd === 'git' && args?.[0] === '-C' && args[2] === 'remote') {
         if (args[1].includes('repo1')) {
-          return {stdout: 'git@github.com:example/repo1.git'} as any
+          return {stdout: 'git@github.com:example/repo1.git'} as Result
         }
         if (args[1].includes('repo2')) {
-          return {stdout: 'https://github.com/example/repo2.git'} as any
+          return {stdout: 'https://github.com/example/repo2.git'} as Result
         }
       }
 
       if (cmd === 'gh' && args?.[0] === 'api' && args[1].includes('/topics')) {
-          return {
-            exitCode: 0,
-            stdout: JSON.stringify({names: ['existing-topic']}),
-          } as any
-        }
+        return {
+          exitCode: 0,
+          stdout: JSON.stringify({names: ['existing-topic']}),
+        } as Result
+      }
 
       // Mock maven validation to return true
-      return {stdout: 'mock stdout', exitCode: 0} as any
+      return {stdout: 'mock stdout', exitCode: 0} as Result
     })
   })
 
@@ -65,8 +65,7 @@ describe('repo:tag', () => {
 
   it('handles non-git directories properly', async () => {
     // Modify fs.pathExists to make repo2 not a git repo
-    const pathExistsStub = fs.pathExists as sinon.SinonStub
-    pathExistsStub.restore()
+    sandbox.restore()
 
     sandbox.stub(fs, 'pathExists').callsFake(async (gitPath) => {
       if (gitPath.includes('repo1/.git')) return true

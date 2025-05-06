@@ -35,9 +35,20 @@ test: build
     npm test
 
 # Run repo:list command to list GitHub repositories
-repo-list USERNAME LIMIT="10" *FLAGS="": build
+# Examples:
+#   just repo-list motlin
+#   just repo-list motlin --limit 10
+#   just repo-list motlin --language Java
+#   just repo-list motlin --topic maven
+#
+# Short flag alternatives:
+#   -l = --limit
+#   -g = --language
+#   -t = --topic
+#   -u = --user
+repo-list USERNAME *FLAGS="": build
     @echo "🔍 Listing GitHub repositories for {{USERNAME}}..."
-    ./bin/run.js repo:list --user {{USERNAME}} --limit {{LIMIT}} {{FLAGS}}
+    ./bin/run.js repo:list --user {{USERNAME}} {{FLAGS}}
 
 # Run all checks, continuing even if some fail
 precommit:

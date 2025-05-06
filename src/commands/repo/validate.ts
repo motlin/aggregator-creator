@@ -33,10 +33,8 @@ export default class RepoValidate extends Command {
 
     if (isValid) {
       this.log(chalk.green(`✅ Repository is a valid Maven project: ${repoPath}`))
-      process.exit(0)
     } else {
-      this.log(chalk.red(`❌ Repository validation failed: ${repoPath}`))
-      process.exit(1)
+      this.error(chalk.red(`❌ Repository validation failed: ${repoPath}`), {exit: 1})
     }
   }
 

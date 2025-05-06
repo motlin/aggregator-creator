@@ -1,8 +1,7 @@
 import {Args, Command} from '@oclif/core'
 import * as fs from 'fs-extra'
-import * as path from 'node:path'
-import * as readline from 'node:readline'
-import {execa} from 'execa'
+import path from 'node:path'
+import {execa, type Options, type Result} from 'execa'
 import {z} from 'zod'
 
 export default class RepoClone extends Command {
@@ -21,7 +20,11 @@ export default class RepoClone extends Command {
   // Schema for validating repository format
   private repoNameSchema = z.string().regex(/^[^/]+\/[^/]+$/, 'Repository must be in format "owner/repo"')
 
-  private async execute(command: string, args: string[] = [], options: any = {}): Promise<any> {
+  private async execute(
+    command: string,
+    args: string[] = [],
+    options: Options & {silent?: boolean} = {},
+  ): Promise<Result> {
     const silent = options.silent === true
 
     if (!silent) {
@@ -30,10 +33,11 @@ export default class RepoClone extends Command {
 
     try {
       return await execa(command, args, options)
-    } catch (error) {
+    } catch (error: unknown) {
       if (!silent) {
         this.error(`Command failed: ${command} ${args.join(' ')}`)
-        this.error(`${(error as any).stderr || (error as Error).message}`)
+        const errorObj = error as Error & {stderr?: string}
+        this.error(`${errorObj.stderr || errorObj.message}`)
       }
       throw error
     }
@@ -113,11 +117,10 @@ export default class RepoClone extends Command {
         const total = validLines.length
 
         for (const [i, trimmedLine] of validLines.entries()) {
-
           // Validate repository format
           try {
             this.repoNameSchema.parse(trimmedLine)
-          } catch (error) {
+          } catch (error: unknown) {
             if (error instanceof z.ZodError) {
               this.error(`Invalid repository format: ${trimmedLine} - must be in format "owner/repo"`, {exit: 1})
             }
@@ -164,8 +167,8 @@ export default class RepoClone extends Command {
     try {
       await this.execute('gh', ['repo', 'clone', repoName, repoDir])
       this.log(`✅ Successfully cloned ${repoName}`)
-    } catch (error) {
-      this.error(`❌ Failed to clone ${repoName}: ${(error as Error).message}`, {exit: 1})
+    } catch (error: unknown) {
+      this.error(`❌ Failed to clone ${repoName}: ${error instanceof Error ? error.message : String(error)}`, {exit: 1})
       // With exit: 1, we won't reach here, but TypeScript needs this for type safety
       throw error
     }

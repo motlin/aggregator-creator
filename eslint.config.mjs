@@ -16,6 +16,10 @@ export default [
       'perfectionist/sort-objects': 'off',
       'perfectionist/sort-classes': 'off',
       'perfectionist/sort-imports': 'off',
+      'perfectionist/sort-interfaces': 'off',
+      'perfectionist/sort-union-types': 'off',
+      'perfectionist/sort-switch-case': 'off',
+      'no-await-in-loop': 'off',
       'camelcase': ['error', {
         'properties': 'never',
         'ignoreDestructuring': true

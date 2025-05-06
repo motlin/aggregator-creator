@@ -1,7 +1,7 @@
 import {Args, Command, Flags} from '@oclif/core'
 import fs from 'fs-extra'
-import * as path from 'node:path'
-import {execa} from 'execa'
+import path from 'node:path'
+import {execa, type Options, type Result} from 'execa'
 import {create} from 'xmlbuilder2'
 import chalk from 'chalk'
 
@@ -42,11 +42,11 @@ export default class AggregatorCreate extends Command {
   /**
    * Execute a shell command with error handling
    */
-  private async execute(command: string, args: string[] = [], options: any = {}): Promise<any> {
+  private async execute(command: string, args: string[] = [], options: Options = {}): Promise<Result> {
     try {
       return await execa(command, args, options)
-    } catch (error: any) {
-      this.error(`Command execution failed: ${error.message}`, {exit: 1})
+    } catch (error: unknown) {
+      this.error(`Command execution failed: ${error instanceof Error ? error.message : String(error)}`, {exit: 1})
       throw error
     }
   }
@@ -119,8 +119,8 @@ export default class AggregatorCreate extends Command {
     // Ensure directory exists
     try {
       await fs.ensureDir(directoryPath)
-    } catch (error: any) {
-      this.error(`Failed to access directory: ${error.message}`, {exit: 1})
+    } catch (error: unknown) {
+      this.error(`Failed to access directory: ${error instanceof Error ? error.message : String(error)}`, {exit: 1})
     }
 
     this.log(chalk.blue(`🔍 Scanning for Maven repositories in ${directoryPath}...`))
@@ -270,8 +270,8 @@ export default class AggregatorCreate extends Command {
           version: flags.pomVersion,
         },
       }
-    } catch (error: any) {
-      this.error(`Failed to write aggregator POM: ${error.message}`, {exit: 1})
+    } catch (error: unknown) {
+      this.error(`Failed to write aggregator POM: ${error instanceof Error ? error.message : String(error)}`, {exit: 1})
       throw error
     }
   }

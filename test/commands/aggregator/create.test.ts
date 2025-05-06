@@ -1,9 +1,9 @@
 import {runCommand} from '@oclif/test'
 import {expect} from 'chai'
 import * as fs from 'fs-extra'
-import * as path from 'node:path'
+import path from 'node:path'
 import * as os from 'node:os'
-import sinon from 'sinon'
+import {restore} from 'sinon'
 
 describe('aggregator:create', () => {
   let tempDir: string
@@ -29,7 +29,7 @@ describe('aggregator:create', () => {
   afterEach(async () => {
     // Clean up test directory
     await fs.remove(tempDir)
-    sinon.restore()
+    restore()
   })
 
   it('errors when no directory is provided', async () => {
@@ -37,7 +37,7 @@ describe('aggregator:create', () => {
       await runCommand('aggregator:create')
       // If we get here without an error, fail the test
       expect.fail('Command should have failed but did not')
-    } catch (error: any) {
+    } catch (error: Error & {message: string}) {
       expect(error.message).to.contain('Missing required arg')
     }
   })
