@@ -26,7 +26,8 @@ export default [
       }],
       '@stylistic/lines-between-class-members': 'off',
       '@stylistic/padding-line-between-statements': 'off',
-      'max-params': 'off'
+      'max-params': 'off',
+      'complexity': 'off'
     }
   }
 ]
