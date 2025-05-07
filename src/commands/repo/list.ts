@@ -89,7 +89,7 @@ export default class RepoList extends Command {
             break
           }
           case 'duration': {
-            this.log(`┗ ${verboseLine}`)
+            this.log(`┗━ ${verboseLine}`)
 
             break
           }
@@ -97,7 +97,7 @@ export default class RepoList extends Command {
             const MAX_LENGTH = 120
             const truncatedLine =
               verboseLine.length > MAX_LENGTH ? `${verboseLine.slice(0, Math.max(0, MAX_LENGTH))}...` : verboseLine
-            this.log(`┣ ${truncatedLine}`)
+            this.log(`┣━ ${truncatedLine}`)
 
             break
           }
