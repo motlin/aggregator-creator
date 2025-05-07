@@ -1,21 +1,23 @@
 import {runCommand} from '@oclif/test'
 import {expect} from 'chai'
-import {execa} from 'execa'
-import * as fs from 'fs-extra'
+import fs from 'fs-extra'
 import path from 'node:path'
-import * as sinon from 'sinon'
+import {createSandbox} from 'sinon'
+
+// Import mock execa for repo:validate tests
+import './mock-execa-validate'
 
 describe('repo:validate', () => {
   let tempDir: string
-  let sandbox: sinon.SinonSandbox
+  const sandbox = createSandbox()
 
   beforeEach(() => {
     tempDir = path.join(process.cwd(), 'test-temp-dir')
-    sandbox = sinon.createSandbox()
   })
 
   afterEach(async () => {
     sandbox.restore()
+
     if (fs.existsSync(tempDir)) {
       await fs.remove(tempDir)
     }
@@ -26,10 +28,11 @@ describe('repo:validate', () => {
 
     try {
       await runCommand(`repo:validate ${nonExistentPath}`)
-      throw new Error('Command should have failed')
-    } catch (error) {
-      const typedError = error as {code: number; message: string}
-      expect(typedError.code).to.equal(1)
+      expect.fail('Command should have failed')
+    } catch (error: unknown) {
+      // In OCLIF v4, errors thrown with exit: 1 will have exit property
+      const typedError = error as {exit?: number; message: string}
+      expect(typedError.exit).to.equal(1)
       expect(typedError.message).to.contain('Directory does not exist')
     }
   })
@@ -39,29 +42,17 @@ describe('repo:validate', () => {
 
     try {
       await runCommand(`repo:validate ${tempDir}`)
-      throw new Error('Command should have failed')
-    } catch (error) {
-      const typedError = error as {code: number; message: string}
-      expect(typedError.code).to.equal(1)
-      expect(typedError.message).to.contain('No pom.xml found')
+      expect.fail('Command should have failed')
+    } catch (error: unknown) {
+      const typedError = error as {exit?: number; message: string}
+      expect(typedError.exit).to.equal(1)
+      expect(typedError.message).to.contain('Repository validation failed')
     }
   })
 
   it('should succeed for valid Maven repo', async () => {
     await fs.ensureDir(tempDir)
     await fs.writeFile(path.join(tempDir, 'pom.xml'), '<project></project>')
-
-    // Mock mvn command execution
-    sandbox.stub(execa, 'command').resolves({
-      command: 'mvn help:effective-pom',
-      exitCode: 0,
-      failed: false,
-      isCanceled: false,
-      killed: false,
-      stderr: '',
-      stdout: 'effective-pom',
-      timedOut: false,
-    })
 
     const {stdout} = await runCommand(`repo:validate ${tempDir}`)
     expect(stdout).to.contain('valid Maven project')

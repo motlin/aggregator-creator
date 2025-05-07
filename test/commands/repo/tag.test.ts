@@ -3,7 +3,9 @@ import {expect} from 'chai'
 import {createSandbox} from 'sinon'
 import fs from 'fs-extra'
 import path from 'node:path'
-import {execa, type Result} from 'execa'
+
+// Import mock execa for repo:tag tests
+import './mock-execa-tag'
 
 describe('repo:tag', () => {
   const sandbox = createSandbox()
@@ -17,35 +19,13 @@ describe('repo:tag', () => {
     ] as unknown as fs.Dirent[])
 
     // Stub path.resolve to return predictable paths
-    sandbox.stub(path, 'resolve').callsFake((path) => path)
+    sandbox.stub(path, 'resolve').callsFake((p: string) => p)
 
     // Stub fs.pathExists for .git directory checks
-    sandbox.stub(fs, 'pathExists').callsFake(async (gitPath) => {
-      if (gitPath.includes('repo1/.git')) return true
-      if (gitPath.includes('repo2/.git')) return true
+    sandbox.stub(fs, 'pathExists').callsFake(async (gitPath: string) => {
+      if (typeof gitPath === 'string' && gitPath.includes('repo1/.git')) return true
+      if (typeof gitPath === 'string' && gitPath.includes('repo2/.git')) return true
       return false
-    })
-
-    // Stub execa for git remote calls
-    sandbox.stub(execa).callsFake(async (cmd, args) => {
-      if (cmd === 'git' && args?.[0] === '-C' && args[2] === 'remote') {
-        if (args[1].includes('repo1')) {
-          return {stdout: 'git@github.com:example/repo1.git'} as Result
-        }
-        if (args[1].includes('repo2')) {
-          return {stdout: 'https://github.com/example/repo2.git'} as Result
-        }
-      }
-
-      if (cmd === 'gh' && args?.[0] === 'api' && args[1].includes('/topics')) {
-        return {
-          exitCode: 0,
-          stdout: JSON.stringify({names: ['existing-topic']}),
-        } as Result
-      }
-
-      // Mock maven validation to return true
-      return {stdout: 'mock stdout', exitCode: 0} as Result
     })
   })
 
@@ -64,11 +44,25 @@ describe('repo:tag', () => {
   })
 
   it('handles non-git directories properly', async () => {
-    // Modify fs.pathExists to make repo2 not a git repo
+    // Reset stubs and create new ones for this test
     sandbox.restore()
 
-    sandbox.stub(fs, 'pathExists').callsFake(async (gitPath) => {
-      if (gitPath.includes('repo1/.git')) return true
+    // Create a new sandbox for this test
+    const testSandbox = createSandbox()
+
+    // Stub fs.readdir to return a mock repository structure
+    testSandbox.stub(fs, 'readdir').resolves([
+      {name: 'repo1', isDirectory: () => true},
+      {name: 'repo2', isDirectory: () => true},
+      {name: 'not-a-dir', isDirectory: () => false},
+    ] as unknown as fs.Dirent[])
+
+    // Stub path.resolve to return predictable paths
+    testSandbox.stub(path, 'resolve').callsFake((p: string) => p)
+
+    // Modify fs.pathExists to make repo2 not a git repo
+    testSandbox.stub(fs, 'pathExists').callsFake(async (gitPath: string) => {
+      if (typeof gitPath === 'string' && gitPath.includes('repo1/.git')) return true
       return false
     })
 
@@ -76,5 +70,8 @@ describe('repo:tag', () => {
 
     expect(stdout).to.contain('Skipping repo2 - not a git repository')
     expect(stdout).to.contain('[DRY RUN] Would tag example/repo1 with topic: maven')
+
+    // Clean up this test's sandbox
+    testSandbox.restore()
   })
 })

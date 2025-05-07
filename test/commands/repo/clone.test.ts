@@ -1,20 +1,31 @@
-import {expect, test} from '@oclif/test'
+import {runCommand} from '@oclif/test'
+import {expect} from 'chai'
 
 describe('repo:clone', () => {
-  test
-    .stderr()
-    .command(['repo:clone'])
-    .exit(1)
-    .it('errors when no arguments provided', (ctx) => {
-      expect(ctx.stderr).to.contain('Missing required arg')
-    })
+  // Mock execa module is automatically used since it's imported in the test directory
 
-  test
-    .stdout()
-    .stderr()
-    .command(['repo:clone', './test-dir'])
-    .exit(1)
-    .it('errors when no stdin input provided', (ctx) => {
-      expect(ctx.stderr).to.contain('No input provided')
-    })
+  beforeEach(() => {
+    // Mock process.stdin.isTTY to true to force "No input provided" error
+    Object.defineProperty(process.stdin, 'isTTY', {value: true})
+  })
+
+  it('errors when no arguments provided', async () => {
+    try {
+      await runCommand('repo:clone')
+      // If we get here without an error, fail the test
+      expect.fail('Command should have failed but did not')
+    } catch (error: unknown) {
+      expect((error as Error).message).to.include('Missing required argument targetDirectory')
+    }
+  })
+
+  it('errors when no stdin input provided', async () => {
+    try {
+      await runCommand('repo:clone ./test-dir')
+      // If we get here without an error, fail the test
+      expect.fail('Command should have failed but did not')
+    } catch (error: unknown) {
+      expect((error as Error).message).to.include('No input provided')
+    }
+  })
 })

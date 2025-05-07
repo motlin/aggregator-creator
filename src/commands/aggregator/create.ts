@@ -148,6 +148,39 @@ export default class AggregatorCreate extends Command {
 
     this.log(chalk.blue(`Found ${firstLevelEntries.length} potential repository containers to scan`))
 
+    // Early return if no directories to scan
+    if (firstLevelEntries.length === 0) {
+      // Calculate elapsed time
+      const elapsedTimeMs = Date.now() - startTime
+
+      // Prepare the result object
+      const result = {
+        success: false,
+        pomPath: '',
+        modules: [],
+        stats: {
+          totalScanned: 0,
+          validRepositories: 0,
+          skippedRepositories: 0,
+          elapsedTimeMs,
+        },
+        mavenCoordinates: {
+          groupId: flags.groupId,
+          artifactId: flags.artifactId,
+          version: flags.pomVersion,
+        },
+        error: 'No Maven repositories found. Each repository must contain a pom.xml file.',
+      }
+
+      // In non-JSON mode, throw an error
+      if (!this.jsonEnabled()) {
+        this.error(result.error, {exit: 1})
+      }
+
+      // In JSON mode, return the result object
+      return result
+    }
+
     for (const entry of firstLevelEntries) {
       this.log(chalk.dim(`⏳ Examining: ${entry}`))
 
@@ -206,7 +239,35 @@ export default class AggregatorCreate extends Command {
     }
 
     if (mavenRepos.length === 0) {
-      this.error('No Maven repositories found. Each repository must contain a pom.xml file.', {exit: 1})
+      // Calculate elapsed time
+      const elapsedTimeMs = Date.now() - startTime
+
+      // Prepare the result object for both JSON and non-JSON cases
+      const result = {
+        success: false,
+        pomPath: '',
+        modules: [],
+        stats: {
+          totalScanned,
+          validRepositories: 0,
+          skippedRepositories: skippedRepos.length,
+          elapsedTimeMs,
+        },
+        mavenCoordinates: {
+          groupId: flags.groupId,
+          artifactId: flags.artifactId,
+          version: flags.pomVersion,
+        },
+        error: 'No Maven repositories found. Each repository must contain a pom.xml file.',
+      }
+
+      // In non-JSON mode, throw an error
+      if (!this.jsonEnabled()) {
+        this.error(result.error, {exit: 1})
+      }
+
+      // In JSON mode, return the result object
+      return result
     }
 
     // Map found repos to modules for POM file
@@ -272,7 +333,6 @@ export default class AggregatorCreate extends Command {
       }
     } catch (error: unknown) {
       this.error(`Failed to write aggregator POM: ${error instanceof Error ? error.message : String(error)}`, {exit: 1})
-      throw error
     }
   }
 }

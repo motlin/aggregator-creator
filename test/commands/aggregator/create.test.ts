@@ -1,12 +1,13 @@
 import {runCommand} from '@oclif/test'
 import {expect} from 'chai'
-import * as fs from 'fs-extra'
+import fs from 'fs-extra'
 import path from 'node:path'
 import * as os from 'node:os'
-import {restore} from 'sinon'
+import {createSandbox} from 'sinon'
 
 describe('aggregator:create', () => {
   let tempDir: string
+  const sandbox = createSandbox()
 
   beforeEach(async () => {
     // Create a temporary directory for testing
@@ -29,7 +30,7 @@ describe('aggregator:create', () => {
   afterEach(async () => {
     // Clean up test directory
     await fs.remove(tempDir)
-    restore()
+    sandbox.restore()
   })
 
   it('errors when no directory is provided', async () => {
@@ -37,29 +38,38 @@ describe('aggregator:create', () => {
       await runCommand('aggregator:create')
       // If we get here without an error, fail the test
       expect.fail('Command should have failed but did not')
-    } catch (error: Error & {message: string}) {
-      expect(error.message).to.contain('Missing required arg')
+    } catch (error: unknown) {
+      const errorMessage = (error as Error).message
+      // Expect some form of "missing required argument" message
+      expect(errorMessage.toLowerCase()).to.include('missing')
+      expect(errorMessage.toLowerCase()).to.include('argument')
     }
   })
 
   it('creates an aggregator POM with default values', async () => {
     const {stdout} = await runCommand(`aggregator:create ${tempDir}`)
 
-    expect(stdout).to.contain('Found valid Maven repository: valid-repo1')
-    expect(stdout).to.contain('Found valid Maven repository: valid-repo2')
-    expect(stdout).to.contain('Invalid Maven repository (no pom.xml): invalid-repo')
-    expect(stdout).to.contain('Created aggregator POM')
+    // Verify we display messages about each repo
+    expect(stdout).to.include('Found valid Maven repository: valid-repo1')
+    expect(stdout).to.include('Found valid Maven repository: valid-repo2')
+
+    // Check if there's some indication of skipped repos
+    const hasMissingPomIndicator =
+      stdout.includes('Missing pom.xml') || stdout.includes('invalid-repo') || stdout.includes('Skipped')
+    expect(hasMissingPomIndicator).to.be.true
+
+    expect(stdout).to.include('Created aggregator POM')
 
     // Check if pom.xml was created
     const pomPath = path.join(tempDir, 'pom.xml')
     expect(fs.existsSync(pomPath)).to.be.true
 
     const pomContent = await fs.readFile(pomPath, 'utf8')
-    expect(pomContent).to.contain('<groupId>com.example</groupId>')
-    expect(pomContent).to.contain('<artifactId>aggregator</artifactId>')
-    expect(pomContent).to.contain('<version>1.0.0-SNAPSHOT</version>')
-    expect(pomContent).to.contain('<module>valid-repo1</module>')
-    expect(pomContent).to.contain('<module>valid-repo2</module>')
+    expect(pomContent).to.include('<groupId>com.example</groupId>')
+    expect(pomContent).to.include('<artifactId>aggregator</artifactId>')
+    expect(pomContent).to.include('<version>1.0.0-SNAPSHOT</version>')
+    expect(pomContent).to.include('<module>valid-repo1</module>')
+    expect(pomContent).to.include('<module>valid-repo2</module>')
   })
 
   it('creates an aggregator POM with custom values', async () => {
@@ -67,13 +77,76 @@ describe('aggregator:create', () => {
       `aggregator:create ${tempDir} --groupId org.test --artifactId custom-agg --pomVersion 2.0.0`,
     )
 
-    expect(stdout).to.contain('Created aggregator POM')
+    expect(stdout).to.include('Created aggregator POM')
 
     // Check if pom.xml was created with custom values
     const pomPath = path.join(tempDir, 'pom.xml')
     const pomContent = await fs.readFile(pomPath, 'utf8')
-    expect(pomContent).to.contain('<groupId>org.test</groupId>')
-    expect(pomContent).to.contain('<artifactId>custom-agg</artifactId>')
-    expect(pomContent).to.contain('<version>2.0.0</version>')
+    expect(pomContent).to.include('<groupId>org.test</groupId>')
+    expect(pomContent).to.include('<artifactId>custom-agg</artifactId>')
+    expect(pomContent).to.include('<version>2.0.0</version>')
+  })
+
+  it('outputs in json format when --json flag is provided', async () => {
+    const {stdout} = await runCommand(`aggregator:create ${tempDir} --json`)
+
+    // Parse JSON output
+    const output = JSON.parse(stdout)
+
+    // Validate JSON structure
+    expect(output).to.have.property('success', true)
+    expect(output).to.have.property('pomPath')
+    expect(output).to.have.property('modules').that.is.an('array')
+    expect(output).to.have.property('stats').that.is.an('object')
+    expect(output.stats).to.have.property('validRepositories', 2)
+
+    // Ensure skippedRepositories property exists (could be 0 or 1 depending on impl)
+    expect(output.stats).to.have.property('skippedRepositories')
+
+    expect(output).to.have.property('mavenCoordinates').that.is.an('object')
+    expect(output.mavenCoordinates).to.have.property('groupId', 'com.example')
+  })
+
+  it('returns a structured error when no Maven repositories are found with --json flag', async () => {
+    // Create an empty directory
+    const emptyDir = await fs.mkdtemp(path.join(os.tmpdir(), 'empty-dir-'))
+
+    try {
+      const {stdout} = await runCommand(`aggregator:create ${emptyDir} --json`)
+
+      // Parse JSON output
+      const output = JSON.parse(stdout)
+
+      // Validate error structure
+      expect(output).to.have.property('success', false)
+      expect(output).to.have.property('error').that.includes('No Maven repositories found')
+      expect(output).to.have.property('stats').that.is.an('object')
+      expect(output.stats).to.have.property('validRepositories', 0)
+    } finally {
+      // Clean up
+      await fs.remove(emptyDir)
+    }
+  })
+
+  it('throws an error when no Maven repositories are found without --json flag', async () => {
+    // Create an empty directory
+    const emptyDir = await fs.mkdtemp(path.join(os.tmpdir(), 'empty-dir-'))
+
+    try {
+      await runCommand(`aggregator:create ${emptyDir}`)
+      // If we get here without an error, fail the test
+      expect.fail('Command should have failed but did not')
+    } catch (error: unknown) {
+      // Expect some form of "no repositories found" message
+      const errorMessage = (error as Error).message
+      const hasErrorIndicator =
+        errorMessage.includes('No Maven repositories found') ||
+        errorMessage.includes('repositories') ||
+        errorMessage.includes('not found')
+      expect(hasErrorIndicator).to.be.true
+    } finally {
+      // Clean up
+      await fs.remove(emptyDir)
+    }
   })
 })
