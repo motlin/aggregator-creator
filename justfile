@@ -141,7 +141,7 @@ smoke-test: build
 
     echo "Step 5: Testing aggregator:create"
     echo "📦 Creating aggregator..."
-    ./bin/run.js aggregator:create -d "${AGGREGATOR_DIR}" "${MAVEN_DIRS}"
+    ./bin/run.js aggregator:create "${MAVEN_DIRS}" -g com.example -a maven-aggregator
 
     echo ""
     echo "✅ All smoke tests completed successfully!"
