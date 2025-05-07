@@ -79,8 +79,8 @@ smoke-test: build
     fi
 
     echo "Step 1: Testing repo:list"
-    echo "🔍 Listing repositories for apache with maven topic..."
-    ./bin/run.js repo:list -u apache -t maven -l 100 > "${TEST_DIR}/list-output.txt"
+    echo "🔍 Listing repositories for motlin with maven topic..."
+    ./bin/run.js repo:list -u motlin -t maven -l 100 > "${TEST_DIR}/list-output.txt"
 
     echo "Step 2: Testing repo:clone"
     echo "📦 Cloning repositories..."
