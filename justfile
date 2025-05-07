@@ -50,14 +50,6 @@ repo-list USERNAME *FLAGS="": build
     @echo "🔍 Listing GitHub repositories for {{USERNAME}}..."
     ./bin/run.js repo:list --user {{USERNAME}} {{FLAGS}}
 
-# Run all checks, continuing even if some fail
-precommit: install
-    @echo "🔍 Running pre-commit checks..."
-    npm run build || (echo "❌ Build failed but continuing...")
-    npm run lint:fix || (echo "❌ Lint-fix failed but continuing...")
-    npm run format || (echo "❌ Format failed but continuing...")
-    @echo "✅ Pre-commit checks completed. Review any errors above."
-
 # Run everything
-all: install build lint-fix format test manifest
+precommit: install build lint-fix format test manifest
     @echo "✅ All checks and steps completed successfully."
