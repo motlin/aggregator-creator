@@ -94,13 +94,26 @@ smoke-test: build
     echo "Step 4: Testing repo:validate"
     echo "🔍 Finding Maven repositories..."
     MAVEN_COUNT=0
-    # Find directories with pom.xml files and make a copy for validation
-    find "${REPOS_DIR}" -name "pom.xml" -type f | while read -r POM_FILE; do
-        REPO_NAME=$(basename "$(dirname "${POM_FILE}")")
-        echo "✅ Found Maven repository: ${REPO_NAME}"
-        if [ ! -d "${MAVEN_DIRS}/${REPO_NAME}" ]; then
-            cp -r "$(dirname "${POM_FILE}")" "${MAVEN_DIRS}/${REPO_NAME}"
-            MAVEN_COUNT=$((MAVEN_COUNT + 1))
+
+    # Look only for repositories with pom.xml directly at their root
+    # This handles the repository structure from repo:clone which creates owner/repo directories
+    for OWNER_DIR in "${REPOS_DIR}"/*; do
+        if [ -d "${OWNER_DIR}" ]; then
+            OWNER=$(basename "${OWNER_DIR}")
+
+            for REPO_DIR in "${OWNER_DIR}"/*; do
+                if [ -d "${REPO_DIR}" ]; then
+                    REPO_NAME=$(basename "${REPO_DIR}")
+                    # Check if pom.xml exists at the root of this repository
+                    if [ -f "${REPO_DIR}/pom.xml" ]; then
+                        echo "✅ Found Maven repository: ${OWNER}/${REPO_NAME}"
+                        # Create directory with the repo name only
+                        mkdir -p "${MAVEN_DIRS}/${REPO_NAME}"
+                        cp -r "${REPO_DIR}/." "${MAVEN_DIRS}/${REPO_NAME}"
+                        MAVEN_COUNT=$((MAVEN_COUNT + 1))
+                    fi
+                fi
+            done
         fi
     done
 
