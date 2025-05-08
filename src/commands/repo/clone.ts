@@ -164,12 +164,12 @@ export default class RepoClone extends Command {
 
     const relativeRepoDir = path.relative(targetDirectory, repoDir)
 
-    // Use ASCII art matching the style in repo:list
-    this.log(`\n📦 Cloning ${chalk.yellow(repoName)} into ${chalk.yellow(relativeRepoDir)}... (${chalk.yellow(index)}/${total})`)
+    // Use ASCII art matching the style in repo:list, starting with the cloning message
+    this.log(`\n┏ 📦 Cloning ${chalk.yellow(repoName)} into ${chalk.yellow(relativeRepoDir)}... (${chalk.yellow(index)}/${total})`)
 
     try {
       // Show command execution with ASCII art indentation
-      this.log(`┏ 🔄 Running gh clone for ${chalk.yellow(repoName)}`)
+      this.log(`┣━ 🔄 Running gh clone for ${chalk.yellow(repoName)}`)
       await this.execute('gh', ['repo', 'clone', repoName, repoDir], {silent: true})
       this.log(`┗━ ✅ Successfully cloned ${chalk.yellow(repoName)}`)
     } catch (error: unknown) {
