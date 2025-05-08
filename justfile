@@ -51,7 +51,7 @@ repo-list USERNAME *FLAGS="": build
     ./bin/run.js repo:list --user {{USERNAME}} {{FLAGS}}
 
 # Run a manual smoke test with real repositories
-smoke-test: build
+smoke-test CLEAN="true": build
     #!/usr/bin/env bash
     set -e
 
@@ -62,6 +62,7 @@ smoke-test: build
     AGGREGATOR_DIR="${TEST_DIR}/aggregator"
 
     echo "🧪 Running smoke test in ${TEST_DIR}"
+    echo "📂 Test Directory: ${TEST_DIR}"
     mkdir -p "${REPOS_DIR}" "${MAVEN_DIRS}" "${AGGREGATOR_DIR}"
 
     # Validate GitHub CLI is available
@@ -145,8 +146,19 @@ smoke-test: build
 
     echo ""
     echo "✅ All smoke tests completed successfully!"
-    echo "🧹 Cleaning up test directory..."
-    rm -rf "${TEST_DIR}"
+
+    # Check the value of CLEAN parameter to determine cleanup behavior
+    if [ "{{CLEAN}}" = "true" ]; then
+        echo "🧹 Cleaning up test directory..."
+        rm -rf "${TEST_DIR}"
+    else
+        echo "🔍 Generated POM file is at: ${MAVEN_DIRS}/pom.xml"
+        echo "📂 Test files preserved at: ${TEST_DIR}"
+        echo ""
+        echo "🧹 When you're done reviewing, clean up with:"
+        echo "rm -rf \"${TEST_DIR}\""
+    fi
+
     echo "🎉 Smoke test finished."
 
 # Run everything
