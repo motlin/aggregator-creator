@@ -3,6 +3,7 @@ import * as fs from 'fs-extra'
 import path from 'node:path'
 import {execa, type Options, type Result} from 'execa'
 import {z} from 'zod'
+import chalk from 'chalk'
 
 export default class RepoClone extends Command {
   static override description = 'Clone GitHub repositories listed from stdin'
@@ -162,13 +163,15 @@ export default class RepoClone extends Command {
     }
 
     const relativeRepoDir = path.relative(targetDirectory, repoDir)
-    this.log(`📦 Cloning ${repoName} into ${relativeRepoDir}... (${index}/${total})`)
+
+    // Use chalk to highlight variables in yellow
+    this.log(`📦 Cloning ${chalk.yellow(repoName)} into ${chalk.yellow(relativeRepoDir)}... (${chalk.yellow(index)}/${chalk.yellow(total)})`)
 
     try {
       await this.execute('gh', ['repo', 'clone', repoName, repoDir])
-      this.log(`✅ Successfully cloned ${repoName}`)
+      this.log(`✅ Successfully cloned ${chalk.yellow(repoName)}`)
     } catch (error: unknown) {
-      this.error(`❌ Failed to clone ${repoName}: ${error instanceof Error ? error.message : String(error)}`, {exit: 1})
+      this.error(`❌ Failed to clone ${chalk.yellow(repoName)}: ${error instanceof Error ? error.message : String(error)}`, {exit: 1})
       // With exit: 1, we won't reach here, but TypeScript needs this for type safety
       throw error
     }
