@@ -29,16 +29,16 @@ export default class RepoClone extends Command {
     const silent = options.silent === true
 
     if (!silent) {
-      this.log(`Executing: ${command} ${args.join(' ')}`)
+      this.log(`├─ Executing: ${command} ${args.join(' ')}`)
     }
 
     try {
       return await execa(command, args, options)
     } catch (error: unknown) {
       if (!silent) {
-        this.error(`Command failed: ${command} ${args.join(' ')}`)
+        this.error(`├─ Command failed: ${command} ${args.join(' ')}`)
         const errorObj = error as Error & {stderr?: string}
-        this.error(`${errorObj.stderr || errorObj.message}`)
+        this.error(`└─ ${errorObj.stderr || errorObj.message}`)
       }
       throw error
     }
@@ -164,14 +164,16 @@ export default class RepoClone extends Command {
 
     const relativeRepoDir = path.relative(targetDirectory, repoDir)
 
-    // Use chalk to highlight variables in yellow
-    this.log(`📦 Cloning ${chalk.yellow(repoName)} into ${chalk.yellow(relativeRepoDir)}... (${chalk.yellow(index)}/${chalk.yellow(total)})`)
+    // Use ASCII art matching the style in repo:list
+    this.log(`\n📦 Cloning ${chalk.yellow(repoName)} into ${chalk.yellow(relativeRepoDir)}... (${chalk.yellow(index)}/${total})`)
 
     try {
-      await this.execute('gh', ['repo', 'clone', repoName, repoDir])
-      this.log(`✅ Successfully cloned ${chalk.yellow(repoName)}`)
+      // Show command execution with ASCII art indentation
+      this.log(`┏ 🔄 Running gh clone for ${chalk.yellow(repoName)}`)
+      await this.execute('gh', ['repo', 'clone', repoName, repoDir], {silent: true})
+      this.log(`┗━ ✅ Successfully cloned ${chalk.yellow(repoName)}`)
     } catch (error: unknown) {
-      this.error(`❌ Failed to clone ${chalk.yellow(repoName)}: ${error instanceof Error ? error.message : String(error)}`, {exit: 1})
+      this.error(`┗━ ❌ Failed to clone ${chalk.yellow(repoName)}: ${error instanceof Error ? error.message : String(error)}`, {exit: 1})
       // With exit: 1, we won't reach here, but TypeScript needs this for type safety
       throw error
     }
