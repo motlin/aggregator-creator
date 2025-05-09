@@ -6,9 +6,9 @@ export default class RepoList extends Command {
   static override description = 'List GitHub repositories based on filters'
 
   static override examples = [
-    '<%= config.bin %> <%= command.id %> --user motlin --limit 10',
+    '<%= config.bin %> <%= command.id %> --user motlin --limit 100',
     '<%= config.bin %> <%= command.id %> --user motlin --topic maven --language Java --language TypeScript --json',
-    '<%= config.bin %> <%= command.id %> --user motlin --limit 10 --json',
+    '<%= config.bin %> <%= command.id %> --user motlin --limit 100 --json',
   ]
 
   static override enableJsonFlag = true
