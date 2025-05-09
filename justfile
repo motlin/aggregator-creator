@@ -37,7 +37,7 @@ test: build
 # Run repo:list command to list GitHub repositories
 # Examples:
 #   just repo-list motlin
-#   just repo-list motlin --limit 10
+#   just repo-list motlin --limit 100
 #   just repo-list motlin --language Java
 #   just repo-list motlin --topic maven
 #
@@ -81,7 +81,7 @@ workflow-test CLEAN="true": build
 
     echo "Step 1: List repositories using repo:list"
     echo "🔍 Listing repositories for motlin..."
-    ./bin/run.js repo:list --user motlin --limit 10 --json > "${TEST_DIR}/repos.json"
+    ./bin/run.js repo:list --user motlin --limit 100 --json > "${TEST_DIR}/repos.json"
     cat "${TEST_DIR}/repos.json" | jq -r '.[].full_name' > "${TEST_DIR}/repos-to-clone.txt"
     echo "📋 Found $(wc -l < "${TEST_DIR}/repos-to-clone.txt") repositories"
 
@@ -134,7 +134,7 @@ workflow-test CLEAN="true": build
 
         echo "Step 5: List repositories with maven topic"
         echo "🔍 Listing repositories with maven topic..."
-        ./bin/run.js repo:list --user motlin --topic maven --limit 10 --json > "${TEST_DIR}/maven-repos.json"
+        ./bin/run.js repo:list --user motlin --topic maven --limit 100 --json > "${TEST_DIR}/maven-repos.json"
 
         echo "Step 6: Clone maven-tagged repositories"
         echo "📦 Cloning maven-tagged repositories..."
