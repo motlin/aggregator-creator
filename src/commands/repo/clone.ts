@@ -66,11 +66,6 @@ export default class RepoClone extends Command {
     if (process.stdin.isTTY) {
       this.error('No input provided. This command expects repository data from stdin.', {exit: 1})
     } else {
-      const resolvedPath = path.resolve(targetDirectory)
-      this.log(`Cloning repositories into ${resolvedPath}...`)
-
-      let successCount = 0
-
       let fullInput = ''
       for await (const chunk of process.stdin) {
         fullInput += chunk
@@ -82,26 +77,35 @@ export default class RepoClone extends Command {
           const validRepos = jsonData.filter((repo) => repo.owner?.login && repo.name)
           const total = validRepos.length
 
+          this.log(`╭─── 🚀 [0/${total}] Cloning All Repositories `)
+          this.log(`│     `)
+
           for (const [i, repo] of validRepos.entries()) {
             const repoFullName = `${repo.owner.login}/${repo.name}`
             await this.cloneRepository(repoFullName, targetDirectory, i + 1, total)
-            successCount++
+            this.log(`│     `)
           }
 
-          this.log('\nCloning summary:')
-          this.log(`✅ Successfully cloned: ${successCount}`)
+          this.log(`╰─── 🏁 All repositories cloned successfully`)
         } else if (jsonData.owner?.login && jsonData.name) {
-          const repoFullName = `${jsonData.owner.login}/${jsonData.name}`
-          await this.cloneRepository(repoFullName, targetDirectory, 1, 1)
+          const total = 1
+          this.log(`╭─── 🚀 [0/${total}] Cloning All Repositories `)
+          this.log(`│     `)
 
-          this.log('\nCloning summary:')
-          this.log(`✅ Successfully cloned: 1`)
+          const repoFullName = `${jsonData.owner.login}/${jsonData.name}`
+          await this.cloneRepository(repoFullName, targetDirectory, 1, total)
+          this.log(`│     `)
+
+          this.log(`╰─── 🏁 All repositories cloned successfully`)
         }
       } catch {
         const lines = fullInput.split('\n')
         const validLines = lines.map((line) => line.trim()).filter((line) => line.length > 0)
 
         const total = validLines.length
+
+        this.log(`╭─── 🚀 [0/${total}] Cloning All Repositories `)
+        this.log(`│     `)
 
         for (const [i, trimmedLine] of validLines.entries()) {
           try {
@@ -114,11 +118,10 @@ export default class RepoClone extends Command {
           }
 
           await this.cloneRepository(trimmedLine, targetDirectory, i + 1, total)
-          successCount++
+          this.log(`│     `)
         }
 
-        this.log('\nCloning summary:')
-        this.log(`✅ Successfully cloned: ${successCount}`)
+        this.log(`╰─── 🏁 All repositories cloned successfully`)
       }
     }
   }
@@ -144,16 +147,19 @@ export default class RepoClone extends Command {
       // Directory doesn't exist, which is fine
     }
 
-    const relativeRepoDir = path.relative(targetDirectory, repoDir)
-
-    this.log(`\n┏ 📦 Cloning ${chalk.yellow(repoName)} into ${chalk.yellow(relativeRepoDir)}... (${chalk.yellow(index)}/${total})`)
+    this.log(
+      `├──╮ 📦 [${chalk.yellow(index)}/${total}] Cloning ${chalk.yellow(repoName)}`,
+    )
 
     try {
-      this.log(`┣━ 🔄 Running gh clone for ${chalk.yellow(repoName)}`)
+      this.log(`│  │ 🔄 Running gh clone for ${repoName}`)
       await this.execute('gh', ['repo', 'clone', repoName, repoDir], {silent: true})
-      this.log(`┗━ ✅ Successfully cloned ${chalk.yellow(repoName)}`)
+      this.log(`│  ╰ ✅ Successfully cloned ${repoName}`)
     } catch (error: unknown) {
-      this.error(`┗━ ❌ Failed to clone ${chalk.yellow(repoName)}: ${error instanceof Error ? error.message : String(error)}`, {exit: 1})
+      this.error(
+        `│  ╰ ❌ Failed to clone ${repoName}: ${error instanceof Error ? error.message : String(error)}`,
+        {exit: 1},
+      )
       throw error
     }
   }
