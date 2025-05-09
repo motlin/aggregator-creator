@@ -18,7 +18,6 @@ export default class RepoClone extends Command {
     targetDirectory: Args.string({description: 'Directory to clone repositories into', required: true}),
   }
 
-  // Schema for validating repository format
   private repoNameSchema = z.string().regex(/^[^/]+\/[^/]+$/, 'Repository must be in format "owner/repo"')
 
   private async execute(
@@ -48,7 +47,6 @@ export default class RepoClone extends Command {
     const {args} = await this.parse(RepoClone)
     const {targetDirectory} = args
 
-    // Validate GitHub CLI is installed
     try {
       await execa('gh', ['--version'])
     } catch {
@@ -57,17 +55,14 @@ export default class RepoClone extends Command {
       })
     }
 
-    // Validate GitHub CLI authentication
     try {
       await execa('gh', ['auth', 'status'])
     } catch {
       this.error('Not authenticated with GitHub. Please run `gh auth login` first.', {exit: 1})
     }
 
-    // Ensure target directory exists
     await fs.ensureDir(targetDirectory)
 
-    // Check if stdin is available (being piped)
     if (process.stdin.isTTY) {
       this.error('No input provided. This command expects repository data from stdin.', {exit: 1})
     } else {
@@ -76,19 +71,14 @@ export default class RepoClone extends Command {
 
       let successCount = 0
 
-      // Collect all input first
       let fullInput = ''
       for await (const chunk of process.stdin) {
         fullInput += chunk
       }
 
-      // Try to parse as JSON first (for the case of --json output from repo:list)
       try {
         const jsonData = JSON.parse(fullInput)
-
-        // Handle JSON array from repo:list command
         if (Array.isArray(jsonData)) {
-          // Filter out only valid repositories with owner and name
           const validRepos = jsonData.filter((repo) => repo.owner?.login && repo.name)
           const total = validRepos.length
 
@@ -98,11 +88,9 @@ export default class RepoClone extends Command {
             successCount++
           }
 
-          // Output summary (this will only be reached if no error occurred)
           this.log('\nCloning summary:')
           this.log(`✅ Successfully cloned: ${successCount}`)
         } else if (jsonData.owner?.login && jsonData.name) {
-          // Handle single JSON object
           const repoFullName = `${jsonData.owner.login}/${jsonData.name}`
           await this.cloneRepository(repoFullName, targetDirectory, 1, 1)
 
@@ -110,15 +98,12 @@ export default class RepoClone extends Command {
           this.log(`✅ Successfully cloned: 1`)
         }
       } catch {
-        // Not valid JSON, process line by line
         const lines = fullInput.split('\n')
-        // Filter out empty lines and collect valid repos
         const validLines = lines.map((line) => line.trim()).filter((line) => line.length > 0)
 
         const total = validLines.length
 
         for (const [i, trimmedLine] of validLines.entries()) {
-          // Validate repository format
           try {
             this.repoNameSchema.parse(trimmedLine)
           } catch (error: unknown) {
@@ -132,7 +117,6 @@ export default class RepoClone extends Command {
           successCount++
         }
 
-        // Output summary (only reached if all operations succeeded)
         this.log('\nCloning summary:')
         this.log(`✅ Successfully cloned: ${successCount}`)
       }
@@ -148,10 +132,8 @@ export default class RepoClone extends Command {
     const [owner, repo] = repoName.split('/')
     const repoDir = path.join(targetDirectory, owner, repo)
 
-    // Ensure the parent directory exists
     await fs.ensureDir(path.dirname(repoDir))
 
-    // Check if directory already exists and is not empty
     try {
       const dirContents = await fs.readdir(repoDir)
       if (dirContents.length > 0) {
@@ -164,17 +146,14 @@ export default class RepoClone extends Command {
 
     const relativeRepoDir = path.relative(targetDirectory, repoDir)
 
-    // Use ASCII art matching the style in repo:list, starting with the cloning message
     this.log(`\n┏ 📦 Cloning ${chalk.yellow(repoName)} into ${chalk.yellow(relativeRepoDir)}... (${chalk.yellow(index)}/${total})`)
 
     try {
-      // Show command execution with ASCII art indentation
       this.log(`┣━ 🔄 Running gh clone for ${chalk.yellow(repoName)}`)
       await this.execute('gh', ['repo', 'clone', repoName, repoDir], {silent: true})
       this.log(`┗━ ✅ Successfully cloned ${chalk.yellow(repoName)}`)
     } catch (error: unknown) {
       this.error(`┗━ ❌ Failed to clone ${chalk.yellow(repoName)}: ${error instanceof Error ? error.message : String(error)}`, {exit: 1})
-      // With exit: 1, we won't reach here, but TypeScript needs this for type safety
       throw error
     }
   }

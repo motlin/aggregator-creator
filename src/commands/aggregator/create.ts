@@ -39,9 +39,6 @@ export default class AggregatorCreate extends Command {
     }),
   }
 
-  /**
-   * Execute a shell command with error handling
-   */
   private async execute(command: string, args: string[] = [], options: Options = {}): Promise<Result> {
     try {
       return await execa(command, args, options)
@@ -51,9 +48,6 @@ export default class AggregatorCreate extends Command {
     }
   }
 
-  /**
-   * Check if a repository has a valid pom.xml file
-   */
   private async validateMavenRepo(repoPath: string): Promise<boolean> {
     const pomPath = path.join(repoPath, 'pom.xml')
     try {
@@ -64,9 +58,6 @@ export default class AggregatorCreate extends Command {
     }
   }
 
-  /**
-   * Create the aggregator POM XML
-   */
   private createAggregatorPom(groupId: string, artifactId: string, version: string, modules: string[]): string {
     // prettier-ignore
     const pom = create({version: '1.0'})
@@ -83,7 +74,6 @@ export default class AggregatorCreate extends Command {
       .ele('name').txt(`${artifactId} Aggregator POM`).up()
       .ele('description').txt('Aggregator POM for multiple Maven repositories').up()
 
-    // Add modules
     const modulesEle = pom.ele('modules')
     for (const module of modules) {
       modulesEle.ele('module').txt(module)
@@ -130,10 +120,8 @@ export default class AggregatorCreate extends Command {
     const skippedRepos: {path: string; relativePath: string; reason: string}[] = []
     let totalScanned = 0
 
-    // First level directories (could be either Maven repos or owner directories)
     const entries = await fs.readdir(directoryPath)
 
-    // Filter out non-directories and pom.xml
     const firstLevelEntries = []
     for (const entry of entries) {
       if (entry === 'pom.xml') continue
@@ -148,12 +136,9 @@ export default class AggregatorCreate extends Command {
 
     this.log(chalk.blue(`Found ${firstLevelEntries.length} potential repository containers to scan`))
 
-    // Early return if no directories to scan
     if (firstLevelEntries.length === 0) {
-      // Calculate elapsed time
       const elapsedTimeMs = Date.now() - startTime
 
-      // Prepare the result object
       const result = {
         success: false,
         pomPath: '',
@@ -172,12 +157,10 @@ export default class AggregatorCreate extends Command {
         error: 'No Maven repositories found. Each repository must contain a pom.xml file.',
       }
 
-      // In non-JSON mode, throw an error
       if (!this.jsonEnabled()) {
         this.error(result.error, {exit: 1})
       }
 
-      // In JSON mode, return the result object
       return result
     }
 
@@ -187,14 +170,13 @@ export default class AggregatorCreate extends Command {
       const entryPath = path.join(directoryPath, entry)
       const stats = await fs.stat(entryPath)
 
-      // This should always be a directory since we filtered above
+      // TODO: Replace with assertion since this should always be a directory (filtered earlier)
       if (!stats.isDirectory()) {
         continue
       }
 
       totalScanned++
 
-      // Check if this is a Maven repo
       const hasPom = await this.validateMavenRepo(entryPath)
       if (hasPom) {
         mavenRepos.push({
@@ -204,7 +186,6 @@ export default class AggregatorCreate extends Command {
         continue
       }
 
-      // If not a Maven repo, check if it contains Maven repos (owner/repo structure)
       try {
         const subEntries = await fs.readdir(entryPath)
         for (const subEntry of subEntries) {
@@ -229,7 +210,6 @@ export default class AggregatorCreate extends Command {
           }
         }
       } catch (error) {
-        // Skip if we can't read the directory
         skippedRepos.push({
           path: entryPath,
           relativePath: entry,
@@ -239,7 +219,6 @@ export default class AggregatorCreate extends Command {
     }
 
     if (mavenRepos.length === 0) {
-      // Calculate elapsed time
       const elapsedTimeMs = Date.now() - startTime
 
       // Prepare the result object for both JSON and non-JSON cases
@@ -261,24 +240,19 @@ export default class AggregatorCreate extends Command {
         error: 'No Maven repositories found. Each repository must contain a pom.xml file.',
       }
 
-      // In non-JSON mode, throw an error
       if (!this.jsonEnabled()) {
         this.error(result.error, {exit: 1})
       }
 
-      // In JSON mode, return the result object
       return result
     }
 
-    // Map found repos to modules for POM file
     const validModules = mavenRepos.map((repo) => repo.relativePath)
 
-    // Log found repositories
     for (const repo of mavenRepos) {
       this.log(chalk.green(`✅ Found valid Maven repository: ${repo.relativePath}`))
     }
 
-    // Log summary
     this.log(chalk.blue('\n📊 Repository scan summary:'))
     this.log(chalk.green(`✅ Found ${mavenRepos.length} valid Maven repositories`))
     if (skippedRepos.length > 0) {
@@ -290,21 +264,17 @@ export default class AggregatorCreate extends Command {
       }
     }
 
-    // Generate the aggregator POM
     const pomXml = this.createAggregatorPom(flags.groupId, flags.artifactId, flags.pomVersion, validModules)
 
-    // Write the aggregator POM
     const pomPath = path.join(directoryPath, 'pom.xml')
     try {
       await fs.writeFile(pomPath, pomXml)
       this.log(chalk.green(`\n✅ Created aggregator POM at ${pomPath}`))
       this.log(chalk.blue(`📋 Included ${validModules.length} modules`))
 
-      // Calculate elapsed time
       const elapsedTimeMs = Date.now() - startTime
       this.log(chalk.dim(`⏱️ Operation completed in ${elapsedTimeMs}ms`))
 
-      // Return structured output for JSON flag
       return {
         success: true,
         pomPath,
