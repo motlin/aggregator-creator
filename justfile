@@ -50,20 +50,20 @@ repo-list USERNAME *FLAGS="": build
     @echo "🔍 Listing GitHub repositories for {{USERNAME}}..."
     ./bin/run.js repo:list --user {{USERNAME}} {{FLAGS}}
 
-# Run a manual smoke test with real repositories
-smoke-test CLEAN="true": build
+# Run a complete workflow test demonstrating the full process
+workflow-test CLEAN="true": build
     #!/usr/bin/env bash
     set -e
 
     # Set up test directories
-    TEST_DIR="$(mktemp -d -t oclif-smoke-test-XXXXXXXX)"
+    TEST_DIR="$(mktemp -d -t oclif-workflow-test-XXXXXXXX)"
     REPOS_DIR="${TEST_DIR}/repos"
-    MAVEN_DIRS="${TEST_DIR}/maven-repos"
-    AGGREGATOR_DIR="${TEST_DIR}/aggregator"
+    VALIDATED_REPOS="${TEST_DIR}/validated-repos"
+    FINAL_REPOS="${TEST_DIR}/final-repos"
 
-    echo "🧪 Running smoke test in ${TEST_DIR}"
+    echo "🧪 Running workflow test in ${TEST_DIR}"
     echo "📂 Test Directory: ${TEST_DIR}"
-    mkdir -p "${REPOS_DIR}" "${MAVEN_DIRS}" "${AGGREGATOR_DIR}"
+    mkdir -p "${REPOS_DIR}" "${VALIDATED_REPOS}" "${FINAL_REPOS}"
 
     # Validate GitHub CLI is available
     if ! command -v gh &> /dev/null; then
@@ -79,25 +79,20 @@ smoke-test CLEAN="true": build
         exit 1
     fi
 
-    echo "Step 1: Testing repo:list"
+    echo "Step 1: List repositories using repo:list"
     echo "🔍 Listing repositories for motlin..."
-    ./bin/run.js repo:list -u motlin -l 100 > "${TEST_DIR}/list-output.txt"
+    ./bin/run.js repo:list --user motlin --limit 10 --json > "${TEST_DIR}/repos.json"
+    cat "${TEST_DIR}/repos.json" | jq -r '.[].full_name' > "${TEST_DIR}/repos-to-clone.txt"
+    echo "📋 Found $(wc -l < "${TEST_DIR}/repos-to-clone.txt") repositories"
 
-    echo "Step 2: Testing repo:clone"
+    echo "Step 2: Clone repositories using repo:clone"
     echo "📦 Cloning repositories..."
-    cat "${TEST_DIR}/list-output.txt" | grep -E "^- [^/]+/[^/]+" | sed 's/^- \([^/]*\/[^( ]*\).*/\1/' > "${TEST_DIR}/repos-to-clone.txt"
-    cat "${TEST_DIR}/repos-to-clone.txt" | ./bin/run.js repo:clone "${REPOS_DIR}"
+    cat "${TEST_DIR}/repos.json" | ./bin/run.js repo:clone "${REPOS_DIR}"
 
-    echo "Step 3: Testing repo:tag"
-    echo "🏷️ Tagging repositories with dry-run..."
-    ./bin/run.js repo:tag "${REPOS_DIR}" -t maven -d
+    echo "Step 3: Validate repositories using repo:validate"
+    echo "🔍 Validating Maven repositories..."
+    touch "${TEST_DIR}/validated-repos.txt"
 
-    echo "Step 4: Testing repo:validate"
-    echo "🔍 Finding Maven repositories..."
-    MAVEN_COUNT=0
-
-    # Look only for repositories with pom.xml directly at their root
-    # This handles the repository structure from repo:clone which creates owner/repo directories
     for OWNER_DIR in "${REPOS_DIR}"/*; do
         if [ -d "${OWNER_DIR}" ]; then
             OWNER=$(basename "${OWNER_DIR}")
@@ -105,61 +100,75 @@ smoke-test CLEAN="true": build
             for REPO_DIR in "${OWNER_DIR}"/*; do
                 if [ -d "${REPO_DIR}" ]; then
                     REPO_NAME=$(basename "${REPO_DIR}")
-                    # Check if pom.xml exists at the root of this repository
+                    FULL_NAME="${OWNER}/${REPO_NAME}"
+
+                    # Only try to validate repos with pom.xml
                     if [ -f "${REPO_DIR}/pom.xml" ]; then
-                        echo "✅ Found Maven repository: ${OWNER}/${REPO_NAME}"
-                        # Create directory with the repo name only
-                        mkdir -p "${MAVEN_DIRS}/${REPO_NAME}"
-                        cp -r "${REPO_DIR}/." "${MAVEN_DIRS}/${REPO_NAME}"
-                        MAVEN_COUNT=$((MAVEN_COUNT + 1))
+                        echo "🔍 Validating Maven repository: ${FULL_NAME}"
+                        if ./bin/run.js repo:validate "${REPO_DIR}" &> /dev/null; then
+                            echo "✅ Validation successful: ${FULL_NAME}"
+                            echo "${FULL_NAME}" >> "${TEST_DIR}/validated-repos.txt"
+
+                            # Copy to validated repos dir preserving owner/repo structure
+                            mkdir -p "${VALIDATED_REPOS}/${OWNER}"
+                            cp -r "${REPO_DIR}" "${VALIDATED_REPOS}/${OWNER}/"
+                        else
+                            echo "❌ Validation failed: ${FULL_NAME}"
+                        fi
+                    else
+                        echo "⏩ Skipping non-Maven repository: ${FULL_NAME}"
                     fi
                 fi
             done
         fi
     done
 
-    # Validate at least one Maven repo was found
-    if [ "$(ls -A "${MAVEN_DIRS}")" ]; then
-        echo "✅ Found ${MAVEN_COUNT} Maven repositories for validation"
+    # Count validated repos
+    VALIDATED_COUNT=$(wc -l < "${TEST_DIR}/validated-repos.txt")
+    echo "✅ Found ${VALIDATED_COUNT} validated Maven repositories"
 
-        # Validate each Maven repository
-        for MAVEN_REPO in "${MAVEN_DIRS}"/*; do
-            if [ -d "${MAVEN_REPO}" ]; then
-                REPO_NAME=$(basename "${MAVEN_REPO}")
-                echo "🔍 Validating Maven repository: ${REPO_NAME}"
+    if [ "${VALIDATED_COUNT}" -gt 0 ]; then
+        echo "Step 4: Tag validated repositories using repo:tag"
+        echo "🏷️ Adding maven topic to validated repositories..."
+        ./bin/run.js repo:tag "${VALIDATED_REPOS}" --topic maven --dry-run
 
-                # Skip actual validation if Maven isn't installed
-                if command -v mvn &> /dev/null; then
-                    ./bin/run.js repo:validate "${MAVEN_REPO}" || echo "⚠️ Validation failed for ${REPO_NAME} but continuing test"
-                else
-                    echo "⚠️ Maven not installed, skipping actual validation"
-                fi
-            fi
-        done
+        echo "Step 5: List repositories with maven topic"
+        echo "🔍 Listing repositories with maven topic..."
+        ./bin/run.js repo:list --user motlin --topic maven --limit 10 --json > "${TEST_DIR}/maven-repos.json"
+
+        echo "Step 6: Clone maven-tagged repositories"
+        echo "📦 Cloning maven-tagged repositories..."
+        cat "${TEST_DIR}/maven-repos.json" | ./bin/run.js repo:clone "${FINAL_REPOS}"
+
+        echo "Step 7: Create aggregator POM"
+        echo "📄 Creating aggregator POM..."
+        ./bin/run.js aggregator:create "${FINAL_REPOS}" --groupId org.example --artifactId maven-aggregator
+
+        # Verify the aggregator POM was created
+        if [ -f "${FINAL_REPOS}/pom.xml" ]; then
+            echo "📄 Successfully created aggregator POM at: ${FINAL_REPOS}/pom.xml"
+        else
+            echo "⚠️ Aggregator POM was not created as expected"
+        fi
     else
-        echo "⚠️ No Maven repositories found for validation"
+        echo "⚠️ No validated Maven repositories found, skipping tagging and aggregator steps"
     fi
 
-    echo "Step 5: Testing aggregator:create"
-    echo "📦 Creating aggregator..."
-    ./bin/run.js aggregator:create "${MAVEN_DIRS}" -g com.example -a maven-aggregator
-
     echo ""
-    echo "✅ All smoke tests completed successfully!"
+    echo "✅ Workflow test completed successfully!"
 
-    # Check the value of CLEAN parameter to determine cleanup behavior
+    # Clean up or preserve test directory based on parameter
     if [ "{{CLEAN}}" = "true" ]; then
         echo "🧹 Cleaning up test directory..."
         rm -rf "${TEST_DIR}"
     else
-        echo "🔍 Generated POM file is at: ${MAVEN_DIRS}/pom.xml"
         echo "📂 Test files preserved at: ${TEST_DIR}"
         echo ""
         echo "🧹 When you're done reviewing, clean up with:"
         echo "rm -rf \"${TEST_DIR}\""
     fi
 
-    echo "🎉 Smoke test finished."
+    echo "🎉 Workflow test finished."
 
 # Run everything
 precommit: install build lint-fix format test manifest
