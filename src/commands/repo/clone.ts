@@ -11,7 +11,7 @@ export default class RepoClone extends Command {
   static override examples = [
     'echo "owner/repo" | <%= config.bin %> <%= command.id %> ./target-dir',
     'cat repos.txt | <%= config.bin %> <%= command.id %> ./target-dir',
-    '<%= config.bin %> repo:list --user someuser --limit 10 --json | <%= config.bin %> <%= command.id %> ./target-dir',
+    '<%= config.bin %> repo:list --user someuser --limit 100 --json | <%= config.bin %> <%= command.id %> ./target-dir',
   ]
 
   static override args = {
@@ -147,19 +147,16 @@ export default class RepoClone extends Command {
       // Directory doesn't exist, which is fine
     }
 
-    this.log(
-      `├──╮ 📦 [${chalk.yellow(index)}/${total}] Cloning ${chalk.yellow(repoName)}`,
-    )
+    this.log(`├──╮ 📦 [${chalk.yellow(index)}/${total}] Cloning ${chalk.yellow(repoName)}`)
 
     try {
       this.log(`│  │ 🔄 Running gh clone for ${repoName}`)
       await this.execute('gh', ['repo', 'clone', repoName, repoDir], {silent: true})
       this.log(`│  ╰ ✅ Successfully cloned ${repoName}`)
     } catch (error: unknown) {
-      this.error(
-        `│  ╰ ❌ Failed to clone ${repoName}: ${error instanceof Error ? error.message : String(error)}`,
-        {exit: 1},
-      )
+      this.error(`│  ╰ ❌ Failed to clone ${repoName}: ${error instanceof Error ? error.message : String(error)}`, {
+        exit: 1,
+      })
       throw error
     }
   }
