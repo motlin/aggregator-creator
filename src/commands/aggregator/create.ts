@@ -120,7 +120,9 @@ export default class AggregatorCreate extends Command {
       this.error(`Failed to access directory: ${error instanceof Error ? error.message : String(error)}`, {exit: 1})
     }
 
-    this.log(chalk.blue(`🔍 Scanning for Maven repositories in ${directoryPath}...`))
+    this.log(chalk.blue(`╭─── 📄 Creating aggregator POM...`))
+    this.log(chalk.blue(`│`))
+    this.log(chalk.blue(`│ 🔍 Scanning for Maven repositories in ${directoryPath}...`))
 
     // Find all potential Maven repositories (considering possible nesting like owner/repo structure)
     const mavenRepos: {path: string; relativePath: string}[] = []

@@ -81,17 +81,14 @@ workflow-test CLEAN="true": build
     fi
 
     echo "Step 1: List repositories using repo:list"
-    echo "🔍 Listing repositories for motlin with language=Java..."
     ./bin/run.js repo:list --user motlin --language Java --limit 100 --json > "${TEST_DIR}/repos.json"
     cat "${TEST_DIR}/repos.json" | jq -r '.[] | .owner.login + "/" + .name' > "${TEST_DIR}/repos-to-clone.txt"
     echo "📋 Found $(wc -l < "${TEST_DIR}/repos-to-clone.txt") repositories"
 
     echo "Step 2: Clone repositories using repo:clone"
-    echo "📦 Cloning repositories..."
     cat "${TEST_DIR}/repos.json" | ./bin/run.js repo:clone "${REPOS_DIR}"
 
     echo "Step 3: Validate repositories using repo:validate"
-    echo "Validating Maven repositories..."
 
     # Run validation with built-in copying and output file generation
     ./bin/run.js repo:validate "${REPOS_DIR}" --output "${TEST_DIR}/validated-repos.txt" --copyTo "${VALIDATED_REPOS}"
@@ -101,19 +98,15 @@ workflow-test CLEAN="true": build
 
     if [ "${VALIDATED_COUNT}" -gt 0 ]; then
         echo "Step 4: Tag validated repositories using repo:tag"
-        echo "🏷️ Adding maven topic to validated repositories..."
         ./bin/run.js repo:tag "${VALIDATED_REPOS}" --topic maven --dryRun
 
         echo "Step 5: List repositories with maven topic"
-        echo "🔍 Listing repositories with maven topic and language=Java..."
         ./bin/run.js repo:list --user motlin --topic maven --language Java --limit 100 --json > "${TEST_DIR}/maven-repos.json"
 
         echo "Step 6: Clone maven-tagged repositories"
-        echo "📦 Cloning maven-tagged repositories..."
         cat "${TEST_DIR}/maven-repos.json" | ./bin/run.js repo:clone "${FINAL_REPOS}"
 
         echo "Step 7: Create aggregator POM"
-        echo "📄 Creating aggregator POM..."
         ./bin/run.js aggregator:create "${FINAL_REPOS}" --groupId org.example --artifactId maven-aggregator
 
         # Verify the aggregator POM was created

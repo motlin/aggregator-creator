@@ -29,18 +29,18 @@ export default class RepoClone extends Command {
       verbose: (verboseLine: string, {type}: {type: string}) => {
         switch (type) {
           case 'command': {
-            this.log(`│  ├──╮ ${verboseLine}`)
+            this.log(`├──╮ ${verboseLine}`)
             break
           }
           case 'duration': {
-            this.log(`│  │  ╰ ${verboseLine}`)
+            this.log(`│  ╰ ${verboseLine}`)
             break
           }
           case 'output': {
             const MAX_LENGTH = 120
             const truncatedLine =
               verboseLine.length > MAX_LENGTH ? `${verboseLine.slice(0, Math.max(0, MAX_LENGTH))}...` : verboseLine
-            this.log(`│  │  │ ${truncatedLine}`)
+            this.log(`│  │ ${truncatedLine}`)
             break
           }
           default: {
@@ -50,25 +50,26 @@ export default class RepoClone extends Command {
       },
     })
 
-    try {
-      await execa('gh', ['--version'])
-    } catch {
-      this.error('GitHub CLI (gh) is not installed or not in PATH. Please install it from https://cli.github.com/', {
-        exit: 1,
-      })
-    }
-
-    try {
-      await execa('gh', ['auth', 'status'])
-    } catch {
-      this.error('Not authenticated with GitHub. Please run `gh auth login` first.', {exit: 1})
-    }
-
-    await fs.ensureDir(targetDirectory)
-
     if (process.stdin.isTTY) {
       this.error('No input provided. This command expects repository data from stdin.', {exit: 1})
     } else {
+      this.log(`╭─── 📦 Cloning repositories...`)
+      
+      try {
+        await execa('gh', ['--version'])
+      } catch {
+        this.error('GitHub CLI (gh) is not installed or not in PATH. Please install it from https://cli.github.com/', {
+          exit: 1,
+        })
+      }
+
+      try {
+        await execa('gh', ['auth', 'status'])
+      } catch {
+        this.error('Not authenticated with GitHub. Please run `gh auth login` first.', {exit: 1})
+      }
+
+      await fs.ensureDir(targetDirectory)
       let fullInput = ''
       for await (const chunk of process.stdin) {
         fullInput += chunk
@@ -103,6 +104,8 @@ export default class RepoClone extends Command {
 
         const total = validLines.length
 
+        this.log(`╭─── 📦 Cloning repositories...`)
+        this.log(`│`)
         this.log(`╭─── 🚀 Cloning ${total} ${total === 1 ? 'repository' : 'repositories'}`)
 
         for (const [i, trimmedLine] of validLines.entries()) {
@@ -140,6 +143,7 @@ export default class RepoClone extends Command {
       if (dirContents.length > 0) {
         this.log(`├──╮ ⚠️ [${chalk.yellow(index)}/${total}] ${chalk.yellow(repoName)}`)
         this.log(`│  ╰ Skipped: Directory already exists and is not empty`)
+        this.log(`│`)
         return
       }
     } catch {
@@ -152,6 +156,7 @@ export default class RepoClone extends Command {
       // Use execa with verbose config to clone the repository
       await execa('gh', ['repo', 'clone', repoName, repoDir])
       this.log(`│  ╰ ✅ Done`)
+      this.log(`│`)
     } catch (error: unknown) {
       this.error(`│  ╰ ❌ Failed: ${error instanceof Error ? error.message : String(error)}`, {
         exit: 1,
