@@ -1,7 +1,7 @@
 import {Args, Command} from '@oclif/core'
 import * as fs from 'fs-extra'
 import path from 'node:path'
-import {execa, type Options, type Result} from 'execa'
+import {execa as execa_} from 'execa'
 import {z} from 'zod'
 import chalk from 'chalk'
 
@@ -20,32 +20,35 @@ export default class RepoClone extends Command {
 
   private repoNameSchema = z.string().regex(/^[^/]+\/[^/]+$/, 'Repository must be in format "owner/repo"')
 
-  private async execute(
-    command: string,
-    args: string[] = [],
-    options: Options & {silent?: boolean} = {},
-  ): Promise<Result> {
-    const silent = options.silent === true
-
-    if (!silent) {
-      this.log(`├─ Executing: ${command} ${args.join(' ')}`)
-    }
-
-    try {
-      return await execa(command, args, options)
-    } catch (error: unknown) {
-      if (!silent) {
-        this.error(`├─ Command failed: ${command} ${args.join(' ')}`)
-        const errorObj = error as Error & {stderr?: string}
-        this.error(`└─ ${errorObj.stderr || errorObj.message}`)
-      }
-      throw error
-    }
-  }
-
   public async run(): Promise<void> {
     const {args} = await this.parse(RepoClone)
     const {targetDirectory} = args
+
+    // Configure execa with verbose logging like repo:list
+    const execa = execa_({
+      verbose: (verboseLine: string, {type}: {type: string}) => {
+        switch (type) {
+          case 'command': {
+            this.log(`  │  ┏ ${verboseLine}`)
+            break
+          }
+          case 'duration': {
+            this.log(`  │  ┗━ ${verboseLine}`)
+            break
+          }
+          case 'output': {
+            const MAX_LENGTH = 120
+            const truncatedLine =
+              verboseLine.length > MAX_LENGTH ? `${verboseLine.slice(0, Math.max(0, MAX_LENGTH))}...` : verboseLine
+            this.log(`  │  ┣━ ${truncatedLine}`)
+            break
+          }
+          default: {
+            this.debug(`${type} ${verboseLine}`)
+          }
+        }
+      },
+    })
 
     try {
       await execa('gh', ['--version'])
@@ -82,7 +85,7 @@ export default class RepoClone extends Command {
 
           for (const [i, repo] of validRepos.entries()) {
             const repoFullName = `${repo.owner.login}/${repo.name}`
-            await this.cloneRepository(repoFullName, targetDirectory, i + 1, total)
+            await this.cloneRepository(repoFullName, targetDirectory, i + 1, total, execa)
             this.log(`│     `)
           }
 
@@ -93,7 +96,7 @@ export default class RepoClone extends Command {
           this.log(`│     `)
 
           const repoFullName = `${jsonData.owner.login}/${jsonData.name}`
-          await this.cloneRepository(repoFullName, targetDirectory, 1, total)
+          await this.cloneRepository(repoFullName, targetDirectory, 1, total, execa)
           this.log(`│     `)
 
           this.log(`╰─── 🏁 Cloning complete`)
@@ -117,7 +120,7 @@ export default class RepoClone extends Command {
             throw error
           }
 
-          await this.cloneRepository(trimmedLine, targetDirectory, i + 1, total)
+          await this.cloneRepository(trimmedLine, targetDirectory, i + 1, total, execa)
           this.log(`│     `)
         }
 
@@ -131,6 +134,7 @@ export default class RepoClone extends Command {
     targetDirectory: string,
     index: number,
     total: number,
+    execa: typeof execa_,
   ): Promise<void> {
     const [owner, repo] = repoName.split('/')
     const repoDir = path.join(targetDirectory, owner, repo)
@@ -149,12 +153,15 @@ export default class RepoClone extends Command {
     }
 
     this.log(`├──╮ 📦 [${chalk.yellow(index)}/${total}] ${chalk.yellow(repoName)}`)
+    this.log(`│  │`)
 
     try {
-      this.log(`│  │ 🔄 Running: gh clone ${repoName}`)
-      await this.execute('gh', ['repo', 'clone', repoName, repoDir], {silent: true})
+      // Use execa with verbose config to clone the repository
+      await execa('gh', ['repo', 'clone', repoName, repoDir])
+      this.log(`│  │`)
       this.log(`│  ╰ ✅ Done`)
     } catch (error: unknown) {
+      this.log(`│  │`)
       this.error(`│  ╰ ❌ Failed: ${error instanceof Error ? error.message : String(error)}`, {
         exit: 1,
       })

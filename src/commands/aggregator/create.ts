@@ -4,6 +4,7 @@ import path from 'node:path'
 import {execa, type Options, type Result} from 'execa'
 import {create} from 'xmlbuilder2'
 import chalk from 'chalk'
+import inquirer from 'inquirer'
 
 export default class AggregatorCreate extends Command {
   static override args = {
@@ -16,6 +17,7 @@ export default class AggregatorCreate extends Command {
     '<%= config.bin %> <%= command.id %> ./maven-repos',
     '<%= config.bin %> <%= command.id %> ./maven-repos --groupId org.example',
     '<%= config.bin %> <%= command.id %> ./maven-repos --artifactId custom-aggregator --pomVersion 2.0.0',
+    '<%= config.bin %> <%= command.id %> ./maven-repos --force',
     '<%= config.bin %> <%= command.id %> ./maven-repos --json',
   ]
 
@@ -36,6 +38,11 @@ export default class AggregatorCreate extends Command {
       char: 'v',
       description: 'Version for aggregator POM',
       default: '1.0.0-SNAPSHOT',
+    }),
+    yes: Flags.boolean({
+      char: 'y',
+      description: 'Automatically answer "yes" to all prompts',
+      default: false,
     }),
   }
 
@@ -261,6 +268,60 @@ export default class AggregatorCreate extends Command {
         if (repo.reason === 'Missing pom.xml') {
           this.log(chalk.yellow(`  → ${repo.relativePath}: Missing pom.xml file`))
         }
+      }
+    }
+
+    // Ask for confirmation unless yes flag is used
+    const {yes} = flags
+    let proceed = yes
+
+    if (!proceed) {
+      this.log(chalk.blue('\n📋 Ready to create aggregator POM with the following settings:'))
+      this.log(chalk.blue(`  - groupId: ${chalk.cyan(flags.groupId)}`))
+      this.log(chalk.blue(`  - artifactId: ${chalk.cyan(flags.artifactId)}`))
+      this.log(chalk.blue(`  - version: ${chalk.cyan(flags.pomVersion)}`))
+      this.log(chalk.blue(`  - modules: ${chalk.cyan(validModules.length)} Maven repositories`))
+
+      const {confirmed} = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'confirmed',
+          message: 'Do you want to create the aggregator POM?',
+          default: false,
+        },
+      ])
+      proceed = confirmed
+    }
+
+    if (!proceed) {
+      this.log(chalk.yellow('Operation canceled by user.'))
+      const elapsedTimeMs = Date.now() - startTime
+
+      return {
+        success: false,
+        pomPath: '',
+        modules: [
+          ...mavenRepos.map((repo) => ({
+            path: repo.relativePath,
+            valid: true,
+          })),
+          ...skippedRepos.map((repo) => ({
+            path: repo.relativePath,
+            valid: false,
+            reason: repo.reason,
+          })),
+        ],
+        stats: {
+          totalScanned,
+          validRepositories: mavenRepos.length,
+          skippedRepositories: skippedRepos.length,
+          elapsedTimeMs,
+        },
+        mavenCoordinates: {
+          groupId: flags.groupId,
+          artifactId: flags.artifactId,
+          version: flags.pomVersion,
+        },
       }
     }
 
