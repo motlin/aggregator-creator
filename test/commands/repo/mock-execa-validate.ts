@@ -1,7 +1,13 @@
 /**
  * Custom mock execa for the repo:validate command tests
  */
-import type {Result} from 'execa'
+import type {Options, Result} from 'execa'
+
+// Fix the type for execa factory function
+type ExecaFactoryResult = {
+  (file: string, arguments_?: readonly string[], options?: Options): Promise<Result>
+  sync: (file: string, arguments_?: readonly string[], options?: Options) => Result
+}
 
 /**
  * Mock for the repo:validate command test
@@ -32,6 +38,45 @@ export const execa = async (command: string, args?: string[]): Promise<Result> =
     killed: false,
     timedOut: false,
   } as Result
+}
+
+// Add factory function that returns a configured execa function
+export const execa_ = (options?: {verbose?: (message: string, meta: unknown) => void}): ExecaFactoryResult => {
+  const execaFn = async (command: string, args?: readonly string[]): Promise<Result> => {
+    if (options?.verbose) {
+      options.verbose(`${command} ${args?.join(' ') || ''}`, {type: 'command'})
+
+      // Process started
+      const result = await execa(command, args as string[])
+
+      // Log output if any
+      if (result.stdout) {
+        options.verbose(result.stdout, {type: 'output'})
+      }
+
+      // Log completion
+      options.verbose(`Completed in 0.1s`, {type: 'duration'})
+
+      return result
+    }
+
+    return execa(command, args as string[])
+  }
+
+  // Add sync method to satisfy the type
+  execaFn.sync = (command: string, args?: readonly string[]): Result =>
+    ({
+      command: `${command} ${args?.join(' ') || ''}`,
+      exitCode: 0,
+      stdout: 'mock stdout sync',
+      stderr: '',
+      failed: false,
+      isCanceled: false,
+      killed: false,
+      timedOut: false,
+    }) as Result
+
+  return execaFn
 }
 
 export const execaCommand = async (command: string): Promise<Result> => {

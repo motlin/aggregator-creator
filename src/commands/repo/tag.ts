@@ -1,9 +1,8 @@
 import {Args, Command, Flags} from '@oclif/core'
 import chalk from 'chalk'
-import {execa} from 'execa'
+import {execa as execa_} from 'execa'
 import fs from 'fs-extra'
 import path from 'node:path'
-import logUpdate from 'log-update'
 import inquirer from 'inquirer'
 
 export default class RepoTag extends Command {
@@ -49,8 +48,35 @@ export default class RepoTag extends Command {
     const {directory} = args
     const {topic, dryRun, verbose, yes} = flags
 
-    this.log(`🏷️ Adding ${chalk.cyan(topic)} topic to validated repositories...`)
-    this.log(`Scanning directory: ${chalk.cyan(directory)} for repositories to tag with topic: ${chalk.cyan(topic)}`)
+    // Configure execa with verbose logging similar to other commands
+    const execa = execa_({
+      verbose: (verboseLine: string, {type}: {type: string}) => {
+        switch (type) {
+          case 'command': {
+            this.log(`│  ├──╮ ${verboseLine}`)
+            break
+          }
+          case 'duration': {
+            this.log(`│  │  ╰ ${verboseLine}`)
+            break
+          }
+          case 'output': {
+            const MAX_LENGTH = 120
+            const truncatedLine =
+              verboseLine.length > MAX_LENGTH ? `${verboseLine.slice(0, Math.max(0, MAX_LENGTH))}...` : verboseLine
+            this.log(`│  │  │ ${truncatedLine}`)
+            break
+          }
+          default: {
+            this.debug(`${type} ${verboseLine}`)
+          }
+        }
+      },
+    })
+
+    this.log(`╭─── 🏷️ Adding ${chalk.cyan(topic)} topic to validated repositories...`)
+    this.log(`│`)
+    this.log(`│ Scanning directory: ${chalk.cyan(directory)} for repositories to tag with topic: ${chalk.cyan(topic)}`)
     if (dryRun) {
       this.log(chalk.yellow('Running in dry-run mode - no changes will be applied'))
     }
@@ -59,10 +85,10 @@ export default class RepoTag extends Command {
       const absolutePath = path.resolve(directory)
       const entries = await fs.readdir(absolutePath, {withFileTypes: true})
 
-      // Filter for directories only
-      const dirs = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name)
+      // Filter for directories only - these will be owner directories
+      const ownerDirs = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name)
 
-      this.log(`Found ${chalk.cyan(dirs.length)} directories to check`)
+      this.log(`Found ${chalk.cyan(ownerDirs.length)} owner directories to check`)
 
       // First pass: validate repositories and collect valid ones
       const validRepos: Array<{
@@ -72,41 +98,58 @@ export default class RepoTag extends Command {
         repoName: string
       }> = []
 
-      for (const repoDir of dirs) {
-        const repoPath = path.join(absolutePath, repoDir)
-        const repoName = path.basename(repoPath)
+      let totalRepos = 0
 
-        this.log(`Processing repository: ${chalk.cyan(repoName)}`)
+      // Process repositories with owner/repo structure
+      for (const ownerDir of ownerDirs) {
+        const ownerPath = path.join(absolutePath, ownerDir)
 
-        // Check if it's a git repository
-        if (!(await this.isGitRepository(repoPath))) {
-          this.log(chalk.yellow(`Skipping ${repoName} - not a git repository`))
-          continue
-        }
+        // Get repositories in this owner directory
+        const repoEntries = await fs.readdir(ownerPath, {withFileTypes: true})
+        const repoDirs = repoEntries.filter((entry) => entry.isDirectory()).map((entry) => entry.name)
 
-        // Validate as Maven repository
-        const isValid = await this.validateMavenRepo(repoPath, verbose)
+        for (const repoDir of repoDirs) {
+          totalRepos++
+          const repoPath = path.join(ownerPath, repoDir)
+          const repoName = repoDir
 
-        if (isValid) {
-          this.log(chalk.green(`✓ Valid Maven repository: ${repoName}`))
+          this.log(`Processing repository: ${chalk.cyan(`${ownerDir}/${repoName}`)}`)
 
-          // Get repository owner and name from remote URL
-          const {owner, name} = await this.getRepoOwnerAndName(repoPath)
-
-          if (owner && name) {
-            validRepos.push({
-              path: repoPath,
-              name: repoName,
-              owner,
-              repoName: name,
-            })
-          } else {
-            this.log(chalk.yellow(`Could not determine GitHub owner/name for ${repoName}`))
+          // Check if it's a git repository
+          if (!(await this.isGitRepository(repoPath))) {
+            this.log(chalk.yellow(`Skipping ${ownerDir}/${repoName} - not a git repository`))
+            continue
           }
-        } else {
-          this.log(chalk.yellow(`Skipping ${repoName} - not a valid Maven repository`))
+
+          // Validate as Maven repository
+          const isValid = await this.validateMavenRepo(repoPath, execa, verbose)
+
+          if (isValid) {
+            this.log(chalk.green(`✓ Valid Maven repository: ${ownerDir}/${repoName}`))
+
+            // Get repository owner and name from remote URL
+            const {owner, name} = await this.getRepoOwnerAndName(repoPath, execa)
+
+            if (owner && name) {
+              validRepos.push({
+                path: repoPath,
+                name: repoName,
+                owner,
+                repoName: name,
+              })
+            } else {
+              this.log(chalk.yellow(`Could not determine GitHub owner/name for ${ownerDir}/${repoName}`))
+            }
+          } else {
+            this.log(chalk.yellow(`Skipping ${ownerDir}/${repoName} - not a valid Maven repository`))
+          }
         }
       }
+
+      // Log total repositories found
+      this.log(
+        `Checked ${chalk.cyan(totalRepos)} total repositories across ${chalk.cyan(ownerDirs.length)} owner directories`,
+      )
 
       // Show confirmation with list of repositories to tag
       if (validRepos.length === 0) {
@@ -147,7 +190,7 @@ export default class RepoTag extends Command {
         if (dryRun) {
           this.log(chalk.blue(`[DRY RUN] Would tag ${repo.owner}/${repo.repoName} with topic: ${topic}`))
         } else {
-          await this.tagRepository(repo.owner, repo.repoName, topic)
+          await this.tagRepository(repo.owner, repo.repoName, topic, execa)
           this.log(chalk.green(`✓ Tagged ${repo.owner}/${repo.repoName} with topic: ${topic}`))
         }
       }
@@ -167,7 +210,10 @@ export default class RepoTag extends Command {
     }
   }
 
-  private async getRepoOwnerAndName(repoPath: string): Promise<{owner: string; name: string}> {
+  private async getRepoOwnerAndName(
+    repoPath: string,
+    execa: typeof execa_ = execa_,
+  ): Promise<{owner: string; name: string}> {
     try {
       const {stdout} = await execa('git', ['-C', repoPath, 'remote', 'get-url', 'origin'])
 
@@ -190,7 +236,12 @@ export default class RepoTag extends Command {
     }
   }
 
-  private async tagRepository(owner: string, name: string, topic: string): Promise<void> {
+  private async tagRepository(
+    owner: string,
+    name: string,
+    topic: string,
+    execa: typeof execa_ = execa_,
+  ): Promise<void> {
     try {
       await execa('gh', ['api', `repos/${owner}/${name}/topics`, '--method', 'GET'], {
         reject: false,
@@ -225,7 +276,7 @@ export default class RepoTag extends Command {
     }
   }
 
-  private async validateMavenRepo(repoPath: string, verbose = false): Promise<boolean> {
+  private async validateMavenRepo(repoPath: string, execa: typeof execa_ = execa_, verbose = false): Promise<boolean> {
     const absolutePath = path.resolve(repoPath)
     if (verbose) this.log(`Validating Maven repo at: ${absolutePath}`)
 
@@ -252,59 +303,14 @@ export default class RepoTag extends Command {
     }
 
     // Run Maven validation using help:effective-pom
-    let spinnerInterval: NodeJS.Timeout | null = null
-
     try {
-      if (verbose) {
-        // Set up spinner for verbose mode
-        const spinChars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
-        let spinIdx = 0
-        const startTime = Date.now()
-
-        spinnerInterval = setInterval(() => {
-          const spinner = spinChars[spinIdx]
-          spinIdx = (spinIdx + 1) % spinChars.length
-          const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
-
-          logUpdate(`${spinner} Validating Maven project (${elapsed}s)`)
-        }, 100)
-      }
-
-      try {
-        if (verbose) {
-          await execa('mvn', ['help:effective-pom', '-f', pomPath])
-          if (spinnerInterval) {
-            clearInterval(spinnerInterval)
-            logUpdate.clear()
-          }
-          if (verbose) {
-            this.log(chalk.dim(`Maven validation successful`))
-          }
-        } else {
-          await execa('mvn', ['help:effective-pom', '-f', pomPath, '-q'])
-        }
-
-        return true
-      } catch (execError) {
-        if (spinnerInterval) {
-          clearInterval(spinnerInterval)
-          logUpdate.clear()
-        }
-
-        if (execError instanceof Error && execError.message.includes('ENOENT')) {
-          if (verbose) {
-            this.log(chalk.yellow('Maven (mvn) command not found. Please install Maven.'))
-          }
-        } else if (verbose) {
-          this.log(chalk.yellow(`Maven validation failed`))
-        }
-
-        return false
-      }
-    } catch {
-      if (spinnerInterval) {
-        clearInterval(spinnerInterval)
-        logUpdate.clear()
+      // The verbose listener configured in run() will handle showing the command and output
+      await execa('mvn', ['help:effective-pom', '-f', pomPath])
+      return true
+    } catch (execError) {
+      // The verbose listener will show the error output
+      if (execError instanceof Error && execError.message.includes('ENOENT')) {
+        this.log(`│  │ ${chalk.yellow('Maven (mvn) command not found. Please install Maven.')}`)
       }
       return false
     }

@@ -1,9 +1,8 @@
 import {Args, Command, Flags} from '@oclif/core'
 import chalk from 'chalk'
-import {execa} from 'execa'
+import {execa as execa_} from 'execa'
 import fs from 'fs-extra'
 import path from 'node:path'
-import logUpdate from 'log-update'
 
 type RepoInfo = {
   path: string
@@ -48,6 +47,32 @@ export default class RepoValidate extends Command {
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(RepoValidate)
     const {repoPath} = args
+
+    // Configure execa with verbose logging
+    const execa = execa_({
+      verbose: (verboseLine: string, {type}: {type: string}) => {
+        switch (type) {
+          case 'command': {
+            this.log(`│  ├──╮ ${verboseLine}`)
+            break
+          }
+          case 'duration': {
+            this.log(`│  │  ╰ ${verboseLine}`)
+            break
+          }
+          case 'output': {
+            const MAX_LENGTH = 120
+            const truncatedLine =
+              verboseLine.length > MAX_LENGTH ? `${verboseLine.slice(0, Math.max(0, MAX_LENGTH))}...` : verboseLine
+            this.log(`│  │  │ ${truncatedLine}`)
+            break
+          }
+          default: {
+            this.debug(`${type} ${verboseLine}`)
+          }
+        }
+      },
+    })
 
     const absolutePath = path.resolve(repoPath)
     const startTime = Date.now()
@@ -118,7 +143,7 @@ export default class RepoValidate extends Command {
           continue
         }
 
-        const isValid = await this.validateMavenRepo(repo.path, flags.verbose)
+        const isValid = await this.validateMavenRepo(repo.path, execa, flags.verbose)
         repo.valid = isValid
 
         if (isValid) {
@@ -171,7 +196,7 @@ export default class RepoValidate extends Command {
     }
   }
 
-  public async validateMavenRepo(repoPath: string, verbose = false): Promise<boolean> {
+  public async validateMavenRepo(repoPath: string, execa: typeof execa_, _verbose = false): Promise<boolean> {
     const absolutePath = path.resolve(repoPath)
 
     // Check if directory exists
@@ -197,64 +222,14 @@ export default class RepoValidate extends Command {
 
     // Run Maven validation using help:effective-pom
     try {
-      let spinnerInterval: NodeJS.Timeout | null = null
-
-      if (verbose) {
-        // Set up spinner for verbose mode
-        const spinChars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
-        let spinIdx = 0
-        const startTime = Date.now()
-
-        spinnerInterval = setInterval(() => {
-          const spinner = spinChars[spinIdx]
-          spinIdx = (spinIdx + 1) % spinChars.length
-          const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
-
-          logUpdate(`│  │ ${spinner} Running: mvn help:effective-pom -f ${pomPath} (${elapsed}s)`)
-        }, 100)
+      // The verbose listener configured in run() will handle showing the command and output
+      await execa('mvn', ['help:effective-pom', '-f', pomPath])
+      return true
+    } catch (execError) {
+      // The verbose listener will show the error output
+      if (execError instanceof Error && execError.message.includes('ENOENT')) {
+        this.log(`│  │ ${chalk.yellow('Maven (mvn) command not found. Please install Maven.')}`)
       }
-
-      try {
-        if (verbose) {
-          const result = await execa('mvn', ['help:effective-pom', '-f', pomPath])
-          if (spinnerInterval) {
-            clearInterval(spinnerInterval)
-            logUpdate.clear()
-          }
-          if (verbose) {
-            this.log(`│  │ Maven validation output:`)
-            this.log(
-              result.stdout
-                .split('\n')
-                .slice(0, 5)
-                .map((line) => `│  │ ${line}`)
-                .join('\n'),
-            )
-            this.log(`│  │ ...`)
-          }
-        } else {
-          await execa('mvn', ['help:effective-pom', '-f', pomPath, '-q'])
-        }
-
-        return true
-      } catch (execError) {
-        if (spinnerInterval) {
-          clearInterval(spinnerInterval)
-          logUpdate.clear()
-        }
-
-        if (execError instanceof Error && execError.message.includes('ENOENT')) {
-          if (verbose) {
-            this.log(`│  │ ${chalk.yellow('Maven (mvn) command not found. Please install Maven.')}`)
-          }
-        } else if (verbose) {
-          this.log(`│  │ ${chalk.yellow(`Maven validation failed`)}`)
-          this.debug(`Validation error: ${execError}`)
-        }
-
-        return false
-      }
-    } catch {
       return false
     }
   }
