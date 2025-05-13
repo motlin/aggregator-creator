@@ -47,7 +47,7 @@ describe('aggregator:create', () => {
   })
 
   it('creates an aggregator POM with default values', async () => {
-    const {stdout} = await runCommand(`aggregator:create ${tempDir}`)
+    const {stdout} = await runCommand(`aggregator:create ${tempDir} --yes`)
 
     // Verify we display messages about each repo
     expect(stdout).to.include('Found valid Maven repository: valid-repo1')
@@ -74,7 +74,7 @@ describe('aggregator:create', () => {
 
   it('creates an aggregator POM with custom values', async () => {
     const {stdout} = await runCommand(
-      `aggregator:create ${tempDir} --groupId org.test --artifactId custom-agg --pomVersion 2.0.0`,
+      `aggregator:create ${tempDir} --groupId org.test --artifactId custom-agg --pomVersion 2.0.0 --yes`,
     )
 
     expect(stdout).to.include('Created aggregator POM')
@@ -88,7 +88,7 @@ describe('aggregator:create', () => {
   })
 
   it('outputs in json format when --json flag is provided', async () => {
-    const {stdout} = await runCommand(`aggregator:create ${tempDir} --json`)
+    const {stdout} = await runCommand(`aggregator:create ${tempDir} --json --yes`)
 
     // Parse JSON output
     const output = JSON.parse(stdout)
@@ -112,7 +112,7 @@ describe('aggregator:create', () => {
     const emptyDir = await fs.mkdtemp(path.join(os.tmpdir(), 'empty-dir-'))
 
     try {
-      const {stdout} = await runCommand(`aggregator:create ${emptyDir} --json`)
+      const {stdout} = await runCommand(`aggregator:create ${emptyDir} --json --yes`)
 
       // Parse JSON output
       const output = JSON.parse(stdout)
@@ -133,7 +133,7 @@ describe('aggregator:create', () => {
     const emptyDir = await fs.mkdtemp(path.join(os.tmpdir(), 'empty-dir-'))
 
     try {
-      await runCommand(`aggregator:create ${emptyDir}`)
+      await runCommand(`aggregator:create ${emptyDir} --yes`)
       // If we get here without an error, fail the test
       expect.fail('Command should have failed but did not')
     } catch (error: unknown) {

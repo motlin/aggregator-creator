@@ -40,6 +40,7 @@ test: build
 #   just repo-list motlin --limit 100
 #   just repo-list motlin --language Java
 #   just repo-list motlin --topic maven
+#   just repo-list motlin --language Java --limit 100
 #
 # Short flag alternatives:
 #   -l = --limit
@@ -80,9 +81,9 @@ workflow-test CLEAN="true": build
     fi
 
     echo "Step 1: List repositories using repo:list"
-    echo "🔍 Listing repositories for motlin..."
-    ./bin/run.js repo:list --user motlin --limit 100 --json > "${TEST_DIR}/repos.json"
-    cat "${TEST_DIR}/repos.json" | jq -r '.[].full_name' > "${TEST_DIR}/repos-to-clone.txt"
+    echo "🔍 Listing repositories for motlin with language=Java..."
+    ./bin/run.js repo:list --user motlin --language Java --limit 100 --json > "${TEST_DIR}/repos.json"
+    cat "${TEST_DIR}/repos.json" | jq -r '.[] | .owner.login + "/" + .name' > "${TEST_DIR}/repos-to-clone.txt"
     echo "📋 Found $(wc -l < "${TEST_DIR}/repos-to-clone.txt") repositories"
 
     echo "Step 2: Clone repositories using repo:clone"
@@ -90,51 +91,22 @@ workflow-test CLEAN="true": build
     cat "${TEST_DIR}/repos.json" | ./bin/run.js repo:clone "${REPOS_DIR}"
 
     echo "Step 3: Validate repositories using repo:validate"
-    echo "🔍 Validating Maven repositories..."
-    touch "${TEST_DIR}/validated-repos.txt"
+    echo "Validating Maven repositories..."
 
-    for OWNER_DIR in "${REPOS_DIR}"/*; do
-        if [ -d "${OWNER_DIR}" ]; then
-            OWNER=$(basename "${OWNER_DIR}")
+    # Run validation with built-in copying and output file generation
+    ./bin/run.js repo:validate "${REPOS_DIR}" --output "${TEST_DIR}/validated-repos.txt" --copyTo "${VALIDATED_REPOS}"
 
-            for REPO_DIR in "${OWNER_DIR}"/*; do
-                if [ -d "${REPO_DIR}" ]; then
-                    REPO_NAME=$(basename "${REPO_DIR}")
-                    FULL_NAME="${OWNER}/${REPO_NAME}"
-
-                    # Only try to validate repos with pom.xml
-                    if [ -f "${REPO_DIR}/pom.xml" ]; then
-                        echo "🔍 Validating Maven repository: ${FULL_NAME}"
-                        if ./bin/run.js repo:validate "${REPO_DIR}" &> /dev/null; then
-                            echo "✅ Validation successful: ${FULL_NAME}"
-                            echo "${FULL_NAME}" >> "${TEST_DIR}/validated-repos.txt"
-
-                            # Copy to validated repos dir preserving owner/repo structure
-                            mkdir -p "${VALIDATED_REPOS}/${OWNER}"
-                            cp -r "${REPO_DIR}" "${VALIDATED_REPOS}/${OWNER}/"
-                        else
-                            echo "❌ Validation failed: ${FULL_NAME}"
-                        fi
-                    else
-                        echo "⏩ Skipping non-Maven repository: ${FULL_NAME}"
-                    fi
-                fi
-            done
-        fi
-    done
-
-    # Count validated repos
-    VALIDATED_COUNT=$(wc -l < "${TEST_DIR}/validated-repos.txt")
-    echo "✅ Found ${VALIDATED_COUNT} validated Maven repositories"
+    # Count validated repos for next steps
+    VALIDATED_COUNT=$(wc -l < "${TEST_DIR}/validated-repos.txt" || echo 0)
 
     if [ "${VALIDATED_COUNT}" -gt 0 ]; then
         echo "Step 4: Tag validated repositories using repo:tag"
         echo "🏷️ Adding maven topic to validated repositories..."
-        ./bin/run.js repo:tag "${VALIDATED_REPOS}" --topic maven --dry-run
+        ./bin/run.js repo:tag "${VALIDATED_REPOS}" --topic maven --dryRun
 
         echo "Step 5: List repositories with maven topic"
-        echo "🔍 Listing repositories with maven topic..."
-        ./bin/run.js repo:list --user motlin --topic maven --limit 100 --json > "${TEST_DIR}/maven-repos.json"
+        echo "🔍 Listing repositories with maven topic and language=Java..."
+        ./bin/run.js repo:list --user motlin --topic maven --language Java --limit 100 --json > "${TEST_DIR}/maven-repos.json"
 
         echo "Step 6: Clone maven-tagged repositories"
         echo "📦 Cloning maven-tagged repositories..."

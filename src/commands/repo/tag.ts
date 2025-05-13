@@ -3,6 +3,8 @@ import chalk from 'chalk'
 import {execa} from 'execa'
 import fs from 'fs-extra'
 import path from 'node:path'
+import logUpdate from 'log-update'
+import inquirer from 'inquirer'
 
 export default class RepoTag extends Command {
   static override args = {
@@ -16,7 +18,7 @@ export default class RepoTag extends Command {
 
   static override examples = [
     '<%= config.bin %> <%= command.id %> ./repos-dir --topic maven',
-    '<%= config.bin %> <%= command.id %> ./repos-dir --topic maven --dry-run',
+    '<%= config.bin %> <%= command.id %> ./repos-dir --topic maven --dryRun',
   ]
 
   static override flags = {
@@ -35,14 +37,20 @@ export default class RepoTag extends Command {
       description: 'Show verbose output during operation',
       default: false,
     }),
+    yes: Flags.boolean({
+      char: 'y',
+      description: 'Automatically answer "yes" to all prompts',
+      default: false,
+    }),
   }
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(RepoTag)
     const {directory} = args
-    const {topic, dryRun, verbose} = flags
+    const {topic, dryRun, verbose, yes} = flags
 
-    this.log(`Scanning directory: ${directory} for repositories to tag with topic: ${topic}`)
+    this.log(`🏷️ Adding ${chalk.cyan(topic)} topic to validated repositories...`)
+    this.log(`Scanning directory: ${chalk.cyan(directory)} for repositories to tag with topic: ${chalk.cyan(topic)}`)
     if (dryRun) {
       this.log(chalk.yellow('Running in dry-run mode - no changes will be applied'))
     }
@@ -54,53 +62,99 @@ export default class RepoTag extends Command {
       // Filter for directories only
       const dirs = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name)
 
-      this.log(`Found ${dirs.length} directories to check`)
+      this.log(`Found ${chalk.cyan(dirs.length)} directories to check`)
+
+      // First pass: validate repositories and collect valid ones
+      const validRepos: Array<{
+        path: string
+        name: string
+        owner: string
+        repoName: string
+      }> = []
 
       for (const repoDir of dirs) {
         const repoPath = path.join(absolutePath, repoDir)
-        await this.processRepository(repoPath, topic, dryRun, verbose)
+        const repoName = path.basename(repoPath)
+
+        this.log(`Processing repository: ${chalk.cyan(repoName)}`)
+
+        // Check if it's a git repository
+        if (!(await this.isGitRepository(repoPath))) {
+          this.log(chalk.yellow(`Skipping ${repoName} - not a git repository`))
+          continue
+        }
+
+        // Validate as Maven repository
+        const isValid = await this.validateMavenRepo(repoPath, verbose)
+
+        if (isValid) {
+          this.log(chalk.green(`✓ Valid Maven repository: ${repoName}`))
+
+          // Get repository owner and name from remote URL
+          const {owner, name} = await this.getRepoOwnerAndName(repoPath)
+
+          if (owner && name) {
+            validRepos.push({
+              path: repoPath,
+              name: repoName,
+              owner,
+              repoName: name,
+            })
+          } else {
+            this.log(chalk.yellow(`Could not determine GitHub owner/name for ${repoName}`))
+          }
+        } else {
+          this.log(chalk.yellow(`Skipping ${repoName} - not a valid Maven repository`))
+        }
+      }
+
+      // Show confirmation with list of repositories to tag
+      if (validRepos.length === 0) {
+        this.log(chalk.yellow('No valid Maven repositories found to tag.'))
+        return
+      }
+
+      this.log(`\n${chalk.green(`Found ${validRepos.length} valid Maven repositories to tag:`)}`)
+
+      for (const repo of validRepos) {
+        this.log(`  - ${chalk.cyan(repo.owner + '/' + repo.repoName)}`)
+      }
+
+      // Ask for confirmation unless in dry run mode or yes flag is used
+      let proceed = dryRun || yes
+
+      if (!proceed) {
+        const {confirmed} = await inquirer.prompt([
+          {
+            type: 'confirm',
+            name: 'confirmed',
+            message: `Do you want to tag these ${validRepos.length} repositories with the '${topic}' topic?`,
+            default: false,
+          },
+        ])
+        proceed = confirmed
+      }
+
+      if (!proceed) {
+        this.log(chalk.yellow('Operation canceled by user.'))
+        return
+      }
+
+      // Second pass: tag repositories
+      this.log(chalk.cyan('\nTagging repositories...'))
+
+      for (const repo of validRepos) {
+        if (dryRun) {
+          this.log(chalk.blue(`[DRY RUN] Would tag ${repo.owner}/${repo.repoName} with topic: ${topic}`))
+        } else {
+          await this.tagRepository(repo.owner, repo.repoName, topic)
+          this.log(chalk.green(`✓ Tagged ${repo.owner}/${repo.repoName} with topic: ${topic}`))
+        }
       }
 
       this.log(chalk.green('✅ Repository tagging process completed'))
     } catch (error) {
       this.error(`Failed to process repositories: ${error}`, {exit: 1})
-    }
-  }
-
-  private async processRepository(repoPath: string, topic: string, dryRun: boolean, verbose: boolean): Promise<void> {
-    try {
-      this.log(`Processing repository: ${path.basename(repoPath)}`)
-
-      // Check if it's a git repository
-      if (!(await this.isGitRepository(repoPath))) {
-        this.log(chalk.yellow(`Skipping ${path.basename(repoPath)} - not a git repository`))
-        return
-      }
-
-      // Validate as Maven repository
-      const isValid = await this.validateMavenRepo(repoPath, verbose)
-
-      if (isValid) {
-        this.log(chalk.green(`✓ Valid Maven repository: ${path.basename(repoPath)}`))
-
-        // Get repository owner and name from remote URL
-        const {owner, name} = await this.getRepoOwnerAndName(repoPath)
-
-        if (owner && name) {
-          if (dryRun) {
-            this.log(chalk.blue(`[DRY RUN] Would tag ${owner}/${name} with topic: ${topic}`))
-          } else {
-            await this.tagRepository(owner, name, topic)
-            this.log(chalk.green(`✓ Tagged ${owner}/${name} with topic: ${topic}`))
-          }
-        } else {
-          this.log(chalk.yellow(`Could not determine GitHub owner/name for ${path.basename(repoPath)}`))
-        }
-      } else {
-        this.log(chalk.yellow(`Skipping ${path.basename(repoPath)} - not a valid Maven repository`))
-      }
-    } catch (error) {
-      this.log(chalk.red(`Error processing ${path.basename(repoPath)}: ${error}`))
     }
   }
 
@@ -179,11 +233,9 @@ export default class RepoTag extends Command {
     try {
       const stats = await fs.stat(absolutePath)
       if (!stats.isDirectory()) {
-        this.error(`Path is not a directory: ${absolutePath}`, {exit: false})
         return false
       }
     } catch {
-      this.error(`Directory does not exist: ${absolutePath}`, {exit: false})
       return false
     }
 
@@ -192,39 +244,68 @@ export default class RepoTag extends Command {
     try {
       const pomExists = await fs.pathExists(pomPath)
       if (!pomExists) {
-        this.warn(`No pom.xml found at: ${pomPath}`)
+        if (verbose) this.log(chalk.yellow(`No pom.xml found at: ${pomPath}`))
         return false
       }
-    } catch (error) {
-      this.error(`Error checking for pom.xml: ${error}`, {exit: false})
+    } catch {
       return false
     }
 
     // Run Maven validation using help:effective-pom
+    let spinnerInterval: NodeJS.Timeout | null = null
+
     try {
-      if (verbose) this.log(`Running mvn help:effective-pom on: ${pomPath}`)
+      if (verbose) {
+        // Set up spinner for verbose mode
+        const spinChars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+        let spinIdx = 0
+        const startTime = Date.now()
+
+        spinnerInterval = setInterval(() => {
+          const spinner = spinChars[spinIdx]
+          spinIdx = (spinIdx + 1) % spinChars.length
+          const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
+
+          logUpdate(`${spinner} Validating Maven project (${elapsed}s)`)
+        }, 100)
+      }
 
       try {
         if (verbose) {
-          const result = await execa('mvn', ['help:effective-pom', '-f', pomPath])
-          this.log(result.stdout)
+          await execa('mvn', ['help:effective-pom', '-f', pomPath])
+          if (spinnerInterval) {
+            clearInterval(spinnerInterval)
+            logUpdate.clear()
+          }
+          if (verbose) {
+            this.log(chalk.dim(`Maven validation successful`))
+          }
         } else {
           await execa('mvn', ['help:effective-pom', '-f', pomPath, '-q'])
         }
 
         return true
       } catch (execError) {
+        if (spinnerInterval) {
+          clearInterval(spinnerInterval)
+          logUpdate.clear()
+        }
+
         if (execError instanceof Error && execError.message.includes('ENOENT')) {
-          this.log(chalk.yellow('Maven (mvn) command not found. Please install Maven.'))
-        } else {
-          this.log(chalk.yellow(`Maven validation failed for: ${absolutePath}`))
-          if (verbose) this.debug(`Validation error: ${execError}`)
+          if (verbose) {
+            this.log(chalk.yellow('Maven (mvn) command not found. Please install Maven.'))
+          }
+        } else if (verbose) {
+          this.log(chalk.yellow(`Maven validation failed`))
         }
 
         return false
       }
-    } catch (error) {
-      this.error(`Unexpected error during validation: ${error}`, {exit: false})
+    } catch {
+      if (spinnerInterval) {
+        clearInterval(spinnerInterval)
+        logUpdate.clear()
+      }
       return false
     }
   }

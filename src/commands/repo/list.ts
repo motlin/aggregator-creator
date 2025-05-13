@@ -7,7 +7,8 @@ export default class RepoList extends Command {
 
   static override examples = [
     '<%= config.bin %> <%= command.id %> --user motlin --limit 100',
-    '<%= config.bin %> <%= command.id %> --user motlin --topic maven --language Java --language TypeScript --json',
+    '<%= config.bin %> <%= command.id %> --user motlin --language Java --limit 100',
+    '<%= config.bin %> <%= command.id %> --user motlin --topic maven --language Java --json',
     '<%= config.bin %> <%= command.id %> --user motlin --limit 100 --json',
   ]
 

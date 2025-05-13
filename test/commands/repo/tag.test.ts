@@ -34,7 +34,7 @@ describe('repo:tag', () => {
   })
 
   it('runs repo:tag with dry-run flag', async () => {
-    const {stdout} = await runCommand('repo:tag ./test-repos --topic maven --dry-run')
+    const {stdout} = await runCommand('repo:tag ./test-repos --topic maven --dry-run --yes')
 
     expect(stdout).to.contain('Scanning directory: ./test-repos')
     expect(stdout).to.contain('Running in dry-run mode')
@@ -66,7 +66,7 @@ describe('repo:tag', () => {
       return false
     })
 
-    const {stdout} = await runCommand('repo:tag ./test-repos --topic maven --dry-run')
+    const {stdout} = await runCommand('repo:tag ./test-repos --topic maven --dry-run --yes')
 
     expect(stdout).to.contain('Skipping repo2 - not a git repository')
     expect(stdout).to.contain('[DRY RUN] Would tag example/repo1 with topic: maven')
