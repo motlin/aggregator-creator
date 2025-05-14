@@ -120,9 +120,9 @@ export default class AggregatorCreate extends Command {
       this.error(`Failed to access directory: ${error instanceof Error ? error.message : String(error)}`, {exit: 1})
     }
 
-    this.log(chalk.blue(`╭─── 📄 Creating aggregator POM...`))
-    this.log(chalk.blue(`│`))
-    this.log(chalk.blue(`│ 🔍 Scanning for Maven repositories in ${directoryPath}...`))
+    this.log(`╭─── 📄 Creating aggregator POM...`)
+    this.log(`│`)
+    this.log(`├──╮ 🔍 Scanning for Maven repositories in ${chalk.yellow(directoryPath)}...`)
 
     // Find all potential Maven repositories (considering possible nesting like owner/repo structure)
     const mavenRepos: {path: string; relativePath: string}[] = []
@@ -143,7 +143,7 @@ export default class AggregatorCreate extends Command {
       }
     }
 
-    this.log(chalk.blue(`Found ${firstLevelEntries.length} potential repository containers to scan`))
+    this.log(`│  │ Found ${chalk.yellow(firstLevelEntries.length)} potential repository containers to scan`)
 
     if (firstLevelEntries.length === 0) {
       const elapsedTimeMs = Date.now() - startTime
@@ -174,7 +174,7 @@ export default class AggregatorCreate extends Command {
     }
 
     for (const entry of firstLevelEntries) {
-      this.log(chalk.dim(`⏳ Examining: ${entry}`))
+      this.log(`│  │ ${chalk.dim(`⏳ Examining: ${entry}`)}`)
 
       const entryPath = path.join(directoryPath, entry)
       const stats = await fs.stat(entryPath)
@@ -259,30 +259,33 @@ export default class AggregatorCreate extends Command {
     const validModules = mavenRepos.map((repo) => repo.relativePath)
 
     for (const repo of mavenRepos) {
-      this.log(chalk.green(`✅ Found valid Maven repository: ${repo.relativePath}`))
+      this.log(`│  │ ${chalk.green(`✅ Found valid Maven repository: ${repo.relativePath}`)}`)
     }
 
-    this.log(chalk.blue('\n📊 Repository scan summary:'))
-    this.log(chalk.green(`✅ Found ${mavenRepos.length} valid Maven repositories`))
+    this.log(`│  │`)
+    this.log(`│  ├──╮ 📊 Repository scan summary:`)
+    this.log(`│  │  │ ${chalk.green(`✅ Found ${mavenRepos.length} valid Maven repositories`)}`)
     if (skippedRepos.length > 0) {
-      this.log(chalk.yellow(`⚠️ Skipped ${skippedRepos.length} repositories`))
+      this.log(`│  │  │ ${chalk.yellow(`⚠️ Skipped ${skippedRepos.length} repositories`)}`)
       for (const repo of skippedRepos) {
         if (repo.reason === 'Missing pom.xml') {
-          this.log(chalk.yellow(`  → ${repo.relativePath}: Missing pom.xml file`))
+          this.log(`│  │  │ ${chalk.yellow(`  → ${repo.relativePath}: Missing pom.xml file`)}`)
         }
       }
     }
+    this.log(`│  ├──╯`)
 
     // Ask for confirmation unless yes flag is used
     const {yes} = flags
     let proceed = yes
 
     if (!proceed) {
-      this.log(chalk.blue('\n📋 Ready to create aggregator POM with the following settings:'))
-      this.log(chalk.blue(`  - groupId: ${chalk.cyan(flags.groupId)}`))
-      this.log(chalk.blue(`  - artifactId: ${chalk.cyan(flags.artifactId)}`))
-      this.log(chalk.blue(`  - version: ${chalk.cyan(flags.pomVersion)}`))
-      this.log(chalk.blue(`  - modules: ${chalk.cyan(validModules.length)} Maven repositories`))
+      this.log(`│  │`)
+      this.log(`│  ├──╮ 📋 Ready to create aggregator POM with the following settings:`)
+      this.log(`│  │  │ - groupId: ${chalk.yellow(flags.groupId)}`)
+      this.log(`│  │  │ - artifactId: ${chalk.yellow(flags.artifactId)}`)
+      this.log(`│  │  │ - version: ${chalk.yellow(flags.pomVersion)}`)
+      this.log(`│  │  │ - modules: ${chalk.yellow(validModules.length)} Maven repositories`)
 
       const {confirmed} = await inquirer.prompt([
         {
@@ -296,7 +299,8 @@ export default class AggregatorCreate extends Command {
     }
 
     if (!proceed) {
-      this.log(chalk.yellow('Operation canceled by user.'))
+      this.log(`│  │  │ ${chalk.yellow('Operation canceled by user.')}`)
+      this.log(`│  ├──╯`)
       const elapsedTimeMs = Date.now() - startTime
 
       return {
@@ -332,11 +336,13 @@ export default class AggregatorCreate extends Command {
     const pomPath = path.join(directoryPath, 'pom.xml')
     try {
       await fs.writeFile(pomPath, pomXml)
-      this.log(chalk.green(`\n✅ Created aggregator POM at ${pomPath}`))
-      this.log(chalk.blue(`📋 Included ${validModules.length} modules`))
+      this.log(`│  │`)
+      this.log(`│  ├──╮ ${chalk.green(`✅ Created aggregator POM at ${pomPath}`)}`)
+      this.log(`│  │  │ 📋 Included ${chalk.yellow(validModules.length)} modules`)
 
       const elapsedTimeMs = Date.now() - startTime
-      this.log(chalk.dim(`⏱️ Operation completed in ${elapsedTimeMs}ms`))
+      this.log(`│  │  │ ${chalk.dim(`⏱️ Operation completed in ${elapsedTimeMs}ms`)}`)
+      this.log(`│  ├──╯`)
 
       return {
         success: true,

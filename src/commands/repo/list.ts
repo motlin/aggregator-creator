@@ -45,16 +45,19 @@ export default class RepoList extends Command {
     limit: number | undefined,
     execa: typeof execa_,
   ): Promise<z.infer<typeof this.repositoriesSchema>> {
-    this.log(`╭─── 🔍 Fetching GitHub repositories for user: ${username}`)
-    this.log(`│`)
+    this.log(`├──╮ 🔍 Fetching GitHub repositories for user: ${username}`)
 
     try {
+      this.log(`│  ├──╮ Building search query`)
       // Build the GitHub API search query
       const topicQueries = topics.map((topic) => `topic:${topic}`).join(' ')
       const languageQueries = languages.map((language) => `language:${language}`).join(' ')
       const query = `user:${username} ${topicQueries} ${languageQueries}`.trim()
+      this.log(`│  │  │ Query: ${query}`)
+      this.log(`│  ├──╯`)
 
       // Use the execa instance from the run method
+      this.log(`│  ├──╮ Executing GitHub API search`)
 
       // Execute GitHub search API call
       const args = ['api', '-X', 'GET', 'search/repositories', '-f', `q=${query}`, '--jq', '.items']
@@ -62,11 +65,11 @@ export default class RepoList extends Command {
       // Add per_page parameter only if limit is specified
       if (limit) {
         args.splice(6, 0, '-f', `per_page=${limit}`)
+        this.log(`│  │  │ Limit: ${limit}`)
       }
 
       const {stdout} = await execa('gh', args)
 
-      // Parse and validate the response
       const repositories = JSON.parse(stdout)
       return this.repositoriesSchema.parse(repositories)
     } catch (error) {
@@ -86,18 +89,18 @@ export default class RepoList extends Command {
       verbose: (verboseLine: string, {type}: {type: string}) => {
         switch (type) {
           case 'command': {
-            this.log(`│  │  ├──╮ ${verboseLine}`)
+            this.log(`│  │  │ ${verboseLine}`)
             break
           }
           case 'duration': {
-            this.log(`│  │  ├──╯ ${verboseLine}`)
+            this.log(`│  ├──╯ ${verboseLine}`)
             break
           }
           case 'output': {
             const MAX_LENGTH = 120
             const truncatedLine =
               verboseLine.length > MAX_LENGTH ? `${verboseLine.slice(0, Math.max(0, MAX_LENGTH))}...` : verboseLine
-            this.log(`│  │  │  │ ${truncatedLine}`)
+            this.log(`│  │  │ ${truncatedLine}`)
             break
           }
           default: {
@@ -107,8 +110,13 @@ export default class RepoList extends Command {
       },
     })
 
+    this.log(`╭─── 🔍 Listing GitHub repositories...`)
+    this.log(`│`)
+    this.log(`├──╮ 🔍 Prerequisites`)
+
     // Validate that GitHub CLI is installed
     try {
+      this.log(`│  ├──╮ Check gh CLI`)
       await execa('gh', ['--version'])
     } catch {
       this.error('GitHub CLI (gh) is not installed or not in PATH. Please install it from https://cli.github.com/', {
@@ -118,10 +126,14 @@ export default class RepoList extends Command {
 
     // Validate GitHub CLI authentication
     try {
+      this.log(`│  ├──╮ Check gh auth status`)
       await execa('gh', ['auth', 'status'])
     } catch {
       this.error('Not authenticated with GitHub. Please run `gh auth login` first.', {exit: 1})
     }
+
+    this.log(`├──╯ ✅ Prerequisites complete`)
+    this.log(`│`)
 
     if (!flags.user) {
       this.error('GitHub username/organization is required. Use --user flag.', {exit: 1})
@@ -137,18 +149,22 @@ export default class RepoList extends Command {
       )
 
       if (repositories.length === 0) {
-        this.log('│  │ No repositories found matching the criteria.')
+        this.log(`├──╯ ℹ️ No repositories found matching the criteria.`)
+        this.log(`│`)
         return []
       }
 
       // Display human-readable output if not in JSON mode
-      this.log(`│  │  │ 📋 Found ${repositories.length} repositories:`)
+      this.log(`│  ├──╮ 📋 Results: ${repositories.length} repositories`)
+
       for (const repo of repositories) {
         const language = repo.language || 'No language'
         const topics = repo.topics && repo.topics.length > 0 ? `Topics: [${repo.topics.join(', ')}]` : 'No topics'
 
-        this.log(`│  │  │ - ${repo.owner.login}/${repo.name} (${language}) ${topics}`)
+        this.log(`│  │  │ ${repo.owner.login}/${repo.name} (${language}) ${topics}`)
       }
+      this.log(`│  ├──╯ ✅`)
+      this.log(`├──╯ 🔍`)
 
       // Return the repositories which will be output as JSON when --json flag is used
       this.log(`│`)

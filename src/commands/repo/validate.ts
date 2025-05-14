@@ -138,7 +138,7 @@ export default class RepoValidate extends Command {
         this.log(`├──╮ 🔍 [${chalk.yellow(i + 1)}/${repos.length}] ${chalk.yellow(repoFullName)}`)
 
         if (!repo.hasPom) {
-          this.log(`│  ╰ ⏩ Skipping non-Maven repository: ${chalk.yellow(repoFullName)}`)
+          this.log(`│  ├──╯ ⏩ Skipping non-Maven repository: ${chalk.yellow(repoFullName)}`)
           this.log(`│`)
           continue
         }
@@ -147,11 +147,11 @@ export default class RepoValidate extends Command {
         repo.valid = isValid
 
         if (isValid) {
-          this.log(`│  ╰ ✅ Validation successful: ${chalk.green(repoFullName)}`)
+          this.log(`│  ├──╯ ✅ Validation successful: ${chalk.green(repoFullName)}`)
           validCount++
           validRepos.push(repo)
         } else {
-          this.log(`│  ╰ ❌ Validation failed: ${chalk.red(repoFullName)}`)
+          this.log(`│  ├──╯ ❌ Validation failed: ${chalk.red(repoFullName)}`)
         }
 
         this.log(`│`)
