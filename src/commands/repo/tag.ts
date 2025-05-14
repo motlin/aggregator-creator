@@ -76,7 +76,9 @@ export default class RepoTag extends Command {
 
     this.log(`╭─── 🏷️ Adding ${chalk.cyan(topic)} topic to validated repositories...`)
     this.log(`│`)
-    this.log(`├──╮ 🔍 Scanning directory: ${chalk.cyan(directory)} for repositories to tag with topic: ${chalk.cyan(topic)}`)
+    this.log(
+      `├──╮ 🔍 Scanning directory: ${chalk.cyan(directory)} for repositories to tag with topic: ${chalk.cyan(topic)}`,
+    )
     if (dryRun) {
       this.log(`│  │ ${chalk.yellow('Running in dry-run mode - no changes will be applied')}`)
     }
@@ -113,11 +115,12 @@ export default class RepoTag extends Command {
           const repoPath = path.join(ownerPath, repoDir)
           const repoName = repoDir
 
-          this.log(`Processing repository: ${chalk.cyan(`${ownerDir}/${repoName}`)}`)
+          this.log(`│  ├──╮ Processing repository: ${chalk.cyan(`${ownerDir}/${repoName}`)}`)
 
           // Check if it's a git repository
           if (!(await this.isGitRepository(repoPath))) {
-            this.log(chalk.yellow(`Skipping ${ownerDir}/${repoName} - not a git repository`))
+            this.log(`│  │  │ ${chalk.yellow(`Skipping ${ownerDir}/${repoName} - not a git repository`)}`)
+            this.log(`│  ├──╯`)
             continue
           }
 
@@ -125,7 +128,7 @@ export default class RepoTag extends Command {
           const isValid = await this.validateMavenRepo(repoPath, execa, verbose)
 
           if (isValid) {
-            this.log(chalk.green(`✓ Valid Maven repository: ${ownerDir}/${repoName}`))
+            this.log(`│  │  │ ${chalk.green(`✓ Valid Maven repository: ${ownerDir}/${repoName}`)}`)
 
             // Get repository owner and name from remote URL
             const {owner, name} = await this.getRepoOwnerAndName(repoPath, execa)
@@ -138,64 +141,78 @@ export default class RepoTag extends Command {
                 repoName: name,
               })
             } else {
-              this.log(chalk.yellow(`Could not determine GitHub owner/name for ${ownerDir}/${repoName}`))
+              this.log(`│  │  │ ${chalk.yellow(`Could not determine GitHub owner/name for ${ownerDir}/${repoName}`)}`)
             }
           } else {
-            this.log(chalk.yellow(`Skipping ${ownerDir}/${repoName} - not a valid Maven repository`))
+            this.log(`│  │  │ ${chalk.yellow(`Skipping ${ownerDir}/${repoName} - not a valid Maven repository`)}`)
           }
+          this.log(`│  ├──╯`)
         }
       }
 
       // Log total repositories found
+      this.log(`│  │`)
+      this.log(`│  ├──╮ 📊 Summary:`)
       this.log(
-        `Checked ${chalk.cyan(totalRepos)} total repositories across ${chalk.cyan(ownerDirs.length)} owner directories`,
+        `│  │  │ ${chalk.cyan(`Checked ${totalRepos} total repositories across ${ownerDirs.length} owner directories`)}`,
       )
 
       // Show confirmation with list of repositories to tag
       if (validRepos.length === 0) {
-        this.log(chalk.yellow('No valid Maven repositories found to tag.'))
+        this.log(`│  │  │ ${chalk.yellow('No valid Maven repositories found to tag.')}`)
+        this.log(`│  ├──╯`)
         return
       }
 
-      this.log(`\n${chalk.green(`Found ${validRepos.length} valid Maven repositories to tag:`)}`)
+      this.log(`│  │  │ ${chalk.green(`Found ${validRepos.length} valid Maven repositories to tag:`)}`)
 
       for (const repo of validRepos) {
-        this.log(`  - ${chalk.cyan(repo.owner + '/' + repo.repoName)}`)
+        this.log(`│  │  │ - ${chalk.cyan(repo.owner + '/' + repo.repoName)}`)
       }
+      this.log(`│  ├──╯`)
 
       // Ask for confirmation unless in dry run mode or yes flag is used
       let proceed = dryRun || yes
 
       if (!proceed) {
+        this.log(`│  │`)
+        this.log(`│  ├──╮ 🤔 Confirmation`)
+        this.log(`│  │  │ Do you want to tag these ${validRepos.length} repositories with the '${topic}' topic?`)
+
         const {confirmed} = await inquirer.prompt([
           {
             type: 'confirm',
             name: 'confirmed',
-            message: `Do you want to tag these ${validRepos.length} repositories with the '${topic}' topic?`,
+            message: `Proceed with tagging?`,
             default: false,
           },
         ])
         proceed = confirmed
-      }
 
-      if (!proceed) {
-        this.log(chalk.yellow('Operation canceled by user.'))
-        return
+        if (!proceed) {
+          this.log(`│  │  │ ${chalk.yellow('Operation canceled by user.')}`)
+          this.log(`│  ├──╯`)
+          return
+        }
+        this.log(`│  ├──╯`)
       }
 
       // Second pass: tag repositories
-      this.log(chalk.cyan('\nTagging repositories...'))
+      this.log(`│  │`)
+      this.log(`│  ├──╮ 🏷️ ${chalk.cyan('Tagging repositories...')}`)
 
       for (const repo of validRepos) {
         if (dryRun) {
-          this.log(chalk.blue(`[DRY RUN] Would tag ${repo.owner}/${repo.repoName} with topic: ${topic}`))
+          this.log(`│  │  │ ${chalk.blue(`[DRY RUN] Would tag ${repo.owner}/${repo.repoName} with topic: ${topic}`)}`)
         } else {
           await this.tagRepository(repo.owner, repo.repoName, topic, execa)
-          this.log(chalk.green(`✓ Tagged ${repo.owner}/${repo.repoName} with topic: ${topic}`))
+          this.log(`│  │  │ ${chalk.green(`✓ Tagged ${repo.owner}/${repo.repoName} with topic: ${topic}`)}`)
         }
       }
+      this.log(`│  ├──╯`)
 
-      this.log(chalk.green('✅ Repository tagging process completed'))
+      this.log(`│`)
+      this.log(`╰─── ${chalk.green('✅ Repository tagging process completed')}`)
     } catch (error) {
       this.error(`Failed to process repositories: ${error}`, {exit: 1})
     }
@@ -252,7 +269,7 @@ export default class RepoTag extends Command {
             const topics = topicsData.names || []
 
             if (topics.includes(topic)) {
-              this.log(chalk.blue(`Topic ${topic} already exists on ${owner}/${name}`))
+              this.log(`│  │  │ ${chalk.blue(`Topic ${topic} already exists on ${owner}/${name}`)}`)
             } else {
               topics.push(topic)
               await execa('gh', [
@@ -265,14 +282,14 @@ export default class RepoTag extends Command {
               ])
             }
           } catch (error) {
-            this.log(chalk.red(`Error updating topics: ${error}`))
+            this.log(`│  │  │ ${chalk.red(`Error updating topics: ${error}`)}`)
           }
         } else {
-          this.log(chalk.yellow(`Failed to get topics for ${owner}/${name}: ${result.stderr}`))
+          this.log(`│  │  │ ${chalk.yellow(`Failed to get topics for ${owner}/${name}: ${result.stderr}`)}`)
         }
       })
     } catch (error) {
-      this.log(chalk.red(`Failed to tag repository ${owner}/${name}: ${error}`))
+      this.log(`│  │  │ ${chalk.red(`Failed to tag repository ${owner}/${name}: ${error}`)}`)
     }
   }
 

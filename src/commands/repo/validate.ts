@@ -169,7 +169,8 @@ export default class RepoValidate extends Command {
         const validRepoNames = validRepos.map((repo) => `${repo.owner}/${repo.name}`).join('\n')
         await fs.writeFile(outputPath, validRepoNames)
 
-        this.log(`📄 Validated repository list written to: ${chalk.cyan(outputPath)}`)
+        this.log(`├──╮ 📄 Validated repository list written to: ${chalk.cyan(outputPath)}`)
+        this.log(`├──╯`)
       }
 
       // Handle copying repositories
@@ -177,15 +178,16 @@ export default class RepoValidate extends Command {
         const copyPath = path.resolve(flags.copyTo)
         await fs.ensureDir(copyPath)
 
-        this.log(`📦 Copying ${validRepos.length} validated repositories...`)
+        this.log(`├──╮ 📦 Copying ${validRepos.length} validated repositories...`)
 
         for (const repo of validRepos) {
           const destPath = path.join(copyPath, repo.owner, repo.name)
           await fs.ensureDir(path.dirname(destPath))
           await fs.copy(repo.path, destPath)
+          this.log(`│  │ ${chalk.green(`✓ Copied ${repo.owner}/${repo.name}`)}`)
         }
 
-        this.log(`✅ Successfully copied validated repositories to: ${chalk.cyan(copyPath)}`)
+        this.log(`├──╯ ${chalk.green(`✅ Successfully copied repositories to: ${copyPath}`)}`)
       }
 
       // Show elapsed time
