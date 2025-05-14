@@ -57,7 +57,7 @@ export default class RepoTag extends Command {
             break
           }
           case 'duration': {
-            this.log(`│  │  ╰ ${verboseLine}`)
+            this.log(`│  ├──╯ ${verboseLine}`)
             break
           }
           case 'output': {
@@ -305,7 +305,7 @@ export default class RepoTag extends Command {
     // Run Maven validation using help:effective-pom
     try {
       // The verbose listener configured in run() will handle showing the command and output
-      await execa('mvn', ['help:effective-pom', '-f', pomPath])
+      await execa('mvn', ['help:effective-pom', '--quiet', '--file', pomPath])
       return true
     } catch (execError) {
       // The verbose listener will show the error output

@@ -86,18 +86,18 @@ export default class RepoList extends Command {
       verbose: (verboseLine: string, {type}: {type: string}) => {
         switch (type) {
           case 'command': {
-            this.log(`│    │  ├──╮ ${verboseLine}`)
+            this.log(`│  │  ├──╮ ${verboseLine}`)
             break
           }
           case 'duration': {
-            this.log(`│    │  ├──╯ ${verboseLine}`)
+            this.log(`│  │  ├──╯ ${verboseLine}`)
             break
           }
           case 'output': {
             const MAX_LENGTH = 120
             const truncatedLine =
               verboseLine.length > MAX_LENGTH ? `${verboseLine.slice(0, Math.max(0, MAX_LENGTH))}...` : verboseLine
-            this.log(`│    │  │  │ ${truncatedLine}`)
+            this.log(`│  │  │  │ ${truncatedLine}`)
             break
           }
           default: {
@@ -142,12 +142,12 @@ export default class RepoList extends Command {
       }
 
       // Display human-readable output if not in JSON mode
-      this.log(`│    │  │ 📋 Found ${repositories.length} repositories:`)
+      this.log(`│  │  │ 📋 Found ${repositories.length} repositories:`)
       for (const repo of repositories) {
         const language = repo.language || 'No language'
         const topics = repo.topics && repo.topics.length > 0 ? `Topics: [${repo.topics.join(', ')}]` : 'No topics'
 
-        this.log(`│    │  │ - ${repo.owner.login}/${repo.name} (${language}) ${topics}`)
+        this.log(`│  │  │ - ${repo.owner.login}/${repo.name} (${language}) ${topics}`)
       }
 
       // Return the repositories which will be output as JSON when --json flag is used

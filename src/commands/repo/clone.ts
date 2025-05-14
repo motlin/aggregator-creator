@@ -29,18 +29,18 @@ export default class RepoClone extends Command {
       verbose: (verboseLine: string, {type}: {type: string}) => {
         switch (type) {
           case 'command': {
-            this.log(`│    ├──╮ ${verboseLine}`)
+            this.log(`│  │  │ ${verboseLine}`)
             break
           }
           case 'duration': {
-            this.log(`│    ├──╯ ${verboseLine}`)
+            this.log(`│  ├──╯ ${verboseLine}`)
             break
           }
           case 'output': {
             const MAX_LENGTH = 120
             const truncatedLine =
               verboseLine.length > MAX_LENGTH ? `${verboseLine.slice(0, Math.max(0, MAX_LENGTH))}...` : verboseLine
-            this.log(`│    │  │ ${truncatedLine}`)
+            this.log(`│  │  │ ${truncatedLine}`)
             break
           }
           default: {
@@ -55,11 +55,12 @@ export default class RepoClone extends Command {
     } else {
       this.log(`╭─── 📦 Cloning repositories...`)
       this.log(`│`)
-      this.log(`├────╮ 🔍 Prerequisites`)
+      this.log(`├──╮ 🔍 Prerequisites`)
 
       try {
+        this.log(`│  ├──╮ Check gh CLI`)
         await execa('gh', ['--version'])
-        this.log(`│    │`)
+        this.log(`│  │`)
       } catch {
         this.error('GitHub CLI (gh) is not installed or not in PATH. Please install it from https://cli.github.com/', {
           exit: 1,
@@ -67,13 +68,14 @@ export default class RepoClone extends Command {
       }
 
       try {
+        this.log(`│  ├──╮ Check gh auth status`)
         await execa('gh', ['auth', 'status'])
-        this.log(`│    │`)
+        this.log(`│  │`)
       } catch {
         this.error('Not authenticated with GitHub. Please run `gh auth login` first.', {exit: 1})
       }
 
-      this.log(`├────╯ Prerequisites complete`)
+      this.log(`├──╯ ✅ Prerequisites complete`)
       this.log(`│`)
 
       await fs.ensureDir(targetDirectory)
@@ -88,24 +90,24 @@ export default class RepoClone extends Command {
           const validRepos = jsonData.filter((repo) => repo.owner?.login && repo.name)
           const total = validRepos.length
 
-          this.log(`├────╮ 🚀 Cloning ${total} repositories`)
+          this.log(`├──╮ 🚀 Cloning ${total} repositories`)
 
           for (const [i, repo] of validRepos.entries()) {
             const repoFullName = `${repo.owner.login}/${repo.name}`
             await this.cloneRepository(repoFullName, targetDirectory, i + 1, total, execa)
           }
 
-          this.log(`├────╯ Cloning complete`)
+          this.log(`├──╯ Cloning complete`)
           this.log(`│`)
           this.log(`╰─── ✅ All done`)
         } else if (jsonData.owner?.login && jsonData.name) {
           const total = 1
-          this.log(`├────╮ 🚀 Cloning 1 repository`)
+          this.log(`├──╮ 🚀 Cloning 1 repository`)
 
           const repoFullName = `${jsonData.owner.login}/${jsonData.name}`
           await this.cloneRepository(repoFullName, targetDirectory, 1, total, execa)
 
-          this.log(`├────╯ Cloning complete`)
+          this.log(`├──╯ Cloning complete`)
           this.log(`│`)
           this.log(`╰─── ✅ All done`)
         }
@@ -115,7 +117,7 @@ export default class RepoClone extends Command {
 
         const total = validLines.length
 
-        this.log(`├────╮ 🚀 Cloning ${total} ${total === 1 ? 'repository' : 'repositories'}`)
+        this.log(`├──╮ 🚀 Cloning ${total} ${total === 1 ? 'repository' : 'repositories'}`)
 
         for (const [i, trimmedLine] of validLines.entries()) {
           try {
@@ -130,9 +132,9 @@ export default class RepoClone extends Command {
           await this.cloneRepository(trimmedLine, targetDirectory, i + 1, total, execa)
         }
 
-        this.log(`├────╯ Cloning complete`)
+        this.log(`├──╯ Cloning complete`)
         this.log(`│`)
-        this.log(`╰─── ✅ All done`)
+        this.log(`╰── ✅ All done`)
       }
     }
   }
@@ -152,27 +154,26 @@ export default class RepoClone extends Command {
     try {
       const dirContents = await fs.readdir(repoDir)
       if (dirContents.length > 0) {
-        this.log(`│    ├──╮ [${chalk.yellow(index)}/${total}] ${chalk.yellow(repoName)}`)
-        this.log(`│    │  │ Skipped: Directory already exists and is not empty`)
-        this.log(`│    ├──╯`)
-        this.log(`│    │`)
+        this.log(`│  ├──╮ [${chalk.yellow(index)}/${total}] ${chalk.yellow(repoName)}`)
+        this.log(`│  │  │ Skipped: Directory already exists and is not empty`)
+        this.log(`│  ├──╯`)
+        this.log(`│  │`)
         return
       }
     } catch {
       // Directory doesn't exist, which is fine
     }
 
-    this.log(`│    ├──╮ [${chalk.yellow(index)}/${total}] ${chalk.yellow(repoName)}`)
-    this.log(`│    │`)
+    this.log(`│  ├──╮ [${chalk.yellow(index)}/${total}] ${chalk.yellow(repoName)}`)
 
     try {
       // Use execa with verbose config to clone the repository
       await execa('gh', ['repo', 'clone', repoName, repoDir])
       // Don't add anything here, the execa config will output completion
     } catch (error: unknown) {
-      this.log(`│    │  │ ❌ Failed: ${error instanceof Error ? error.message : String(error)}`)
-      this.log(`│    ├──╯`)
-      this.log(`│    │`)
+      this.log(`│  │  │ ❌ Failed: ${error instanceof Error ? error.message : String(error)}`)
+      this.log(`│  ├──╯`)
+      this.log(`│  │`)
       this.error('Repository cloning failed', {
         exit: 1,
       })
