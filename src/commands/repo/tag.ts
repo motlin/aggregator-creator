@@ -76,9 +76,9 @@ export default class RepoTag extends Command {
 
     this.log(`╭─── 🏷️ Adding ${chalk.cyan(topic)} topic to validated repositories...`)
     this.log(`│`)
-    this.log(`│ Scanning directory: ${chalk.cyan(directory)} for repositories to tag with topic: ${chalk.cyan(topic)}`)
+    this.log(`├──╮ 🔍 Scanning directory: ${chalk.cyan(directory)} for repositories to tag with topic: ${chalk.cyan(topic)}`)
     if (dryRun) {
-      this.log(chalk.yellow('Running in dry-run mode - no changes will be applied'))
+      this.log(`│  │ ${chalk.yellow('Running in dry-run mode - no changes will be applied')}`)
     }
 
     try {
@@ -88,7 +88,7 @@ export default class RepoTag extends Command {
       // Filter for directories only - these will be owner directories
       const ownerDirs = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name)
 
-      this.log(`Found ${chalk.cyan(ownerDirs.length)} owner directories to check`)
+      this.log(`│  │ Found ${chalk.cyan(ownerDirs.length)} owner directories to check`)
 
       // First pass: validate repositories and collect valid ones
       const validRepos: Array<{
@@ -218,8 +218,8 @@ export default class RepoTag extends Command {
       const {stdout} = await execa('git', ['-C', repoPath, 'remote', 'get-url', 'origin'])
 
       // Handle SSH and HTTPS remote URLs
-      const sshMatch = stdout.match(/git@github\.com:([^/]+)\/([^.]+)\.git/)
-      const httpsMatch = stdout.match(/https:\/\/github\.com\/([^/]+)\/([^.]+)\.git/)
+      const sshMatch = stdout.match(/git@github\.com:([^/]+)\/([^/]+)(\.git)?$/)
+      const httpsMatch = stdout.match(/https:\/\/github\.com\/([^/]+)\/([^/]+)(\.git)?$/)
 
       const match = sshMatch || httpsMatch
 
