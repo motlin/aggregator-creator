@@ -34,6 +34,19 @@ export const execa = async (command: string, args?: string[]): Promise<Result> =
         timedOut: false,
       } as Result
     }
+
+    if (args[1].includes('repo3.with.dots')) {
+      return {
+        stdout: 'https://github.com/example/repo3.with.dots.git',
+        stderr: '',
+        exitCode: 0,
+        command: `git ${args.join(' ')}`,
+        failed: false,
+        isCanceled: false,
+        killed: false,
+        timedOut: false,
+      } as Result
+    }
   }
 
   // GitHub API call for topics

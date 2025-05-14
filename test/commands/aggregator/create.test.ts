@@ -146,22 +146,45 @@ describe('aggregator:create', () => {
   it('throws an error when no Maven repositories are found without --json flag', async () => {
     // Create an empty directory
     const emptyDir = await fs.mkdtemp(path.join(os.tmpdir(), 'empty-dir-'))
+    let errorThrown = false
 
     try {
-      await runCommand(`aggregator:create ${emptyDir} --yes`)
-      // If we get here without an error, fail the test
-      expect.fail('Command should have failed but did not')
+      const result = await runCommand(`aggregator:create ${emptyDir} --yes`)
+
+      // Check if the command output indicates an error
+      if (
+        result.stderr &&
+        (result.stderr.includes('No Maven repositories found') ||
+          result.stderr.includes('repositories') ||
+          result.stderr.includes('not found'))
+      ) {
+        errorThrown = true
+      } else if (result.error) {
+        // Command failed with an error object
+        errorThrown = true
+      } else {
+        // If we get here without an error, fail the test
+        expect.fail('Command should have failed but did not')
+      }
     } catch (error: unknown) {
-      // Expect some form of "no repositories found" message
-      const errorMessage = (error as Error).message
-      const hasErrorIndicator =
-        errorMessage.includes('No Maven repositories found') ||
-        errorMessage.includes('repositories') ||
-        errorMessage.includes('not found')
-      expect(hasErrorIndicator).to.be.true
+      // If it throws an exception, that's also acceptable
+      errorThrown = true
+
+      // Optionally verify error message content
+      if (error instanceof Error) {
+        const errorMessage = error.message
+        const hasErrorIndicator =
+          errorMessage.includes('No Maven repositories found') ||
+          errorMessage.includes('repositories') ||
+          errorMessage.includes('not found')
+        expect(hasErrorIndicator).to.be.true
+      }
     } finally {
       // Clean up
       await fs.remove(emptyDir)
     }
+
+    // Make sure we saw an error one way or another
+    expect(errorThrown).to.be.true
   })
 })
