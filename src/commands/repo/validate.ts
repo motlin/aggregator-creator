@@ -48,7 +48,6 @@ export default class RepoValidate extends Command {
     const {args, flags} = await this.parse(RepoValidate)
     const {repoPath} = args
 
-    // Configure execa with verbose logging
     const execa = execa_({
       verbose: (verboseLine: string, {type}: {type: string}) => {
         switch (type) {
@@ -78,7 +77,6 @@ export default class RepoValidate extends Command {
     const startTime = Date.now()
 
     try {
-      // Check if path exists and is a directory
       const stats = await fs.stat(absolutePath)
       if (!stats.isDirectory()) {
         this.error(`Path is not a directory: ${absolutePath}`, {exit: 1})
@@ -222,9 +220,7 @@ export default class RepoValidate extends Command {
       return false
     }
 
-    // Run Maven validation using help:effective-pom
     try {
-      // The verbose listener configured in run() will handle showing the command and output
       await execa('mvn', ['help:effective-pom', '--quiet', '--file', pomPath])
       return true
     } catch (execError) {

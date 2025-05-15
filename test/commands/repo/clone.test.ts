@@ -2,7 +2,6 @@ import {runCommand} from '@oclif/test'
 import {expect} from 'chai'
 
 describe('repo:clone', () => {
-  // Mock execa module is automatically used since it's imported in the test directory
 
   beforeEach(() => {
     // Mock process.stdin.isTTY to true to force "No input provided" error

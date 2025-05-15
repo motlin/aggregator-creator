@@ -60,7 +60,6 @@ export async function defaultExecaMock(command: string, args?: string[]): Promis
 // This is needed because we can't directly modify ESM module properties
 export function setupMockInterceptor(): void {
   // This is just a stub for now - we can't actually use import.meta.resolve in tests
-  // Just using manual approach for now
 }
 
 // Helper function to create mock results

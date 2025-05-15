@@ -21,7 +21,6 @@ export default class RepoList extends Command {
     limit: Flags.integer({char: 'l', description: 'Max repositories'}),
   }
 
-  // Repository schema for validation
   private repoSchema = z.object({
     name: z.string(),
     owner: z.object({

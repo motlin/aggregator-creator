@@ -24,7 +24,6 @@ export default class RepoClone extends Command {
     const {args} = await this.parse(RepoClone)
     const {targetDirectory} = args
 
-    // Configure execa with verbose logging like repo:list
     const execa = execa_({
       verbose: (verboseLine: string, {type}: {type: string}) => {
         switch (type) {
@@ -167,9 +166,7 @@ export default class RepoClone extends Command {
     this.log(`│  ├──╮ [${chalk.yellow(index)}/${total}] ${chalk.yellow(repoName)}`)
 
     try {
-      // Use execa with verbose config to clone the repository
       await execa('gh', ['repo', 'clone', repoName, repoDir])
-      // Don't add anything here, the execa config will output completion
     } catch (error: unknown) {
       this.log(`│  │  │ ❌ Failed: ${error instanceof Error ? error.message : String(error)}`)
       this.log(`│  ├──╯`)

@@ -48,7 +48,6 @@ export default class RepoTag extends Command {
     const {directory} = args
     const {topic, dryRun, verbose, yes} = flags
 
-    // Configure execa with verbose logging similar to other commands
     const execa = execa_({
       verbose: (verboseLine: string, {type}: {type: string}) => {
         switch (type) {
@@ -92,7 +91,6 @@ export default class RepoTag extends Command {
 
       this.log(`│  │ Found ${chalk.cyan(ownerDirs.length)} owner directories to check`)
 
-      // First pass: validate repositories and collect valid ones
       const validRepos: Array<{
         path: string
         name: string

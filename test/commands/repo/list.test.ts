@@ -1,15 +1,12 @@
 import {runCommand} from '@oclif/test'
 import {expect} from 'chai'
 
-// Import mock execa for repo:list tests
-// This will be used instead of the real execa due to Node.js module resolution
 import './mock-execa-list'
 
 describe('repo:list', () => {
   it('should show error when no user flag is provided', async () => {
     try {
       await runCommand('repo:list')
-      // If we get here without an error, fail the test
       expect.fail('Command should have failed but did not')
     } catch (error: unknown) {
       expect((error as Error).message).to.contain('GitHub username/organization is required')
@@ -32,7 +29,6 @@ describe('repo:list', () => {
   })
 
   it('should output JSON when --json flag is provided', async () => {
-    // Sample repository data
     const sampleRepos = [
       {
         name: 'repo1',

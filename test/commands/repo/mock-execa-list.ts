@@ -40,9 +40,6 @@ const multiLangRepos = [
   },
 ]
 
-/**
- * Mock for the repo:list command test
- */
 export const execa = async (command: string, args?: string[]): Promise<Result> => {
   // GitHub CLI version check
   if (command === 'gh' && args?.[0] === '--version') {

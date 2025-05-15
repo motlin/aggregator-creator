@@ -277,7 +277,6 @@ export default class AggregatorCreate extends Command {
     this.log(`│`)
     this.log(`├──╮ 🔍 Scanning for Maven repositories in ${chalk.yellow(directoryPath)}...`)
 
-    // Find all potential Maven repositories (considering possible nesting like owner/repo structure)
     const mavenRepos: {path: string; relativePath: string}[] = []
     const skippedRepos: {path: string; relativePath: string; reason: string}[] = []
     let totalScanned = 0

@@ -10,7 +10,6 @@ const sandbox = createSandbox()
  * Mock inquirer to automatically return true for confirmation prompts
  */
 export function mockInquirer() {
-  // Create a default mock implementation
   const promptStub = sandbox.stub(inquirer, 'prompt').resolves({confirmed: true})
 
   return {

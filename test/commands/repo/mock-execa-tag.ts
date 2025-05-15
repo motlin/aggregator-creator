@@ -3,9 +3,6 @@
  */
 import type {Result} from 'execa'
 
-/**
- * Mock for the repo:tag command test
- */
 export const execa = async (command: string, args?: string[]): Promise<Result> => {
   // Mock git commands for repo information
   if (command === 'git' && args?.[0] === '-C' && args[2] === 'remote') {
