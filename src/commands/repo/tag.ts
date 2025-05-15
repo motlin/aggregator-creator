@@ -235,8 +235,8 @@ export default class RepoTag extends Command {
       const {stdout} = await execa('git', ['-C', repoPath, 'remote', 'get-url', 'origin'])
 
       // Handle SSH and HTTPS remote URLs
-      const sshMatch = stdout.match(/git@github\.com:([^/]+)\/([^/]+)(\.git)?$/)
-      const httpsMatch = stdout.match(/https:\/\/github\.com\/([^/]+)\/([^/]+)(\.git)?$/)
+      const sshMatch = stdout.match(/git@github\.[^\/]+\.com:([^/]+)\/([^/]+)(\.git)?$/)
+      const httpsMatch = stdout.match(/https:\/\/github\.[^\/]+\.com\/([^/]+)\/([^/]+)(\.git)?$/)
 
       const match = sshMatch || httpsMatch
 
