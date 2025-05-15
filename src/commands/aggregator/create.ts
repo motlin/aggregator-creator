@@ -80,18 +80,18 @@ export default class AggregatorCreate extends Command {
       return false
     }
   }
-  
+
   private async getMavenProjectAttribute(pomFile: string, attribute: string): Promise<string> {
     try {
       const result = await this.execute('mvn', ['-f', pomFile, 'help:evaluate', `-Dexpression=${attribute}`, '--quiet', '-DforceStdout'], {silent: true})
       if (typeof result.stdout === 'string') {
         return result.stdout;
       }
-      else {
+
         this.error(`│  ╰ ❌ Failed: ${result.stderr}`, {
           exit: 1,
         })
-      }
+
     } catch (error: unknown) {
       this.error(`│  ╰ ❌ Failed: ${error instanceof Error ? error.message : String(error)}`, {
         exit: 1,
@@ -103,15 +103,15 @@ export default class AggregatorCreate extends Command {
   private async isParentPom(pomFile: string): Promise<boolean> {
     try {
       const modules = await this.getMavenProjectAttribute(pomFile, "project.modules");
-      if (modules.length > 0 && modules != '<modules/>') {
+      if (modules.length > 0 && modules !== '<modules/>') {
         this.log(`│  │ ${chalk.yellow(pomFile)} is a parent POM...`)
         return true
       }
-      else { 
+
         this.log(`│  │ ${chalk.yellow(pomFile)} is not a parent POM...`)
         return false
-      }
-      
+
+
     } catch (error: unknown) {
       this.error(`│  ╰ ❌ Failed: ${error instanceof Error ? error.message : String(error)}`, {
         exit: 1,
@@ -121,28 +121,31 @@ export default class AggregatorCreate extends Command {
   }
 
   private async processPoms(allPoms: string[]) {
-    const allGAVs: MavenGAVCoords[] = [];
     this.log(`│  │ ⏳ Processing all found POM files for non parent POM files to add to the dependency management section...`)
+
     const gavPromises = allPoms.map(async (pom) => {
       const parentPom = await this.isParentPom(pom);
       if (!parentPom) {
-        const gav = await this.getGAVFromPom(pom);
-        allGAVs.push(gav);
+        return this.getGAVFromPom(pom);
       }
-    })
-    await Promise.all(gavPromises);
+      return null;
+    });
+
+    const gavResults = await Promise.all(gavPromises);
+    const allGAVs = gavResults.filter((gav): gav is MavenGAVCoords => gav !== null);
+
     if (allGAVs.length > 0) {
       this.log(`│  │ 📝 Adding to the dependency management section of the aggregator...`)
-      allGAVs.forEach(gav => {
+      for (const gav of allGAVs) {
         this.log(`│  │ ${chalk.green(`✅ Adding group ID: ${gav.getGroupId()}, artifact ID: ${gav.getArtifactId()}, and version: ${gav.getVersion()}`)}`)
-      })
+      }
     }
     else {
       this.log(`│  │ No GAVs found to add to the dependency management section of the aggregator...`);
     }
     return allGAVs;
   }
-  
+
   private async findPomFiles(dir: string): Promise<string[]> {
     try {
       await fs.ensureDir(path.dirname(dir))
@@ -153,7 +156,7 @@ export default class AggregatorCreate extends Command {
     const pomFiles = []
     const dirsToExplore = [dir]
     while (dirsToExplore.length > 0) {
-      const currentDir = dirsToExplore.pop() as string; 
+      const currentDir = dirsToExplore.pop() as string;
       try {
         const files = await fs.readdir(currentDir)
         if (files.length > 0) {
@@ -165,12 +168,12 @@ export default class AggregatorCreate extends Command {
             const results = await Promise.all(statPromises);
             for (const result of results) {
               if (result) {
-                const {filepath, stat, file} = result; 
+                const {filepath, stat, file} = result;
                 if (stat && stat.isDirectory()) {
                   dirsToExplore.push(filepath);
                 }
                 else if (stat && stat.isFile() && file === 'pom.xml' ) {
-                    pomFiles.push(filepath); 
+                    pomFiles.push(filepath);
                 }
               }
             }
@@ -188,8 +191,8 @@ export default class AggregatorCreate extends Command {
       const groupId = await this.getMavenProjectAttribute(pomFile, "project.groupId");
       const artifactId = await this.getMavenProjectAttribute(pomFile, "project.artifactId");
       const version = await this.getMavenProjectAttribute(pomFile, "project.version");
-      
-      return new MavenGAVCoords(groupId, artifactId, version); 
+
+      return new MavenGAVCoords(groupId, artifactId, version);
     } catch (error: unknown) {
       this.error(`│  ╰ ❌ Failed to collect GAV from ${pomFile}: ${error instanceof Error ? error.message : String(error)}`, {
         exit: 1,
@@ -395,13 +398,13 @@ export default class AggregatorCreate extends Command {
 
       return result
     }
-  
+
     const validModules = mavenRepos.map((repo) => repo.relativePath)
 
     for (const repo of mavenRepos) {
       this.log(`│  │ ${chalk.green(`✅ Found valid Maven repository: ${repo.relativePath}`)}`)
     }
-    const allPoms = await this.findPomFiles(directoryPath); 
+    const allPoms = await this.findPomFiles(directoryPath);
     const allGAVs = await this.processPoms(allPoms);
     this.log(`│  │`)
     this.log(`│  ├──╮ 📊 Repository scan summary:`)
