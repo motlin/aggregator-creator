@@ -98,7 +98,7 @@ workflow-test CLEAN="true": build
 
     if [ "${VALIDATED_COUNT}" -gt 0 ]; then
         echo "Step 4: Tag validated repositories using repo:tag"
-        ./bin/run.js repo:tag "${VALIDATED_REPOS}" --topic maven --dryRun
+        ./bin/run.js repo:tag "${VALIDATED_REPOS}" --topic maven
 
         echo "Step 5: List repositories with maven topic"
         ./bin/run.js repo:list --user motlin --topic maven --language Java --limit 100 --json > "${TEST_DIR}/maven-repos.json"

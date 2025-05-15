@@ -52,18 +52,18 @@ export default class RepoValidate extends Command {
       verbose: (verboseLine: string, {type}: {type: string}) => {
         switch (type) {
           case 'command': {
-            this.log(`│  ├──╮ ${verboseLine}`)
+            this.log(`│  │  ├──╮ ${verboseLine}`)
             break
           }
           case 'duration': {
-            this.log(`│  ├──╯ ${verboseLine}`)
+            this.log(`│  │  ├──╯ ${verboseLine}`)
             break
           }
           case 'output': {
             const MAX_LENGTH = 120
             const truncatedLine =
               verboseLine.length > MAX_LENGTH ? `${verboseLine.slice(0, Math.max(0, MAX_LENGTH))}...` : verboseLine
-            this.log(`│  │  │ ${truncatedLine}`)
+            this.log(`│  │  │  │ ${truncatedLine}`)
             break
           }
           default: {
