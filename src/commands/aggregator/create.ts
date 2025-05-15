@@ -120,6 +120,32 @@ export default class AggregatorCreate extends Command {
     }
   }
 
+  private async processPoms(allPoms: string[]) {
+    const allGAVs: MavenGAVCoords[] = []
+    this.log(
+      `│  │ ⏳ Processing all found POM files for non parent POM files to add to the dependency management section...`,
+    )
+    const gavPromises = allPoms.map(async (pom) => {
+      const parentPom = await this.isParentPom(pom)
+      if (!parentPom) {
+        const gav = await this.getGAVFromPom(pom)
+        allGAVs.push(gav)
+      }
+    })
+    await Promise.all(gavPromises)
+    if (allGAVs.length > 0) {
+      this.log(`│  │ 📝 Adding to the dependency management section of the aggregator...`)
+      for (const gav of allGAVs) {
+        this.log(
+          `│  │ ${chalk.green(`✅ Adding group ID: ${gav.getGroupId()}, artifact ID: ${gav.getArtifactId()}, and version: ${gav.getVersion()}`)}`,
+        )
+      }
+    } else {
+      this.log(`│  │ No GAVs found to add to the dependency management section of the aggregator...`)
+    }
+    return allGAVs
+  }
+
   private async findPomFiles(dir: string): Promise<string[]> {
     try {
       await fs.ensureDir(path.dirname(dir))
@@ -134,13 +160,20 @@ export default class AggregatorCreate extends Command {
       try {
         const files = await fs.readdir(currentDir)
         if (files.length > 0) {
-          for (const file of files) {
+          const statPromises = files.map(async (file) => {
             const filepath = path.join(currentDir, file)
             const stat = await fs.stat(filepath)
-            if (stat && stat.isDirectory()) {
-              dirsToExplore.push(filepath)
-            } else if (stat && stat.isFile() && file === 'pom.xml') {
-              pomFiles.push(filepath)
+            return {filepath, stat, file}
+          })
+          const results = await Promise.all(statPromises)
+          for (const result of results) {
+            if (result) {
+              const {filepath, stat, file} = result
+              if (stat && stat.isDirectory()) {
+                dirsToExplore.push(filepath)
+              } else if (stat && stat.isFile() && file === 'pom.xml') {
+                pomFiles.push(filepath)
+              }
             }
           }
         }
@@ -379,17 +412,7 @@ export default class AggregatorCreate extends Command {
       this.log(`│  │ ${chalk.green(`✅ Found valid Maven repository: ${repo.relativePath}`)}`)
     }
     const allPoms = await this.findPomFiles(directoryPath)
-    const allGAVs = []
-    for (const pom of allPoms) {
-      const parentPom = await this.isParentPom(pom)
-      if (!parentPom) {
-        const gav = await this.getGAVFromPom(pom)
-        allGAVs.push(gav)
-        this.log(
-          `│  │ ${chalk.green(`✅ Adding group ID: ${gav.getGroupId()}, artifact ID: ${gav.getArtifactId()}, and version: ${gav.getVersion()} to dependencyManagement section`)}`,
-        )
-      }
-    }
+    const allGAVs = await this.processPoms(allPoms)
     this.log(`│  │`)
     this.log(`│  ├──╮ 📊 Repository scan summary:`)
     this.log(`│  │  │ ${chalk.green(`✅ Found ${mavenRepos.length} valid Maven repositories`)}`)
