@@ -136,5 +136,5 @@ workflow-test CLEAN="true": build
     echo "🎉 Workflow test finished."
 
 # Run everything
-precommit: install build lint-fix format test manifest
+precommit: install build lint-fix format test
     @echo "✅ All checks and steps completed successfully."
