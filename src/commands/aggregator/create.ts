@@ -121,18 +121,21 @@ export default class AggregatorCreate extends Command {
   }
 
   private async processPoms(allPoms: string[]) {
-    const allGAVs: MavenGAVCoords[] = []
     this.log(
       `│  │ ⏳ Processing all found POM files for non parent POM files to add to the dependency management section...`,
     )
+
     const gavPromises = allPoms.map(async (pom) => {
       const parentPom = await this.isParentPom(pom)
       if (!parentPom) {
-        const gav = await this.getGAVFromPom(pom)
-        allGAVs.push(gav)
+        return this.getGAVFromPom(pom)
       }
+      return null
     })
-    await Promise.all(gavPromises)
+
+    const gavResults = await Promise.all(gavPromises)
+    const allGAVs = gavResults.filter((gav): gav is MavenGAVCoords => gav !== null)
+
     if (allGAVs.length > 0) {
       this.log(`│  │ 📝 Adding to the dependency management section of the aggregator...`)
       for (const gav of allGAVs) {
