@@ -86,9 +86,9 @@ describe('repo:tag', () => {
     const testSandbox = createSandbox()
 
     // Stub fs.readdir to return a mock repository structure with a repo containing dots
-    testSandbox.stub(fs, 'readdir').resolves([
-      {name: 'repo3.with.dots', isDirectory: () => true},
-    ] as unknown as fs.Dirent[])
+    testSandbox
+      .stub(fs, 'readdir')
+      .resolves([{name: 'repo3.with.dots', isDirectory: () => true}] as unknown as fs.Dirent[])
 
     // Stub path.resolve to return predictable paths
     testSandbox.stub(path, 'resolve').callsFake((p: string) => p)
