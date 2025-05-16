@@ -86,7 +86,6 @@ export default class RepoTag extends Command {
       const absolutePath = path.resolve(directory)
       const entries = await fs.readdir(absolutePath, {withFileTypes: true})
 
-      // Filter for directories only - these will be owner directories
       const ownerDirs = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name)
 
       this.log(`│  │ Found ${chalk.cyan(ownerDirs.length)} owner directories to check`)

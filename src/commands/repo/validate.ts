@@ -199,7 +199,6 @@ export default class RepoValidate extends Command {
   public async validateMavenRepo(repoPath: string, execa: typeof execa_, _verbose = false): Promise<boolean> {
     const absolutePath = path.resolve(repoPath)
 
-    // Check if directory exists
     try {
       const stats = await fs.stat(absolutePath)
       if (!stats.isDirectory()) {

@@ -48,7 +48,6 @@ export default class RepoList extends Command {
 
     try {
       this.log(`│  ├──╮ Building search query`)
-      // Build the GitHub API search query
       const topicQueries = topics.map((topic) => `topic:${topic}`).join(' ')
       const languageQueries = languages.map((language) => `language:${language}`).join(' ')
       const query = `user:${username} ${topicQueries} ${languageQueries}`.trim()

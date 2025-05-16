@@ -3,7 +3,6 @@
  */
 import type {Result} from 'execa'
 
-// Sample repository data for tests
 const sampleRepo = {
   name: 'repo1',
   owner: {login: 'testuser', type: 'User'},
@@ -41,7 +40,6 @@ const multiLangRepos = [
 ]
 
 export const execa = async (command: string, args?: string[]): Promise<Result> => {
-  // GitHub CLI version check
   if (command === 'gh' && args?.[0] === '--version') {
     return {
       stdout: 'gh version 2.0.0',
@@ -55,7 +53,6 @@ export const execa = async (command: string, args?: string[]): Promise<Result> =
     } as Result
   }
 
-  // GitHub CLI auth status
   if (command === 'gh' && args?.[0] === 'auth' && args?.[1] === 'status') {
     return {
       stdout: 'Logged in to github.com as username',
@@ -69,9 +66,7 @@ export const execa = async (command: string, args?: string[]): Promise<Result> =
     } as Result
   }
 
-  // GitHub API call for user repos
   if (command === 'gh' && args?.[0] === 'api') {
-    // Check for language filtering arguments
     const argString = args?.join(' ') || ''
     if (argString.includes('language:TypeScript') || argString.includes('language:Java')) {
       return {
@@ -86,7 +81,6 @@ export const execa = async (command: string, args?: string[]): Promise<Result> =
       } as Result
     }
 
-    // If json flag is present
     if (argString.includes('--json')) {
       return {
         stdout: JSON.stringify([sampleRepo]),
@@ -100,7 +94,6 @@ export const execa = async (command: string, args?: string[]): Promise<Result> =
       } as Result
     }
 
-    // Default API response
     return {
       stdout: JSON.stringify([sampleRepo]),
       stderr: '',
@@ -113,7 +106,6 @@ export const execa = async (command: string, args?: string[]): Promise<Result> =
     } as Result
   }
 
-  // Default successful response
   return {
     stdout: '',
     stderr: '',

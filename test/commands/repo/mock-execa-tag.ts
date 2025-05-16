@@ -4,7 +4,6 @@
 import type {Result} from 'execa'
 
 export const execa = async (command: string, args?: string[]): Promise<Result> => {
-  // Mock git commands for repo information
   if (command === 'git' && args?.[0] === '-C' && args[2] === 'remote') {
     if (args[1].includes('repo1')) {
       return {
@@ -46,7 +45,6 @@ export const execa = async (command: string, args?: string[]): Promise<Result> =
     }
   }
 
-  // GitHub API call for topics
   if (command === 'gh' && args?.[0] === 'api' && args[1]?.includes('/topics')) {
     return {
       stdout: JSON.stringify({names: ['existing-topic']}),
@@ -60,7 +58,6 @@ export const execa = async (command: string, args?: string[]): Promise<Result> =
     } as Result
   }
 
-  // GitHub CLI version check
   if (command === 'gh' && args?.[0] === '--version') {
     return {
       stdout: 'gh version 2.0.0',
@@ -74,7 +71,6 @@ export const execa = async (command: string, args?: string[]): Promise<Result> =
     } as Result
   }
 
-  // GitHub CLI auth status
   if (command === 'gh' && args?.[0] === 'auth' && args?.[1] === 'status') {
     return {
       stdout: 'Logged in to github.com as username',
@@ -88,7 +84,6 @@ export const execa = async (command: string, args?: string[]): Promise<Result> =
     } as Result
   }
 
-  // Default successful response
   return {
     stdout: 'mock stdout',
     stderr: '',
