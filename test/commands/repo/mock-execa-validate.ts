@@ -36,15 +36,12 @@ export const execa_ = (options?: {verbose?: (message: string, meta: unknown) => 
     if (options?.verbose) {
       options.verbose(`${command} ${args?.join(' ') || ''}`, {type: 'command'})
 
-      // Process started
       const result = await execa(command, args as string[])
 
-      // Log output if any
       if (result.stdout) {
         options.verbose(result.stdout, {type: 'output'})
       }
 
-      // Log completion
       options.verbose(`Completed in 0.1s`, {type: 'duration'})
 
       return result
@@ -53,7 +50,6 @@ export const execa_ = (options?: {verbose?: (message: string, meta: unknown) => 
     return execa(command, args as string[])
   }
 
-  // Add sync method to satisfy the type
   execaFn.sync = (command: string, args?: readonly string[]): Result =>
     ({
       command: `${command} ${args?.join(' ') || ''}`,

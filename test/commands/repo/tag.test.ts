@@ -4,14 +4,12 @@ import {createSandbox} from 'sinon'
 import fs from 'fs-extra'
 import path from 'node:path'
 
-// Import mock execa for repo:tag tests
 import './mock-execa-tag'
 
 describe('repo:tag', () => {
   const sandbox = createSandbox()
 
   beforeEach(() => {
-    // Stub fs.readdir to return a mock repository structure
     sandbox.stub(fs, 'readdir').resolves([
       {name: 'repo1', isDirectory: () => true},
       {name: 'repo2', isDirectory: () => true},
@@ -19,10 +17,8 @@ describe('repo:tag', () => {
       {name: 'not-a-dir', isDirectory: () => false},
     ] as unknown as fs.Dirent[])
 
-    // Stub path.resolve to return predictable paths
     sandbox.stub(path, 'resolve').callsFake((p: string) => p)
 
-    // Stub fs.pathExists for .git directory checks
     sandbox.stub(fs, 'pathExists').callsFake(async (gitPath: string) => {
       if (typeof gitPath === 'string' && gitPath.includes('repo1/.git')) return true
       if (typeof gitPath === 'string' && gitPath.includes('repo2/.git')) return true
@@ -103,7 +99,6 @@ describe('repo:tag', () => {
 
     const {stdout} = await runCommand('repo:tag ./test-repos --topic maven --dry-run --yes')
 
-    // The key expectation: the repo with dots in its name should be properly tagged
     expect(stdout).to.contain('✓ Valid Maven repository: repo3.with.dots')
     expect(stdout).to.contain('[DRY RUN] Would tag example/repo3.with.dots with topic: maven')
 
