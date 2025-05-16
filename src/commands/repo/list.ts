@@ -54,7 +54,6 @@ export default class RepoList extends Command {
       this.log(`│  │  │ Query: ${query}`)
       this.log(`│  ├──╯`)
 
-      // Use the execa instance from the run method
       this.log(`│  ├──╮ Executing GitHub API search`)
 
       // Execute GitHub search API call
@@ -76,7 +75,7 @@ export default class RepoList extends Command {
       }
 
       this.error(`Failed to fetch repositories: ${(error as Error).message}`, {exit: 1})
-      throw error // TypeScript needs this even though we'll never reach here
+      throw error
     }
   }
 
@@ -112,7 +111,6 @@ export default class RepoList extends Command {
     this.log(`│`)
     this.log(`├──╮ 🔍 Prerequisites`)
 
-    // Validate that GitHub CLI is installed
     try {
       this.log(`│  ├──╮ Check gh CLI`)
       await execa('gh', ['--version'])
@@ -122,7 +120,6 @@ export default class RepoList extends Command {
       })
     }
 
-    // Validate GitHub CLI authentication
     try {
       this.log(`│  ├──╮ Check gh auth status`)
       await execa('gh', ['auth', 'status'])
@@ -164,13 +161,12 @@ export default class RepoList extends Command {
       this.log(`│  ├──╯ ✅`)
       this.log(`├──╯ 🔍`)
 
-      // Return the repositories which will be output as JSON when --json flag is used
       this.log(`│`)
       this.log(`╰─── ✅ Repository listing complete`)
       return repositories
     } catch (error) {
       this.error(`Error: ${(error as Error).message}`, {exit: 1})
-      return [] // TypeScript needs this even though we'll never reach here
+      return []
     }
   }
 }

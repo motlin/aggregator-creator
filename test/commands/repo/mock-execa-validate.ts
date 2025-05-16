@@ -3,7 +3,6 @@
  */
 import type {Options, Result} from 'execa'
 
-// Fix the type for execa factory function
 type ExecaFactoryResult = {
   (file: string, arguments_?: readonly string[], options?: Options): Promise<Result>
   sync: (file: string, arguments_?: readonly string[], options?: Options) => Result
@@ -13,7 +12,6 @@ type ExecaFactoryResult = {
  * Mock for the repo:validate command test
  */
 export const execa = async (command: string, args?: string[]): Promise<Result> => {
-  // Mock Maven commands
   if (command === 'mvn' && args?.[0] === 'help:effective-pom') {
     return {
       command: 'mvn help:effective-pom',
@@ -27,7 +25,6 @@ export const execa = async (command: string, args?: string[]): Promise<Result> =
     } as Result
   }
 
-  // Default successful response
   return {
     stdout: 'mock stdout',
     stderr: '',
@@ -40,7 +37,6 @@ export const execa = async (command: string, args?: string[]): Promise<Result> =
   } as Result
 }
 
-// Add factory function that returns a configured execa function
 export const execa_ = (options?: {verbose?: (message: string, meta: unknown) => void}): ExecaFactoryResult => {
   const execaFn = async (command: string, args?: readonly string[]): Promise<Result> => {
     if (options?.verbose) {

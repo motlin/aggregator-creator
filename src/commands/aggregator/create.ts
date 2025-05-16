@@ -266,7 +266,6 @@ export default class AggregatorCreate extends Command {
     const {args, flags} = await this.parse(AggregatorCreate)
     const directoryPath = path.resolve(args.directory)
 
-    // Ensure directory exists
     try {
       await fs.ensureDir(directoryPath)
     } catch (error: unknown) {
@@ -382,7 +381,6 @@ export default class AggregatorCreate extends Command {
     if (mavenRepos.length === 0) {
       const elapsedTimeMs = Date.now() - startTime
 
-      // Prepare the result object for both JSON and non-JSON cases
       const result = {
         success: false,
         pomPath: '',
@@ -431,7 +429,6 @@ export default class AggregatorCreate extends Command {
     }
     this.log(`│  ├──╯`)
 
-    // Ask for confirmation unless yes flag is used
     const {yes} = flags
     let proceed = yes
 

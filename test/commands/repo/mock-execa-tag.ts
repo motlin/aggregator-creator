@@ -1,6 +1,3 @@
-/**
- * Custom mock execa for the repo:tag command tests
- */
 import type {Result} from 'execa'
 
 export const execa = async (command: string, args?: string[]): Promise<Result> => {

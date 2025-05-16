@@ -103,7 +103,6 @@ export default class RepoTag extends Command {
       for (const ownerDir of ownerDirs) {
         const ownerPath = path.join(absolutePath, ownerDir)
 
-        // Get repositories in this owner directory
         const repoEntries = await fs.readdir(ownerPath, {withFileTypes: true})
         const repoDirs = repoEntries.filter((entry) => entry.isDirectory()).map((entry) => entry.name)
 
@@ -114,20 +113,17 @@ export default class RepoTag extends Command {
 
           this.log(`│  ├──╮ Processing repository: ${chalk.cyan(`${ownerDir}/${repoName}`)}`)
 
-          // Check if it's a git repository
           if (!(await this.isGitRepository(repoPath))) {
             this.log(`│  │  │ ${chalk.yellow(`Skipping ${ownerDir}/${repoName} - not a git repository`)}`)
             this.log(`│  ├──╯`)
             continue
           }
 
-          // Validate as Maven repository
           const isValid = await this.validateMavenRepo(repoPath, execa, verbose)
 
           if (isValid) {
             this.log(`│  │  │ ${chalk.green(`✓ Valid Maven repository: ${ownerDir}/${repoName}`)}`)
 
-            // Get repository owner and name from remote URL
             const {owner, name} = await this.getRepoOwnerAndName(repoPath, execa)
 
             if (owner && name) {
@@ -147,14 +143,12 @@ export default class RepoTag extends Command {
         }
       }
 
-      // Log total repositories found
       this.log(`│  │`)
       this.log(`│  ├──╮ 📊 Summary:`)
       this.log(
         `│  │  │ ${chalk.cyan(`Checked ${totalRepos} total repositories across ${ownerDirs.length} owner directories`)}`,
       )
 
-      // Show confirmation with list of repositories to tag
       if (validRepos.length === 0) {
         this.log(`│  │  │ ${chalk.yellow('No valid Maven repositories found to tag.')}`)
         this.log(`│  ├──╯`)
@@ -168,7 +162,6 @@ export default class RepoTag extends Command {
       }
       this.log(`│  ├──╯`)
 
-      // Ask for confirmation unless in dry run mode or yes flag is used
       let proceed = dryRun || yes
 
       if (!proceed) {
@@ -231,7 +224,6 @@ export default class RepoTag extends Command {
     try {
       const {stdout} = await execa('git', ['-C', repoPath, 'remote', 'get-url', 'origin'])
 
-      // Handle SSH and HTTPS remote URLs
       const sshMatch = stdout.match(/git@github\.[^/]+\.com:([^/]+)\/([^/]+)(\.git)?$/)
       const httpsMatch = stdout.match(/https:\/\/github\.[^/]+\.com\/([^/]+)\/([^/]+)(\.git)?$/)
 
@@ -294,7 +286,6 @@ export default class RepoTag extends Command {
     const absolutePath = path.resolve(repoPath)
     if (verbose) this.log(`Validating Maven repo at: ${absolutePath}`)
 
-    // Check if directory exists
     try {
       const stats = await fs.stat(absolutePath)
       if (!stats.isDirectory()) {
@@ -304,7 +295,6 @@ export default class RepoTag extends Command {
       return false
     }
 
-    // Check for pom.xml
     const pomPath = path.join(absolutePath, 'pom.xml')
     try {
       const pomExists = await fs.pathExists(pomPath)
@@ -316,7 +306,6 @@ export default class RepoTag extends Command {
       return false
     }
 
-    // Run Maven validation using help:effective-pom
     try {
       // The verbose listener configured in run() will handle showing the command and output
       await execa('mvn', ['help:effective-pom', '--quiet', '--file', pomPath])

@@ -82,14 +82,11 @@ export default class RepoValidate extends Command {
         this.error(`Path is not a directory: ${absolutePath}`, {exit: 1})
       }
 
-      // Gather repositories to validate
       const repos: RepoInfo[] = []
 
-      // Check if this path is a specific repo or a collection of owner directories
       const hasPom = await fs.pathExists(path.join(absolutePath, 'pom.xml'))
 
       if (hasPom) {
-        // This is a single repository
         const repoName = path.basename(absolutePath)
         const ownerName = path.basename(path.dirname(absolutePath))
 
@@ -98,10 +95,9 @@ export default class RepoValidate extends Command {
           owner: ownerName,
           name: repoName,
           hasPom: true,
-          valid: false, // Will update during validation
+          valid: false,
         })
       } else {
-        // This is potentially a directory of owner directories
         const ownerDirs = await fs.readdir(absolutePath, {withFileTypes: true})
 
         for (const ownerDir of ownerDirs.filter((entry) => entry.isDirectory())) {
@@ -117,13 +113,12 @@ export default class RepoValidate extends Command {
               owner: ownerDir.name,
               name: repoDir.name,
               hasPom: repoHasPom,
-              valid: false, // Will update during validation
+              valid: false,
             })
           }
         }
       }
 
-      // Begin validation process
       this.log(`╭─── 🔍 Validating Maven repositories...`)
       this.log(`│`)
 
@@ -159,7 +154,6 @@ export default class RepoValidate extends Command {
         `╰─── ✅ Found ${chalk.green(validCount)} validated Maven ${validCount === 1 ? 'repository' : 'repositories'}`,
       )
 
-      // Handle output file
       if (flags.output && validRepos.length > 0) {
         const outputPath = path.resolve(flags.output)
         await fs.ensureDir(path.dirname(outputPath))
@@ -171,7 +165,6 @@ export default class RepoValidate extends Command {
         this.log(`├──╯`)
       }
 
-      // Handle copying repositories
       if (flags.copyTo && validRepos.length > 0) {
         const copyPath = path.resolve(flags.copyTo)
         await fs.ensureDir(copyPath)
@@ -188,7 +181,6 @@ export default class RepoValidate extends Command {
         this.log(`├──╯ ${chalk.green(`✅ Successfully copied repositories to: ${copyPath}`)}`)
       }
 
-      // Show elapsed time
       const elapsedMs = Date.now() - startTime
       this.debug(`Validation completed in ${elapsedMs}ms`)
     } catch (error) {
@@ -208,7 +200,6 @@ export default class RepoValidate extends Command {
       return false
     }
 
-    // Check for pom.xml
     const pomPath = path.join(absolutePath, 'pom.xml')
     try {
       const pomExists = await fs.pathExists(pomPath)
@@ -223,7 +214,6 @@ export default class RepoValidate extends Command {
       await execa('mvn', ['help:effective-pom', '--quiet', '--file', pomPath])
       return true
     } catch (execError) {
-      // The verbose listener will show the error output
       if (execError instanceof Error && execError.message.includes('ENOENT')) {
         this.log(`│  │ ${chalk.yellow('Maven (mvn) command not found. Please install Maven.')}`)
       }

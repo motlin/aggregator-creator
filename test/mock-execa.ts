@@ -11,7 +11,6 @@ import type {Result} from 'execa'
  * Default mock implementation for execa
  */
 export const defaultExecaMock = async (command: string, args?: string[]): Promise<Result> => {
-  // GitHub CLI version check
   if (command === 'gh' && args?.[0] === '--version') {
     return {
       stdout: 'gh version 2.0.0',
@@ -25,7 +24,6 @@ export const defaultExecaMock = async (command: string, args?: string[]): Promis
     } as Result
   }
 
-  // GitHub CLI auth status
   if (command === 'gh' && args?.[0] === 'auth' && args?.[1] === 'status') {
     return {
       stdout: 'Logged in to github.com as username',
@@ -39,7 +37,6 @@ export const defaultExecaMock = async (command: string, args?: string[]): Promis
     } as Result
   }
 
-  // Default successful response
   return {
     stdout: '',
     stderr: '',
@@ -67,7 +64,6 @@ export const mavenValidationMock = async (_command: string, _args?: string[]): P
     timedOut: false,
   }) as Result
 
-// Mock implementations
 export const execa = defaultExecaMock
 export const execaCommand = async (command: string): Promise<Result> => {
   const parts = command.split(' ')
