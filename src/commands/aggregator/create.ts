@@ -330,9 +330,8 @@ export default class AggregatorCreate extends Command {
       const entryPath = path.join(directoryPath, entry)
       const stats = await fs.stat(entryPath)
 
-      // TODO: Replace with assertion since this should always be a directory (filtered earlier)
       if (!stats.isDirectory()) {
-        continue
+        throw new Error(`Expected ${entryPath} to be a directory`)
       }
 
       totalScanned++
