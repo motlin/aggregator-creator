@@ -50,7 +50,7 @@ export default class RepoList extends Command {
       this.log(`│  ├──╮ Building search query`)
       const topicQueries = topics.map((topic) => `topic:${topic}`).join(' ')
       const languageQueries = languages.map((language) => `language:${language}`).join(' ')
-      const query = `user:${username} ${topicQueries} ${languageQueries}`.trim()
+      const query = `user:${username} ${topicQueries} ${languageQueries} archived:false`.trim()
       this.log(`│  │  │ Query: ${query}`)
       this.log(`│  ├──╯`)
 
