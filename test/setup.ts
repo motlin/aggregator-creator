@@ -1,6 +1,3 @@
-/**
- * Shared setup and mock configuration for tests
- */
 import {createSandbox} from 'sinon'
 import * as execa from 'execa'
 import type {Result} from 'execa'
@@ -11,9 +8,6 @@ export function restoreAllMocks(): void {
   sharedSandbox.restore()
 }
 
-/**
- * Mock result creator for easier test setup
- */
 export function createExecaResult(override: Partial<Result> = {}): Result {
   return {
     command: 'mock-command',
@@ -28,10 +22,6 @@ export function createExecaResult(override: Partial<Result> = {}): Result {
   } as Result
 }
 
-/**
- * A consistent API for mocking execa functions
- * Export mock handlers for specific scenarios
- */
 
 export const ghCliHandler = async (cmd: string, args?: string[]): Promise<Result> => {
   if (cmd === 'gh' && args?.[0] === '--version') {
