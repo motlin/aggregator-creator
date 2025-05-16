@@ -1,6 +1,3 @@
-/**
- * Custom mock execa for the repo:validate command tests
- */
 import type {Options, Result} from 'execa'
 
 type ExecaFactoryResult = {
@@ -8,9 +5,6 @@ type ExecaFactoryResult = {
   sync: (file: string, arguments_?: readonly string[], options?: Options) => Result
 }
 
-/**
- * Mock for the repo:validate command test
- */
 export const execa = async (command: string, args?: string[]): Promise<Result> => {
   if (command === 'mvn' && args?.[0] === 'help:effective-pom') {
     return {

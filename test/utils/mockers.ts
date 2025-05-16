@@ -1,13 +1,5 @@
-/**
- * Utility functions for mocking modules in tests
- */
 import type {Result} from 'execa'
 
-/**
- * Creates a mock execa module with custom implementation
- * @param mockFn Custom implementation for execa
- * @returns A mocked execa module
- */
 export function createMockExeca(mockFn: (command: string, args?: string[]) => Promise<Result>) {
   return {
     execa: mockFn,
@@ -15,9 +7,6 @@ export function createMockExeca(mockFn: (command: string, args?: string[]) => Pr
   }
 }
 
-/**
- * Default Mock for gh CLI version check and auth status
- */
 export async function defaultGhCliMock(command: string, args?: string[]): Promise<Result> {
   if (command === 'gh' && args?.[0] === '--version') {
     return {

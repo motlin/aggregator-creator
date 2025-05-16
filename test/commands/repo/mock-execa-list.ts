@@ -1,6 +1,3 @@
-/**
- * Custom mock execa for the repo:list command tests
- */
 import type {Result} from 'execa'
 
 const sampleRepo = {

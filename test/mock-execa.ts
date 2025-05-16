@@ -1,15 +1,4 @@
-/**
- * Mock execa for tests
- *
- * This approach works without sinon.stub by simply providing a mock module
- * that can be imported directly in tests. Since the file is in the test directory,
- * it won't be used in production.
- */
 import type {Result} from 'execa'
-
-/**
- * Default mock implementation for execa
- */
 export const defaultExecaMock = async (command: string, args?: string[]): Promise<Result> => {
   if (command === 'gh' && args?.[0] === '--version') {
     return {
@@ -49,9 +38,6 @@ export const defaultExecaMock = async (command: string, args?: string[]): Promis
   } as Result
 }
 
-/**
- * Mock for validating Maven repositories
- */
 export const mavenValidationMock = async (_command: string, _args?: string[]): Promise<Result> =>
   ({
     command: 'mvn help:effective-pom',

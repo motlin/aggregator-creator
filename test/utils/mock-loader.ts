@@ -1,8 +1,3 @@
-/**
- * Utility for mocking execa in tests
- * This is needed because in ESM modules, properties are read-only,
- * so we can't directly monkey-patch them.
- */
 import type {Result} from 'execa'
 
 // Store mocked functions
@@ -11,27 +6,15 @@ const mockedFunctions = new Map<string, MockImplementation>()
 // Type for a mock implementation
 type MockImplementation = (command: string, args?: string[]) => Promise<Result>
 
-/**
- * Mock a specific function in a module
- * @param moduleName Module identifier
- * @param functionName Function name to mock
- * @param mockImplementation Mock implementation
- */
 export function mockFunction(moduleName: string, functionName: string, mockImplementation: MockImplementation): void {
   const key = `${moduleName}:${functionName}`
   mockedFunctions.set(key, mockImplementation)
 }
 
-/**
- * Reset all mocks
- */
 export function resetMocks(): void {
   mockedFunctions.clear()
 }
 
-/**
- * Default execa mock that returns a successful result
- */
 export async function defaultExecaMock(command: string, args?: string[]): Promise<Result> {
   if (command === 'gh' && args?.[0] === '--version') {
     return {
