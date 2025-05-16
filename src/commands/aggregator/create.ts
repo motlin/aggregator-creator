@@ -103,7 +103,6 @@ export default class AggregatorCreate extends Command {
         this.log(`│  │ ✅ ${chalk.yellow(pomFile)} is a parent POM`)
         return true
       }
-
       this.log(`│  │ ❌ ${chalk.yellow(pomFile)} is not a parent POM`)
       return false
     } catch (error: unknown) {
