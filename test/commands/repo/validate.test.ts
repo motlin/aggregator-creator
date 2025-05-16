@@ -4,7 +4,6 @@ import fs from 'fs-extra'
 import path from 'node:path'
 import {createSandbox} from 'sinon'
 
-// Import mock execa for repo:validate tests
 import './mock-execa-validate'
 
 describe('repo:validate', () => {
@@ -30,7 +29,6 @@ describe('repo:validate', () => {
       await runCommand(`repo:validate ${nonExistentPath}`)
       expect.fail('Command should have failed')
     } catch (error: unknown) {
-      // In OCLIF v4, errors thrown with exit: 1 will have exit property
       const typedError = error as {exit?: number; message: string}
       expect(typedError.exit).to.equal(1)
       expect(typedError.message).to.contain('Directory does not exist')

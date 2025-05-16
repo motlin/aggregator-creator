@@ -56,10 +56,8 @@ export default class RepoList extends Command {
 
       this.log(`│  ├──╮ Executing GitHub API search`)
 
-      // Execute GitHub search API call
       const args = ['api', '-X', 'GET', 'search/repositories', '-f', `q=${query}`, '--jq', '.items']
 
-      // Add per_page parameter only if limit is specified
       if (limit) {
         args.splice(6, 0, '-f', `per_page=${limit}`)
         this.log(`│  │  │ Limit: ${limit}`)
@@ -149,7 +147,6 @@ export default class RepoList extends Command {
         return []
       }
 
-      // Display human-readable output if not in JSON mode
       this.log(`│  ├──╮ 📋 Results: ${repositories.length} repositories`)
 
       for (const repo of repositories) {

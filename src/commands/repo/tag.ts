@@ -99,7 +99,6 @@ export default class RepoTag extends Command {
 
       let totalRepos = 0
 
-      // Process repositories with owner/repo structure
       for (const ownerDir of ownerDirs) {
         const ownerPath = path.join(absolutePath, ownerDir)
 
@@ -187,7 +186,6 @@ export default class RepoTag extends Command {
         this.log(`│  ├──╯`)
       }
 
-      // Second pass: tag repositories
       this.log(`│  │`)
       this.log(`│  ├──╮ 🏷️ ${chalk.cyan('Tagging repositories...')}`)
 
@@ -307,11 +305,9 @@ export default class RepoTag extends Command {
     }
 
     try {
-      // The verbose listener configured in run() will handle showing the command and output
       await execa('mvn', ['help:effective-pom', '--quiet', '--file', pomPath])
       return true
     } catch (execError) {
-      // The verbose listener will show the error output
       if (execError instanceof Error && execError.message.includes('ENOENT')) {
         this.log(`│  │ ${chalk.yellow('Maven (mvn) command not found. Please install Maven.')}`)
       }
