@@ -37,8 +37,7 @@ export async function defaultExecaMock(command: string, args?: string[]): Promis
   } as Result
 }
 
-export function setupMockInterceptor(): void {
-}
+export function setupMockInterceptor(): void {}
 
 export function createMockResult(override: Partial<Result> = {}): Result {
   return {

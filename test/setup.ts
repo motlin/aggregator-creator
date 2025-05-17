@@ -22,7 +22,6 @@ export function createExecaResult(override: Partial<Result> = {}): Result {
   } as Result
 }
 
-
 export const ghCliHandler = async (cmd: string, args?: string[]): Promise<Result> => {
   if (cmd === 'gh' && args?.[0] === '--version') {
     return createExecaResult({

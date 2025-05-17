@@ -2,7 +2,6 @@ import {runCommand} from '@oclif/test'
 import {expect} from 'chai'
 
 describe('repo:clone', () => {
-
   beforeEach(() => {
     Object.defineProperty(process.stdin, 'isTTY', {value: true})
   })
