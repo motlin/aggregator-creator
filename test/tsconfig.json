@@ -1,15 +1,15 @@
 {
-  "compilerOptions": {
-    "noEmit": true,
-    "skipLibCheck": true,
-    "skipDefaultLibCheck": true,
-    "strict": true,
-    "module": "Node16",
+	"compilerOptions": {
+		"noEmit": true,
+		"skipLibCheck": true,
+		"skipDefaultLibCheck": true,
+		"strict": true,
+		"module": "Node16",
     "target": "es2022",
-    "moduleResolution": "node16",
-    "composite": true,
+		"moduleResolution": "node16",
+	"composite": true,
     "esModuleInterop": true
   },
   "include": ["./**/*"],
-  "references": [{"path": "../src"}]
+	"references": [{"path": "../src"}]
 }
