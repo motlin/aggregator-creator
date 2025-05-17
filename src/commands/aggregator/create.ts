@@ -104,13 +104,12 @@ export default class AggregatorCreate extends Command {
 
   private async isParentPom(pomFile: string): Promise<boolean> {
     try {
-      const modules = await this.getMavenProjectAttribute(pomFile, 'project.modules')
+      const modules = await this.getMavenProjectAttribute(pomFile, "project.modules");
       if (modules.length > 0 && modules !== '<modules/>') {
-        this.log(`│  │ ${chalk.yellow(pomFile)} is a parent POM...`)
+        this.log(`│  │ ${chalk.yellow(pomFile)} is a parent POM...`);
         return true
       }
-
-      this.log(`│  │ ${chalk.yellow(pomFile)} is not a parent POM...`)
+      this.log(`│  │ ${chalk.yellow(pomFile)} is not a parent POM...`);
       return false
     } catch (error: unknown) {
       this.error(`│  ╰ ❌ Failed: ${error instanceof Error ? error.message : String(error)}`, {
