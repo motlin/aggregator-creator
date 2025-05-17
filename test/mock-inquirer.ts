@@ -1,16 +1,16 @@
-import {createSandbox} from 'sinon'
-import * as inquirer from 'inquirer'
+import {createSandbox} from 'sinon';
+import * as inquirer from 'inquirer';
 
-const sandbox = createSandbox()
+const sandbox = createSandbox();
 
 export function mockInquirer() {
-  const promptStub = sandbox.stub(inquirer, 'prompt').resolves({confirmed: true})
+	const promptStub = sandbox.stub(inquirer, 'prompt').resolves({confirmed: true});
 
-  return {
-    promptStub,
-  }
+	return {
+		promptStub,
+	};
 }
 
 export function restoreInquirerMocks() {
-  sandbox.restore()
+	sandbox.restore();
 }

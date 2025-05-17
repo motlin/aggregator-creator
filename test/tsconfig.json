@@ -1,12 +1,12 @@
 {
-  "extends": "../tsconfig",
-  "compilerOptions": {
-    "noEmit": true,
-    "skipLibCheck": true,
-    "skipDefaultLibCheck": true,
-    "noImplicitAny": false,
-    "strict": false,
-    "strictFunctionTypes": false
-  },
-  "references": [{"path": ".."}]
+	"extends": "../tsconfig",
+	"compilerOptions": {
+		"noEmit": true,
+		"skipLibCheck": true,
+		"skipDefaultLibCheck": true,
+		"noImplicitAny": false,
+		"strict": false,
+		"strictFunctionTypes": false
+	},
+	"references": [{"path": ".."}]
 }

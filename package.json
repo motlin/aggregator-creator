@@ -1,88 +1,88 @@
 {
-  "name": "aggregator-creator",
-  "description": "CLI for managing Maven repositories and creating aggregator POMs",
-  "version": "0.0.0",
-  "author": "Craig P. Motlin",
-  "bin": {
-    "aggregator": "./bin/run.js"
-  },
-  "bugs": "https://github.com/motlin/aggregator-creator/issues",
-  "dependencies": {
-    "@oclif/core": "^4",
-    "@oclif/plugin-help": "^6",
-    "chalk": "^5.4.1",
-    "execa": "^9.5.2",
-    "fs-extra": "^11.3.0",
-    "inquirer": "^12.6.1",
-    "log-update": "^6.1.0",
-    "xml2js": "^0.6.2",
-    "xmlbuilder2": "^3.1.1",
-    "zod": "^3.24.3"
-  },
-  "devDependencies": {
-    "@eslint/compat": "^1",
-    "@oclif/prettier-config": "^0.2.1",
-    "@oclif/test": "^4",
-    "@types/chai": "^4",
-    "@types/fs-extra": "^11.0.4",
-    "@types/mocha": "^10",
-    "@types/node": "^18",
-    "@types/sinon": "^17.0.4",
-    "chai": "^4",
-    "eslint": "^9",
-    "eslint-config-oclif": "^6",
-    "eslint-config-prettier": "^10",
-    "mocha": "^10",
-    "oclif": "^4",
-    "prettier": "^3.5.3",
-    "shx": "^0.3.3",
-    "sinon": "^20.0.0",
-    "ts-node": "^10",
-    "typescript": "^5"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "files": [
-    "./bin",
-    "./dist",
-    "./oclif.manifest.json"
-  ],
-  "homepage": "https://github.com/motlin/aggregator-creator",
-  "keywords": [
-    "oclif"
-  ],
-  "license": "Apache 2.0",
-  "main": "dist/index.js",
-  "type": "module",
-  "oclif": {
-    "bin": "aggregator",
-    "dirname": "aggregator",
-    "commands": "./dist/commands",
-    "plugins": [
-      "@oclif/plugin-help"
-    ],
-    "topicSeparator": " ",
-    "topics": {
-      "repo": {
-        "description": "Repository management commands"
-      },
-      "aggregator": {
-        "description": "Maven aggregator POM management"
-      }
-    }
-  },
-  "repository": "motlin/aggregator-creator",
-  "scripts": {
-    "build": "shx rm -rf dist && tsc -b",
-    "lint": "eslint",
-    "lint:fix": "eslint --fix",
-    "format": "prettier --write \"**/*.{ts,json,yaml,yml}\"",
-    "postpack": "shx rm -f oclif.manifest.json",
-    "posttest": "npm run lint",
-    "prepack": "oclif manifest && oclif readme",
-    "test": "TS_NODE_TRANSPILE_ONLY=1 mocha --forbid-only \"test/**/*.test.ts\"",
-    "version": "oclif readme && git add README.md"
-  },
-  "types": "dist/index.d.ts"
+	"name": "aggregator-creator",
+	"description": "CLI for managing Maven repositories and creating aggregator POMs",
+	"version": "0.0.0",
+	"author": "Craig P. Motlin",
+	"bin": {
+		"aggregator": "./bin/run.js"
+	},
+	"bugs": "https://github.com/motlin/aggregator-creator/issues",
+	"dependencies": {
+		"@oclif/core": "^4",
+		"@oclif/plugin-help": "^6",
+		"chalk": "^5.4.1",
+		"execa": "^9.5.2",
+		"fs-extra": "^11.3.0",
+		"inquirer": "^12.6.1",
+		"log-update": "^6.1.0",
+		"xml2js": "^0.6.2",
+		"xmlbuilder2": "^3.1.1",
+		"zod": "^3.24.3"
+	},
+	"devDependencies": {
+		"@eslint/compat": "^1",
+		"@oclif/prettier-config": "^0.2.1",
+		"@oclif/test": "^4",
+		"@types/chai": "^4",
+		"@types/fs-extra": "^11.0.4",
+		"@types/mocha": "^10",
+		"@types/node": "^18",
+		"@types/sinon": "^17.0.4",
+		"chai": "^4",
+		"eslint": "^9",
+		"eslint-config-oclif": "^6",
+		"eslint-config-prettier": "^10",
+		"mocha": "^10",
+		"oclif": "^4",
+		"prettier": "^3.5.3",
+		"shx": "^0.3.3",
+		"sinon": "^20.0.0",
+		"ts-node": "^10",
+		"typescript": "^5"
+	},
+	"engines": {
+		"node": ">=18.0.0"
+	},
+	"files": [
+		"./bin",
+		"./dist",
+		"./oclif.manifest.json"
+	],
+	"homepage": "https://github.com/motlin/aggregator-creator",
+	"keywords": [
+		"oclif"
+	],
+	"license": "Apache 2.0",
+	"main": "dist/index.js",
+	"type": "module",
+	"oclif": {
+		"bin": "aggregator",
+		"dirname": "aggregator",
+		"commands": "./dist/commands",
+		"plugins": [
+			"@oclif/plugin-help"
+		],
+		"topicSeparator": " ",
+		"topics": {
+			"repo": {
+				"description": "Repository management commands"
+			},
+			"aggregator": {
+				"description": "Maven aggregator POM management"
+			}
+		}
+	},
+	"repository": "motlin/aggregator-creator",
+	"scripts": {
+		"build": "shx rm -rf dist && tsc -b",
+		"lint": "eslint",
+		"lint:fix": "eslint --fix",
+		"format": "prettier --write \"**/*.{ts,json,yaml,yml}\"",
+		"postpack": "shx rm -f oclif.manifest.json",
+		"posttest": "npm run lint",
+		"prepack": "oclif manifest && oclif readme",
+		"test": "TS_NODE_TRANSPILE_ONLY=1 mocha --forbid-only \"test/**/*.test.ts\"",
+		"version": "oclif readme && git add README.md"
+	},
+	"types": "dist/index.d.ts"
 }

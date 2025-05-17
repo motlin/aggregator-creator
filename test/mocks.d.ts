@@ -1,9 +1,9 @@
-import 'execa'
-import type {Result as ExecaResult} from 'execa'
+import 'execa';
+import type {Result as ExecaResult} from 'execa';
 
 declare module 'execa' {
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  interface ExecaDefault {}
+	// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+	interface ExecaDefault {}
 
-  type r = ExecaResult
+	type r = ExecaResult;
 }
