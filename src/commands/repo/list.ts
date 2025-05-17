@@ -87,30 +87,28 @@ export default class RepoList extends Command {
     }
   }
 
-  private async getAllOrgs(execa: typeof execa_,): Promise<string[]> {
+  private async getAllOrgs(execa: typeof execa_): Promise<string[]> {
     this.log(`├──╮ 🔍 Fetching all GitHub orgs...`)
 
     try {
-
       // Use the execa instance from the run method
       this.log(`│  ├──╮ Executing GitHub API: gh api -X GET /organizations --jq '.[].login'`)
 
       // Execute GitHub search API call
       const args = ['api', '-X', 'GET', '--paginate', '/organizations', '--jq', '.[].login']
 
-
       const {stdout} = await execa('gh', args)
-    
-      const orgs = stdout.split('\n').filter(Boolean);
+
+      const orgs = stdout.split('\n').filter(Boolean)
       this.log(`│  │ Found ${orgs.length} orgs: ${orgs}...`)
-      return orgs;
+      return orgs
     } catch (error) {
       if (error instanceof z.ZodError) {
         this.error('Invalid repository data format received from GitHub API', {exit: 1})
       }
 
       this.error(`Failed to get all orgs: ${(error as Error).message}`, {exit: 1})
-      throw error 
+      throw error
     }
   }
 
@@ -166,19 +164,22 @@ export default class RepoList extends Command {
     this.log(`│`)
 
     if (!flags.user && !flags.allOrgs) {
-      this.error('GitHub username/organization is required if --allOrgs flag is not in use. Use either the --user or --allOrgs flag.', {exit: 1})
+      this.error(
+        'GitHub username/organization is required if --allOrgs flag is not in use. Use either the --user or --allOrgs flag.',
+        {exit: 1},
+      )
     }
     if (flags.user && flags.allOrgs) {
       this.error('--user and --allOrgs flag cannot be used at the same time. Set only one.')
     }
     let orgs: string[] = []
     if (flags.user) {
-      orgs = [flags.user];
+      orgs = [flags.user]
     }
     if (flags.allOrgs) {
-      orgs = await this.getAllOrgs(execa);
+      orgs = await this.getAllOrgs(execa)
     }
-    let allRepositories: z.infer<typeof this.repositoriesSchema> = [];
+    let allRepositories: z.infer<typeof this.repositoriesSchema> = []
     for (const user of orgs) {
       try {
         const repositories = await this.fetchRepositories(
@@ -188,27 +189,27 @@ export default class RepoList extends Command {
           flags.limit,
           execa,
         )
-  
+
         if (repositories.length === 0) {
           this.log(`├──╯ ℹ️ No repositories in ${user} found matching the criteria.`)
           this.log(`│`)
-          continue; 
+          continue
         }
-  
+
         // Display human-readable output if not in JSON mode
         this.log(`│  ├──╮ 📋 Results of searching ${user}: ${repositories.length} repositories`)
-  
+
         for (const repo of repositories) {
           const language = repo.language || 'No language'
           const topics = repo.topics && repo.topics.length > 0 ? `Topics: [${repo.topics.join(', ')}]` : 'No topics'
-  
+
           this.log(`│  │  │ ${repo.owner.login}/${repo.name} (${language}) ${topics}`)
         }
         this.log(`│  ├──╯ ✅`)
         this.log(`├──╯ 🔍`)
         this.log(`│`)
         this.log(`╰─── ✅ Repository listing complete for ${user}`)
-        allRepositories = this.repositoriesSchema.parse([...allRepositories, ...repositories]);
+        allRepositories = this.repositoriesSchema.parse([...allRepositories, ...repositories])
       } catch (error) {
         this.error(`Error: ${(error as Error).message}`, {exit: 1})
         return []
@@ -217,7 +218,7 @@ export default class RepoList extends Command {
     this.log(`├── ℹ️ ${allRepositories.length} repositories found across all orgs matching the criteria.`)
     this.log(`│`)
 
-    let display =  flags.yes
+    let display = flags.yes || this.jsonEnabled()
     if (!display) {
       this.log(`│  │`)
       this.log(`│  ├──╮ 🤔 Confirmation`)
@@ -230,17 +231,17 @@ export default class RepoList extends Command {
           default: false,
         },
       ])
-      display = display || confirmed;
+      display = display || confirmed
       if (!display) {
         this.log(`│  │  │ ${chalk.yellow('Not displaying repositories...')}`)
         this.log(`│  ╰──╯`)
-        return allRepositories; 
+        return allRepositories
       }
       this.log(`│  ╰──╯`)
     }
 
     const allReposSimplified = allRepositories.map((repo) => `${repo.name}/${repo.owner.login}`)
     this.log(`╰─── ✅ All repositories found: ${chalk.green(`${allReposSimplified}`)}`)
-    return allRepositories;
+    return allRepositories
   }
 }
