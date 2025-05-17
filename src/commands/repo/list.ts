@@ -215,7 +215,7 @@ export default class RepoList extends Command {
     this.log(`├── ℹ️ ${allRepositories.length} repositories found across all orgs matching the criteria.`)
     this.log(`│`)
 
-    let display = flags.yes
+    let display = flags.yes || this.jsonEnabled()
     if (!display) {
       this.log(`│  │`)
       this.log(`│  ├──╮ 🤔 Confirmation`)
