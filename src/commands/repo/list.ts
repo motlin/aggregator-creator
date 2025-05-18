@@ -6,18 +6,22 @@ export default class RepoList extends Command {
   static override description = 'List GitHub repositories based on filters'
 
   static override examples = [
+    '<%= config.bin %> <%= command.id %> --limit 100',
     '<%= config.bin %> <%= command.id %> --user motlin --limit 100',
     '<%= config.bin %> <%= command.id %> --user motlin --language Java --limit 100',
     '<%= config.bin %> <%= command.id %> --user motlin --topic maven --language Java --json',
     '<%= config.bin %> <%= command.id %> --user motlin --limit 100 --json',
+    '<%= config.bin %> <%= command.id %> --include-forks --include-archived',
   ]
 
   static override enableJsonFlag = true
 
   static override flags = {
-    user: Flags.string({char: 'u', description: 'GitHub username/org'}),
+    user: Flags.string({char: 'u', description: 'GitHub username/org to filter by'}),
     topic: Flags.string({char: 't', description: 'Topic filter', multiple: true}),
     language: Flags.string({char: 'g', description: 'Language filter', multiple: true}),
+    'include-forks': Flags.boolean({description: 'Include forked repositories', default: false}),
+    'include-archived': Flags.boolean({description: 'Include archived repositories', default: false}),
     limit: Flags.integer({char: 'l', description: 'Max repositories'}),
   }
 
@@ -38,19 +42,36 @@ export default class RepoList extends Command {
   private repositoriesSchema = z.array(this.repoSchema)
 
   private async fetchRepositories(
-    username: string,
+    username: string | undefined,
     topics: string[] = [],
     languages: string[] = [],
     limit: number | undefined,
+    includeForks: boolean,
+    includeArchived: boolean,
     execa: typeof execa_,
   ): Promise<z.infer<typeof this.repositoriesSchema>> {
-    this.log(`├──╮ 🔍 Fetching GitHub repositories for user: ${username}`)
+    this.log(`├──╮ 🔍 Fetching GitHub repositories${username ? ` for user: ${username}` : ''}`)
 
     try {
       this.log(`│  ├──╮ Building search query`)
       const topicQueries = topics.map((topic) => `topic:${topic}`).join(' ')
       const languageQueries = languages.map((language) => `language:${language}`).join(' ')
-      const query = `user:${username} ${topicQueries} ${languageQueries}`.trim()
+      let query = ''
+
+      if (username) {
+        query += `user:${username} `
+      }
+
+      query += `${topicQueries} ${languageQueries}`
+
+      if (!includeForks) {
+        query += ' fork:false'
+      }
+
+      if (!includeArchived) {
+        query += ' archived:false'
+      }
+
       this.log(`│  │  │ Query: ${query}`)
       this.log(`│  ├──╯`)
 
@@ -128,16 +149,14 @@ export default class RepoList extends Command {
     this.log(`├──╯ ✅ Prerequisites complete`)
     this.log(`│`)
 
-    if (!flags.user) {
-      this.error('GitHub username/organization is required. Use --user flag.', {exit: 1})
-    }
-
     try {
       const repositories = await this.fetchRepositories(
         flags.user,
         flags.topic ? (Array.isArray(flags.topic) ? flags.topic : [flags.topic]) : [],
         flags.language ? (Array.isArray(flags.language) ? flags.language : [flags.language]) : [],
         flags.limit,
+        flags['include-forks'],
+        flags['include-archived'],
         execa,
       )
 

@@ -4,13 +4,12 @@ import {expect} from 'chai'
 import './mock-execa-list'
 
 describe('repo:list', () => {
-  it('should show error when no user flag is provided', async () => {
-    try {
-      await runCommand('repo:list')
-      expect.fail('Command should have failed but did not')
-    } catch (error: unknown) {
-      expect((error as Error).message).to.contain('GitHub username/organization is required')
-    }
+  it('should fetch repositories from all organizations when no user flag is provided', async () => {
+    const {stdout} = await runCommand('repo:list')
+    expect(stdout).to.contain('org1/repo1')
+    expect(stdout).to.contain('org2/repo2')
+    expect(stdout).to.contain('Java')
+    expect(stdout).to.contain('TypeScript')
   })
 
   it('should fetch repositories for specified user', async () => {
@@ -47,5 +46,23 @@ describe('repo:list', () => {
     const {stdout} = await runCommand('repo:list --user testuser --json')
     const parsedOutput = JSON.parse(stdout)
     expect(parsedOutput).to.deep.equal(sampleRepos)
+  })
+
+  it('should include forked repositories when --include-forks flag is provided', async () => {
+    const {stdout} = await runCommand('repo:list --include-forks')
+    expect(stdout).to.contain('otheruser/forked-repo')
+    expect(stdout).to.contain('JavaScript')
+  })
+
+  it('should include archived repositories when --include-archived flag is provided', async () => {
+    const {stdout} = await runCommand('repo:list --include-archived')
+    expect(stdout).to.contain('thirduser/archived-repo')
+    expect(stdout).to.contain('Python')
+  })
+
+  it('should support combining include flags', async () => {
+    const {stdout} = await runCommand('repo:list --include-forks --include-archived')
+    expect(stdout).to.contain('otheruser/forked-repo')
+    expect(stdout).to.contain('thirduser/archived-repo')
   })
 })
