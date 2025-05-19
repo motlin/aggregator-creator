@@ -1,7 +1,7 @@
 import {Args, Command, Flags} from '@oclif/core'
 import fs from 'fs-extra'
 import path from 'node:path'
-import {execa, type Options, type Result} from 'execa'
+import {execa as _execa, type Options, type Result} from 'execa'
 import {create} from 'xmlbuilder2'
 import chalk from 'chalk'
 import inquirer from 'inquirer'
@@ -51,6 +51,7 @@ export default class AggregatorCreate extends Command {
     command: string,
     args: string[] = [],
     options: Options & {silent?: boolean} = {},
+    execaFn = _execa,
   ): Promise<Result> {
     const silent = options.silent === true
 
@@ -59,7 +60,7 @@ export default class AggregatorCreate extends Command {
     }
 
     try {
-      return await execa(command, args, options)
+      return await execaFn(command, args, options)
     } catch (error: unknown) {
       if (!silent) {
         this.error(`├─ Command failed: ${command} ${args.join(' ')}`)
@@ -80,12 +81,13 @@ export default class AggregatorCreate extends Command {
     }
   }
 
-  private async getMavenProjectAttribute(pomFile: string, attribute: string): Promise<string> {
+  private async getMavenProjectAttribute(pomFile: string, attribute: string, execaFn = _execa): Promise<string> {
     try {
       const result = await this.execute(
         'mvn',
         ['-f', pomFile, 'help:evaluate', `-Dexpression=${attribute}`, '--quiet', '-DforceStdout'],
         {silent: true},
+        execaFn
       )
       if (typeof result.stdout === 'string') {
         return result.stdout
@@ -102,15 +104,15 @@ export default class AggregatorCreate extends Command {
     }
   }
 
-  private async isParentPom(pomFile: string): Promise<boolean> {
+  private async isParentPom(pomFile: string, execaFn = _execa): Promise<boolean> {
     try {
-      const modules = await this.getMavenProjectAttribute(pomFile, 'project.modules')
+      const modules = await this.getMavenProjectAttribute(pomFile, 'project.modules', execaFn)
       if (modules.length > 0 && modules !== '<modules/>') {
-        this.log(`│  │ ${chalk.yellow(pomFile)} is a parent POM...`)
+        this.log(`│  │ ✅ ${chalk.yellow(pomFile)} is a parent POM`)
         return true
       }
 
-      this.log(`│  │ ${chalk.yellow(pomFile)} is not a parent POM...`)
+      this.log(`│  │ ❌ ${chalk.yellow(pomFile)} is not a parent POM`)
       return false
     } catch (error: unknown) {
       this.error(`│  ╰ ❌ Failed: ${error instanceof Error ? error.message : String(error)}`, {
@@ -120,15 +122,15 @@ export default class AggregatorCreate extends Command {
     }
   }
 
-  private async processPoms(allPoms: string[]) {
+  private async processPoms(allPoms: string[], execaFn = _execa) {
     this.log(
-      `│  │ ⏳ Processing all found POM files for non parent POM files to add to the dependency management section...`,
+      `│  │ ⏳ Processing all found POM files for non parent POM files to add to the dependencyManagement section...`,
     )
 
     const gavPromises = allPoms.map(async (pom) => {
-      const parentPom = await this.isParentPom(pom)
+      const parentPom = await this.isParentPom(pom, execaFn)
       if (!parentPom) {
-        return this.getGAVFromPom(pom)
+        return this.getGAVFromPom(pom, execaFn)
       }
       return null
     })
@@ -137,14 +139,14 @@ export default class AggregatorCreate extends Command {
     const allGAVs = gavResults.filter((gav): gav is MavenGAVCoords => gav !== null)
 
     if (allGAVs.length > 0) {
-      this.log(`│  │ 📝 Adding to the dependency management section of the aggregator...`)
+      this.log(`│  │ 📝 Adding to the dependencyManagement section of the aggregator...`)
       for (const gav of allGAVs) {
         this.log(
-          `│  │ ${chalk.green(`✅ Adding group ID: ${gav.getGroupId()}, artifact ID: ${gav.getArtifactId()}, and version: ${gav.getVersion()}`)}`,
+          `│  │ ✅ Adding group ID: ${chalk.yellow(gav.getGroupId())}, artifact ID: ${chalk.yellow(gav.getArtifactId())}, and version: ${chalk.yellow(gav.getVersion())}`
         )
       }
     } else {
-      this.log(`│  │ No GAVs found to add to the dependency management section of the aggregator...`)
+      this.log(`│  │ No GAVs found to add to the dependencyManagement section of the aggregator...`)
     }
     return allGAVs
   }
@@ -187,11 +189,11 @@ export default class AggregatorCreate extends Command {
     return pomFiles
   }
 
-  private async getGAVFromPom(pomFile: string): Promise<MavenGAVCoords> {
+  private async getGAVFromPom(pomFile: string, execaFn = _execa): Promise<MavenGAVCoords> {
     try {
-      const groupId = await this.getMavenProjectAttribute(pomFile, 'project.groupId')
-      const artifactId = await this.getMavenProjectAttribute(pomFile, 'project.artifactId')
-      const version = await this.getMavenProjectAttribute(pomFile, 'project.version')
+      const groupId = await this.getMavenProjectAttribute(pomFile, 'project.groupId', execaFn)
+      const artifactId = await this.getMavenProjectAttribute(pomFile, 'project.artifactId', execaFn)
+      const version = await this.getMavenProjectAttribute(pomFile, 'project.version', execaFn)
 
       return new MavenGAVCoords(groupId, artifactId, version)
     } catch (error: unknown) {
@@ -262,6 +264,31 @@ export default class AggregatorCreate extends Command {
       version: string
     }
   }> {
+    const execa = _execa({
+      verbose: (verboseLine: string, {type}: {type: string}) => {
+        switch (type) {
+          case 'command': {
+            this.log(`│  │  │ ${verboseLine}`)
+            break
+          }
+          case 'duration': {
+            this.log(`│  ├──╯ ${verboseLine}`)
+            break
+          }
+          case 'output': {
+            const MAX_LENGTH = 120
+            const truncatedLine =
+              verboseLine.length > MAX_LENGTH ? `${verboseLine.slice(0, Math.max(0, MAX_LENGTH))}...` : verboseLine
+            this.log(`│  │  │ ${truncatedLine}`)
+            break
+          }
+          default: {
+            this.debug(`${type} ${verboseLine}`)
+          }
+        }
+      },
+    })
+
     const startTime = Date.now()
     const {args, flags} = await this.parse(AggregatorCreate)
     const directoryPath = path.resolve(args.directory)
@@ -411,12 +438,12 @@ export default class AggregatorCreate extends Command {
       this.log(`│  │ ${chalk.green(`✅ Found valid Maven repository: ${repo.relativePath}`)}`)
     }
     const allPoms = await this.findPomFiles(directoryPath)
-    const allGAVs = await this.processPoms(allPoms)
+    const allGAVs = await this.processPoms(allPoms, execa)
     this.log(`│  │`)
     this.log(`│  ├──╮ 📊 Repository scan summary:`)
     this.log(`│  │  │ ${chalk.green(`✅ Found ${mavenRepos.length} valid Maven repositories`)}`)
     this.log(
-      `│  │  │ ${chalk.green(`✅ Found ${allGAVs.length} GAVs to add to the dependency management section of the POM`)}`,
+      `│  │  │ ${chalk.green(`✅ Found ${allGAVs.length} GAVs to add to the dependencyManagement section of the POM`)}`,
     )
     if (skippedRepos.length > 0) {
       this.log(`│  │  │ ${chalk.yellow(`⚠️ Skipped ${skippedRepos.length} repositories`)}`)
