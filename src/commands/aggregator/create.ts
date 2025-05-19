@@ -1,7 +1,7 @@
 import {Args, Command, Flags} from '@oclif/core'
 import fs from 'fs-extra'
 import path from 'node:path'
-import {execa as _execa, type Options, type Result} from 'execa'
+import {execa as _execa, type Result} from 'execa'
 import {create} from 'xmlbuilder2'
 import chalk from 'chalk'
 import inquirer from 'inquirer'
@@ -51,23 +51,16 @@ export default class AggregatorCreate extends Command {
   private async execute(
     command: string,
     args: string[] = [],
-    options: Options & {silent?: boolean} = {},
     execaFn = _execa,
   ): Promise<Result> {
-    const silent = options.silent === true
-
-    if (!silent) {
-      this.log(`├─ Executing: ${command} ${args.join(' ')}`)
-    }
+    this.log(`├─ Executing: ${command} ${args.join(' ')}`)
 
     try {
-      return await execaFn(command, args, options)
+      return await execaFn(command, args)
     } catch (error: unknown) {
-      if (!silent) {
-        this.error(`├─ Command failed: ${command} ${args.join(' ')}`)
-        const errorObj = error as Error & {stderr?: string}
-        this.error(`└─ ${errorObj.stderr || errorObj.message}`)
-      }
+      this.error(`├─ Command failed: ${command} ${args.join(' ')}`)
+      const errorObj = error as Error & {stderr?: string}
+      this.error(`└─ ${errorObj.stderr || errorObj.message}`)
       throw error
     }
   }
@@ -87,7 +80,6 @@ export default class AggregatorCreate extends Command {
       const result = await this.execute(
         'mvn',
         ['-f', pomFile, 'help:evaluate', `-Dexpression=${attribute}`, '--quiet', '-DforceStdout'],
-        {silent: true},
         execaFn,
       )
       if (typeof result.stdout === 'string') {
@@ -96,10 +88,8 @@ export default class AggregatorCreate extends Command {
 
       throw new Error(`Failed to evaluate Maven expression: ${result.stderr}`)
     } catch (error: unknown) {
-      // Rethrow the error instead of terminating, so callers can handle it
       const errorMessage = error instanceof Error ? error.message : String(error)
 
-      // Log debug information but don't terminate
       this.debug(`Maven error evaluating ${attribute} in ${pomFile}: ${errorMessage}`)
 
       throw new Error(`Failed to get Maven attribute ${attribute} from ${pomFile}: ${errorMessage}`)
@@ -117,10 +107,8 @@ export default class AggregatorCreate extends Command {
       this.log(`│  │ ❌ ${chalk.yellow(pomFile)} is not a parent POM`)
       return false
     } catch (error: unknown) {
-      // Instead of failing the whole process, log the error and treat it as a non-parent POM
       const errorMessage = error instanceof Error ? error.message : String(error)
 
-      // If this is a parent POM resolution error, log it and continue
       if (
         errorMessage.includes('Non-resolvable parent POM') ||
         errorMessage.includes('parent.relativePath') ||
@@ -130,7 +118,6 @@ export default class AggregatorCreate extends Command {
         return false
       }
 
-      // For other errors, still log but don't fail the whole process
       this.log(`│  ╰ ❌ Failed to determine if ${chalk.yellow(pomFile)} is a parent POM: ${errorMessage}`)
       return false
     }
@@ -148,7 +135,6 @@ export default class AggregatorCreate extends Command {
           return this.getGAVFromPom(pom, execaFn)
         }
       } catch {
-        // If isParentPom throws, log and continue
         this.log(`│  │ ⚠️ Could not determine if ${chalk.yellow(pom)} is a parent POM, skipping`)
       }
       return null
@@ -219,7 +205,6 @@ export default class AggregatorCreate extends Command {
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error)
 
-      // Check if this is a parent POM resolution error
       if (
         errorMessage.includes('Non-resolvable parent POM') ||
         errorMessage.includes('parent.relativePath') ||
@@ -232,7 +217,6 @@ export default class AggregatorCreate extends Command {
         this.log(`│  │ ❌ Failed to collect GAV from ${chalk.yellow(pomFile)}: ${errorMessage}`)
       }
 
-      // Return null instead of throwing to allow processing to continue
       return null
     }
   }
