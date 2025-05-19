@@ -23,6 +23,7 @@ export default class RepoList extends Command {
     language: Flags.string({char: 'g', description: 'Language filter', multiple: true}),
     'include-forks': Flags.boolean({description: 'Include forked repositories', default: false}),
     'include-archived': Flags.boolean({description: 'Include archived repositories', default: false}),
+    'include-user-repos': Flags.boolean({description: 'Include user repositories', default: false}),
     limit: Flags.integer({char: 'l', description: 'Max repositories'}),
   }
 
@@ -49,6 +50,7 @@ export default class RepoList extends Command {
     limit: number | undefined,
     includeForks: boolean,
     includeArchived: boolean,
+    includeUserRepos: boolean, 
     execa: typeof execa_,
   ): Promise<z.infer<typeof this.repositoriesSchema>> {
     this.log(`├──╮ 🔍 Fetching GitHub repositories${username ? ` for user: ${chalk.yellow(username)}` : ''}`)
@@ -61,6 +63,13 @@ export default class RepoList extends Command {
 
       if (username) {
         query += `user:${username} `
+      }
+      else if (!includeUserRepos) {
+        const orgsQuery = ['api', '-X', 'GET', '--paginate', '/organizations', '--jq', '.[].login']
+        const {stdout} = await execa('gh', orgsQuery)
+        const orgs = stdout.split('\n').filter(Boolean)
+        const usersToAdd = orgs.map(org => `user:${org}`).join(' ')
+        query += usersToAdd 
       }
 
       query += `${topicQueries} ${languageQueries}`
@@ -83,6 +92,9 @@ export default class RepoList extends Command {
       if (limit) {
         args.splice(6, 0, '-f', `per_page=${limit}`)
         this.log(`│  │  │ Limit: ${chalk.yellow(limit)}`)
+      }
+      else {
+        args.push('--paginate')
       }
 
       const {stdout} = await execa('gh', args)
@@ -158,6 +170,7 @@ export default class RepoList extends Command {
         flags.limit,
         flags['include-forks'],
         flags['include-archived'],
+        flags['include-user-repos'],
         execa,
       )
 
