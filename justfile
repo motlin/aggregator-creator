@@ -107,7 +107,7 @@ workflow-test CLEAN="true": build
         cat "${TEST_DIR}/maven-repos.json" | ./bin/run.js repo:clone "${FINAL_REPOS}"
 
         echo "Step 7: Create aggregator POM"
-        ./bin/run.js aggregator:create "${FINAL_REPOS}" --groupId org.example --artifactId maven-aggregator
+        ./bin/run.js aggregator:create "${FINAL_REPOS}" --groupId org.example --artifactId maven-aggregator --yes
 
         # Verify the aggregator POM was created
         if [ -f "${FINAL_REPOS}/pom.xml" ]; then
