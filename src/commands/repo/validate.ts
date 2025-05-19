@@ -82,7 +82,7 @@ export default class RepoValidate extends Command {
     try {
       const stats = await fs.stat(absolutePath)
       if (!stats.isDirectory()) {
-        this.error(`Path is not a directory: ${absolutePath}`, {exit: 1})
+        this.error(`Path is not a directory: ${chalk.yellow(absolutePath)}`, {exit: 1})
       }
 
       const repos: RepoInfo[] = []
@@ -224,7 +224,7 @@ export default class RepoValidate extends Command {
       return true
     } catch (execError) {
       if (execError instanceof Error && execError.message.includes('ENOENT')) {
-        this.log(`│  │ ${chalk.yellow('Maven (mvn) command not found. Please install Maven.')}`)
+        this.warn(`│  │ Maven (mvn) command not found. Please install Maven.`)
       }
       return false
     }

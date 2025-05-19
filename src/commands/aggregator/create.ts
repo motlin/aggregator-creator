@@ -49,7 +49,7 @@ export default class AggregatorCreate extends Command {
   }
 
   private async execute(command: string, args: string[] = [], execaFn = _execa): Promise<Result> {
-    this.log(`├─ Executing: ${command} ${args.join(' ')}`)
+    this.log(`├─ Executing: ${chalk.yellow(command)} ${chalk.yellow(args.join(' '))}`)
 
     try {
       return await execaFn(command, args)
@@ -364,7 +364,7 @@ export default class AggregatorCreate extends Command {
     }
 
     for (const entry of firstLevelEntries) {
-      this.log(`│  │ ⏳ Examining: ${chalk.dim(entry)}`)
+      this.log(`│  │ ⏳ Examining: ${chalk.yellow(entry)}`)
 
       const entryPath = path.join(directoryPath, entry)
       const stats = await fs.stat(entryPath)
@@ -488,7 +488,7 @@ export default class AggregatorCreate extends Command {
     }
 
     if (!proceed) {
-      this.log(`│  │  │ ${chalk.yellow('Operation canceled by user.')}`)
+      this.warn(`│  │  │ Operation canceled by user.`)
       this.log(`│  ├──╯`)
       const elapsedTimeMs = Date.now() - startTime
 

@@ -176,7 +176,9 @@ export default class RepoTag extends Command {
       if (!proceed) {
         this.log(`│  │`)
         this.log(`│  ├──╮ 🤔 Confirmation`)
-        this.log(`│  │  │ Do you want to tag these ${validRepos.length} repositories with the '${topic}' topic?`)
+        this.log(
+          `│  │  │ Do you want to tag these ${chalk.yellow(validRepos.length)} repositories with the '${chalk.yellow(topic)}' topic?`,
+        )
 
         const {confirmed} = await inquirer.prompt([
           {
