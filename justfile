@@ -81,14 +81,17 @@ workflow-test CLEAN="true": build
     fi
 
     echo "Step 1: List repositories using repo:list"
+    echo "📋 Manual command: ./bin/run.js repo:list --user motlin --language Java --limit 100 --json > repos.json"
     ./bin/run.js repo:list --user motlin --language Java --limit 100 --json > "${TEST_DIR}/repos.json"
     cat "${TEST_DIR}/repos.json" | jq -r '.[] | .owner.login + "/" + .name' > "${TEST_DIR}/repos-to-clone.txt"
     echo "📋 Found $(wc -l < "${TEST_DIR}/repos-to-clone.txt") repositories"
 
     echo "Step 2: Clone repositories using repo:clone"
+    echo "📋 Manual command: cat repos.json | ./bin/run.js repo:clone ./repos-directory"
     cat "${TEST_DIR}/repos.json" | ./bin/run.js repo:clone "${REPOS_DIR}"
 
     echo "Step 3: Validate repositories using repo:validate"
+    echo "📋 Manual command: ./bin/run.js repo:validate ./repos-directory --output validated-repos.txt --copyTo ./validated-repos"
 
     # Run validation with built-in copying and output file generation
     ./bin/run.js repo:validate "${REPOS_DIR}" --output "${TEST_DIR}/validated-repos.txt" --copyTo "${VALIDATED_REPOS}"
@@ -98,15 +101,19 @@ workflow-test CLEAN="true": build
 
     if [ "${VALIDATED_COUNT}" -gt 0 ]; then
         echo "Step 4: Tag validated repositories using repo:tag"
+        echo "📋 Manual command: ./bin/run.js repo:tag ./validated-repos --topic maven"
         ./bin/run.js repo:tag "${VALIDATED_REPOS}" --topic maven
 
         echo "Step 5: List repositories with maven topic"
+        echo "📋 Manual command: ./bin/run.js repo:list --user motlin --topic maven --language Java --limit 100 --json > maven-repos.json"
         ./bin/run.js repo:list --user motlin --topic maven --language Java --limit 100 --json > "${TEST_DIR}/maven-repos.json"
 
         echo "Step 6: Clone maven-tagged repositories"
+        echo "📋 Manual command: cat maven-repos.json | ./bin/run.js repo:clone ./final-repos"
         cat "${TEST_DIR}/maven-repos.json" | ./bin/run.js repo:clone "${FINAL_REPOS}"
 
         echo "Step 7: Create aggregator POM"
+        echo "📋 Manual command: ./bin/run.js aggregator:create ./final-repos --groupId org.example --artifactId maven-aggregator --yes"
         ./bin/run.js aggregator:create "${FINAL_REPOS}" --groupId org.example --artifactId maven-aggregator --yes
 
         # Verify the aggregator POM was created
