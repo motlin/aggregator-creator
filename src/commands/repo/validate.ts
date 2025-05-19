@@ -22,11 +22,14 @@ export default class RepoValidate extends Command {
 
   static override description = 'Validates if directories contain valid Maven repositories'
 
+  static override enableJsonFlag = true
+
   static override examples = [
     '<%= config.bin %> <%= command.id %> ./path/to/repo',
     '<%= config.bin %> <%= command.id %> /path/to/repos-dir',
     '<%= config.bin %> <%= command.id %> ./repos-dir --output ./validated-repos.txt',
     '<%= config.bin %> <%= command.id %> ./repos-dir --copyTo ./validated-repos',
+    '<%= config.bin %> <%= command.id %> ./repos-dir --json',
   ]
 
   static override flags = {
@@ -44,7 +47,7 @@ export default class RepoValidate extends Command {
     }),
   }
 
-  public async run(): Promise<void> {
+  public async run(): Promise<{validRepos: RepoInfo[]; validCount: number}> {
     const {args, flags} = await this.parse(RepoValidate)
     const {repoPath} = args
 
@@ -183,8 +186,14 @@ export default class RepoValidate extends Command {
 
       const elapsedMs = Date.now() - startTime
       this.debug(`Validation completed in ${elapsedMs}ms`)
+
+      return {
+        validRepos,
+        validCount,
+      }
     } catch (error) {
       this.error(`Error validating repositories: ${error}`, {exit: 1})
+      return {validRepos: [], validCount: 0}
     }
   }
 

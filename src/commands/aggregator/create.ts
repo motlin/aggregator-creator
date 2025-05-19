@@ -48,11 +48,7 @@ export default class AggregatorCreate extends Command {
     }),
   }
 
-  private async execute(
-    command: string,
-    args: string[] = [],
-    execaFn = _execa,
-  ): Promise<Result> {
+  private async execute(command: string, args: string[] = [], execaFn = _execa): Promise<Result> {
     this.log(`├─ Executing: ${command} ${args.join(' ')}`)
 
     try {
@@ -152,7 +148,6 @@ export default class AggregatorCreate extends Command {
         )
       }
       this.log(`│  ├──╯`)
-
     } else {
       this.log(`│  │ No GAVs found to add to the dependencyManagement section of the aggregator...`)
       this.log(`│  │ ℹ️ This may be due to Maven parent POM resolution issues in some repositories`)
@@ -459,9 +454,7 @@ export default class AggregatorCreate extends Command {
     this.log(`│  │`)
     this.log(`│  ├──╮ 📊 Repository scan summary:`)
     this.log(`│  │  │ Found ${chalk.yellow(mavenRepos.length)} valid Maven repositories`)
-    this.log(
-      `│  │  │ Found ${chalk.yellow(allGAVs.length)} GAVs to add to the dependencyManagement section of the POM`,
-    )
+    this.log(`│  │  │ Found ${chalk.yellow(allGAVs.length)} GAVs to add to the dependencyManagement section of the POM`)
     if (skippedRepos.length > 0) {
       this.log(`│  │  │ ⚠️ Skipped ${chalk.yellow(skippedRepos.length)} repositories`)
       for (const repo of skippedRepos) {

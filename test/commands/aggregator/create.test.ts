@@ -94,16 +94,31 @@ describe('aggregator:create', () => {
 
     const output = JSON.parse(stdout)
 
-    expect(output).to.have.property('success', true)
-    expect(output).to.have.property('pomPath')
-    expect(output).to.have.property('modules').that.is.an('array')
-    expect(output).to.have.property('stats').that.is.an('object')
-    expect(output.stats).to.have.property('validRepositories', 2)
-
-    expect(output.stats).to.have.property('skippedRepositories')
-
-    expect(output).to.have.property('mavenCoordinates').that.is.an('object')
-    expect(output.mavenCoordinates).to.have.property('groupId', 'com.example')
+    expect(output).to.deep.equal({
+      success: true,
+      pomPath: path.join(tempDir, 'pom.xml'),
+      modules: [
+        {
+          path: 'valid-repo1',
+          valid: true,
+        },
+        {
+          path: 'valid-repo2',
+          valid: true,
+        },
+      ],
+      stats: {
+        totalScanned: 3,
+        validRepositories: 2,
+        skippedRepositories: 0,
+        elapsedTimeMs: output.stats.elapsedTimeMs,
+      },
+      mavenCoordinates: {
+        groupId: 'com.example',
+        artifactId: 'aggregator',
+        version: '1.0.0-SNAPSHOT',
+      },
+    })
   })
 
   it('returns a structured error when no Maven repositories are found with --json flag', async () => {
@@ -114,10 +129,23 @@ describe('aggregator:create', () => {
 
       const output = JSON.parse(stdout)
 
-      expect(output).to.have.property('success', false)
-      expect(output).to.have.property('error').that.includes('No Maven repositories found')
-      expect(output).to.have.property('stats').that.is.an('object')
-      expect(output.stats).to.have.property('validRepositories', 0)
+      expect(output).to.deep.equal({
+        success: false,
+        pomPath: '',
+        modules: [],
+        stats: {
+          totalScanned: 0,
+          validRepositories: 0,
+          skippedRepositories: 0,
+          elapsedTimeMs: output.stats.elapsedTimeMs,
+        },
+        mavenCoordinates: {
+          groupId: 'com.example',
+          artifactId: 'aggregator',
+          version: '1.0.0-SNAPSHOT',
+        },
+        error: 'No Maven repositories found. Each repository must contain a pom.xml file.',
+      })
     } finally {
       await fs.remove(emptyDir)
     }

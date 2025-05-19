@@ -13,22 +13,8 @@ describe('repo:list', () => {
   })
 
   it('should fetch repositories for specified user', async () => {
-    const {stdout} = await runCommand('repo:list --user testuser')
-    expect(stdout).to.contain('testuser/repo1')
-    expect(stdout).to.contain('Java')
-    expect(stdout).to.contain('Topics: [maven]')
-  })
-
-  it('should support multiple language filters', async () => {
-    const {stdout} = await runCommand('repo:list --user testuser --language Java --language TypeScript')
-    expect(stdout).to.contain('testuser/repo1')
-    expect(stdout).to.contain('testuser/repo2')
-    expect(stdout).to.contain('Java')
-    expect(stdout).to.contain('TypeScript')
-  })
-
-  it('should output JSON when --json flag is provided', async () => {
-    const sampleRepos = [
+    const {stdout} = await runCommand('repo:list --user testuser --json')
+    expect(JSON.parse(stdout)).to.deep.equal([
       {
         name: 'repo1',
         owner: {login: 'testuser', type: 'User'},
@@ -41,11 +27,33 @@ describe('repo:list', () => {
         disabled: false,
         is_template: false,
       },
-    ]
+    ])
+  })
 
-    const {stdout} = await runCommand('repo:list --user testuser --json')
-    const parsedOutput = JSON.parse(stdout)
-    expect(parsedOutput).to.deep.equal(sampleRepos)
+  it('should support multiple language filters', async () => {
+    const {stdout} = await runCommand('repo:list --user testuser --language Java --language TypeScript --json')
+    expect(JSON.parse(stdout)).to.deep.equal([
+      {
+        name: 'repo1',
+        owner: {login: 'testuser', type: 'User'},
+        language: 'Java',
+        topics: ['maven'],
+        fork: false,
+        archived: false,
+        disabled: false,
+        is_template: false,
+      },
+      {
+        name: 'repo2',
+        owner: {login: 'testuser', type: 'User'},
+        language: 'TypeScript',
+        topics: ['webpack'],
+        fork: false,
+        archived: false,
+        disabled: false,
+        is_template: false,
+      },
+    ])
   })
 
   it('should include forked repositories when --include-forks flag is provided', async () => {

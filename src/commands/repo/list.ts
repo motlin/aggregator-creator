@@ -173,7 +173,9 @@ export default class RepoList extends Command {
         const language = repo.language || 'No language'
         const topics = repo.topics && repo.topics.length > 0 ? `Topics: [${repo.topics.join(', ')}]` : 'No topics'
 
-        this.log(`│  │  │ ${chalk.yellow(repo.owner.login)}/${chalk.yellow(repo.name)} (${chalk.yellow(language)}) ${topics}`)
+        this.log(
+          `│  │  │ ${chalk.yellow(repo.owner.login)}/${chalk.yellow(repo.name)} (${chalk.yellow(language)}) ${topics}`,
+        )
       }
       this.log(`│  ├──╯ ✅`)
       this.log(`├──╯ 🔍`)

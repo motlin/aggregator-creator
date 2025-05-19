@@ -15,6 +15,8 @@ export default class RepoTag extends Command {
 
   static override description = 'Tag valid Maven repositories with GitHub topics'
 
+  static override enableJsonFlag = true
+
   static override examples = [
     '<%= config.bin %> <%= command.id %> ./repos-dir --topic maven',
     '<%= config.bin %> <%= command.id %> ./repos-dir --topic maven --dryRun',
@@ -38,10 +40,18 @@ export default class RepoTag extends Command {
     }),
   }
 
-  public async run(): Promise<void> {
+  public async run(): Promise<{
+    success: boolean
+    topic: string
+    tagged: {owner: string; name: string}[]
+    skipped: {owner: string; name: string; reason: string}[]
+  }> {
     const {args, flags} = await this.parse(RepoTag)
     const {directory} = args
     const {topic, dryRun, yes} = flags
+
+    const tagged: {owner: string; name: string}[] = []
+    const skipped: {owner: string; name: string; reason: string}[] = []
 
     const execa = execa_({
       verbose: (verboseLine: string, {type}: {type: string}) => {
@@ -109,6 +119,7 @@ export default class RepoTag extends Command {
 
           if (!(await this.isGitRepository(repoPath))) {
             this.log(`│  │  │ Skipping ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)} - not a git repository`)
+            skipped.push({owner: ownerDir, name: repoName, reason: 'not a git repository'})
             this.log(`│  │  │`)
             continue
           }
@@ -116,7 +127,9 @@ export default class RepoTag extends Command {
           const isValid = await this.validateMavenRepo(repoPath, execa)
 
           if (isValid) {
-            this.log(`│  │  │ ${chalk.green('✓')} Valid Maven repository: ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)}`);
+            this.log(
+              `│  │  │ ${chalk.green('✓')} Valid Maven repository: ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)}`,
+            )
 
             validRepos.push({
               path: repoPath,
@@ -125,7 +138,10 @@ export default class RepoTag extends Command {
               repoName,
             })
           } else {
-            this.log(`│  │  │ Skipping ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)} - not a valid Maven repository`)
+            this.log(
+              `│  │  │ Skipping ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)} - not a valid Maven repository`,
+            )
+            skipped.push({owner: ownerDir, name: repoName, reason: 'not a valid Maven repository'})
           }
           this.log(`│  ├──╯`)
         }
@@ -140,7 +156,12 @@ export default class RepoTag extends Command {
       if (validRepos.length === 0) {
         this.warn(`│  │  │ No valid Maven repositories found to tag.`)
         this.log(`│  ├──╯`)
-        return
+        return {
+          success: true,
+          topic,
+          tagged: [],
+          skipped,
+        }
       }
 
       this.log(`│  │  │ Found ${chalk.green(validRepos.length)} valid Maven repositories to tag:`)
@@ -170,7 +191,12 @@ export default class RepoTag extends Command {
         if (!proceed) {
           this.warn(`│  │  │ Operation canceled by user.`)
           this.log(`│  ├──╯`)
-          return
+          return {
+            success: false,
+            topic,
+            tagged: [],
+            skipped,
+          }
         }
         this.log(`│  ├──╯`)
       }
@@ -183,19 +209,35 @@ export default class RepoTag extends Command {
           this.log(
             `│  │  │ ${chalk.blue('[DRY RUN]')} Would tag ${chalk.yellow(repo.owner)}/${chalk.yellow(repo.repoName)} with topic: ${chalk.cyan(topic)}`,
           )
+          tagged.push({owner: repo.owner, name: repo.repoName})
         } else {
           await this.tagRepository(repo.owner, repo.repoName, topic, execa)
           this.log(
             `│  │  │ ✓ Tagged ${chalk.yellow(repo.owner)}/${chalk.yellow(repo.repoName)} with topic: ${chalk.cyan(topic)}`,
           )
+          tagged.push({owner: repo.owner, name: repo.repoName})
         }
       }
       this.log(`│  ├──╯`)
 
       this.log(`│`)
       this.log(`╰─── ✅ Repository tagging process completed`)
+
+      return {
+        success: true,
+        topic,
+        tagged,
+        skipped,
+      }
     } catch (error) {
       this.error(`Failed to process repositories: ${error}`, {exit: 1})
+
+      return {
+        success: false,
+        topic,
+        tagged: [],
+        skipped: [],
+      }
     }
   }
 
@@ -226,7 +268,9 @@ export default class RepoTag extends Command {
           const topics = topicsData.names || []
 
           if (topics.includes(topic)) {
-            this.log(`│  │  │ Topic ${chalk.yellow(topic)} already exists on ${chalk.yellow(owner)}/${chalk.yellow(name)}`)
+            this.log(
+              `│  │  │ Topic ${chalk.yellow(topic)} already exists on ${chalk.yellow(owner)}/${chalk.yellow(name)}`,
+            )
           } else {
             topics.push(topic)
             await execa('gh', [
@@ -245,7 +289,9 @@ export default class RepoTag extends Command {
         this.warn(`│  │  │ Failed to get topics for ${chalk.yellow(owner)}/${chalk.yellow(name)}: ${result.stderr}`)
       }
     } catch (error) {
-      this.error(`│  │  │ Failed to tag repository ${chalk.yellow(owner)}/${chalk.yellow(name)}: ${error}`, {exit: false})
+      this.error(`│  │  │ Failed to tag repository ${chalk.yellow(owner)}/${chalk.yellow(name)}: ${error}`, {
+        exit: false,
+      })
     }
   }
 

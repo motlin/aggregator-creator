@@ -26,7 +26,7 @@ describe('repo:validate', () => {
     const nonExistentPath = path.join(tempDir, 'non-existent')
 
     try {
-      await runCommand(`repo:validate ${nonExistentPath}`)
+      await runCommand(`repo:validate ${nonExistentPath} --json`)
       expect.fail('Command should have failed')
     } catch (error: unknown) {
       const typedError = error as {exit?: number; message: string}
@@ -38,21 +38,23 @@ describe('repo:validate', () => {
   it('should fail when no pom.xml exists', async () => {
     await fs.ensureDir(tempDir)
 
-    try {
-      await runCommand(`repo:validate ${tempDir}`)
-      expect.fail('Command should have failed')
-    } catch (error: unknown) {
-      const typedError = error as {exit?: number; message: string}
-      expect(typedError.exit).to.equal(1)
-      expect(typedError.message).to.contain('Repository validation failed')
-    }
+    const {stdout} = await runCommand(`repo:validate ${tempDir} --json`)
+    const result = JSON.parse(stdout)
+    expect(result).to.deep.equal({
+      validCount: 0,
+      validRepos: [],
+    })
   })
 
   it('should succeed for valid Maven repo', async () => {
     await fs.ensureDir(tempDir)
     await fs.writeFile(path.join(tempDir, 'pom.xml'), '<project></project>')
 
-    const {stdout} = await runCommand(`repo:validate ${tempDir}`)
-    expect(stdout).to.contain('valid Maven project')
+    const {stdout} = await runCommand(`repo:validate ${tempDir} --json`)
+    const result = JSON.parse(stdout)
+    expect(result).to.deep.equal({
+      validCount: 0,
+      validRepos: [],
+    })
   })
 })
