@@ -20,6 +20,7 @@ export default class AggregatorCreate extends Command {
     '<%= config.bin %> <%= command.id %> ./maven-repos --artifactId custom-aggregator --pomVersion 2.0.0',
     '<%= config.bin %> <%= command.id %> ./maven-repos --force',
     '<%= config.bin %> <%= command.id %> ./maven-repos --json',
+    '<%= config.bin %> repo:list --user someuser --limit 100 --json | <%= config.bin %> <%= command.id %> ./maven-repos',
   ]
 
   static override enableJsonFlag = true
@@ -352,7 +353,7 @@ export default class AggregatorCreate extends Command {
     }
 
     for (const entry of firstLevelEntries) {
-      this.log(`│  │ ${chalk.dim(`⏳ Examining: ${entry}`)}`)
+      this.log(`│  │ ⏳ Examining: ${chalk.dim(entry)}`)
 
       const entryPath = path.join(directoryPath, entry)
       const stats = await fs.stat(entryPath)
@@ -435,21 +436,21 @@ export default class AggregatorCreate extends Command {
     const validModules = mavenRepos.map((repo) => repo.relativePath)
 
     for (const repo of mavenRepos) {
-      this.log(`│  │ ${chalk.green(`✅ Found valid Maven repository: ${repo.relativePath}`)}`)
+      this.log(`│  │ ✅ Found valid Maven repository: ${chalk.yellow(repo.relativePath)}`)
     }
     const allPoms = await this.findPomFiles(directoryPath)
     const allGAVs = await this.processPoms(allPoms, execa)
     this.log(`│  │`)
     this.log(`│  ├──╮ 📊 Repository scan summary:`)
-    this.log(`│  │  │ ${chalk.green(`✅ Found ${mavenRepos.length} valid Maven repositories`)}`)
+    this.log(`│  │  │ ✅ Found ${chalk.yellow(mavenRepos.length)} valid Maven repositories`)
     this.log(
-      `│  │  │ ${chalk.green(`✅ Found ${allGAVs.length} GAVs to add to the dependencyManagement section of the POM`)}`,
+      `│  │  │ ✅ Found ${chalk.yellow(allGAVs.length)} GAVs to add to the dependencyManagement section of the POM`,
     )
     if (skippedRepos.length > 0) {
-      this.log(`│  │  │ ${chalk.yellow(`⚠️ Skipped ${skippedRepos.length} repositories`)}`)
+      this.log(`│  │  │ ⚠️ Skipped ${chalk.yellow(skippedRepos.length)} repositories`)
       for (const repo of skippedRepos) {
         if (repo.reason === 'Missing pom.xml') {
-          this.log(`│  │  │ ${chalk.yellow(`  → ${repo.relativePath}: Missing pom.xml file`)}`)
+          this.log(`│  │  │   → ${chalk.yellow(repo.relativePath)}: Missing pom.xml file`)
         }
       }
     }
@@ -516,11 +517,11 @@ export default class AggregatorCreate extends Command {
     try {
       await fs.writeFile(pomPath, pomXml)
       this.log(`│  │`)
-      this.log(`│  ├──╮ ${chalk.green(`✅ Created aggregator POM at ${pomPath}`)}`)
+      this.log(`│  ├──╮ ✅ Created aggregator POM at ${chalk.yellow(pomPath)}`)
       this.log(`│  │  │ 📋 Included ${chalk.yellow(validModules.length)} modules`)
 
       const elapsedTimeMs = Date.now() - startTime
-      this.log(`│  │  │ ${chalk.dim(`⏱️ Operation completed in ${elapsedTimeMs}ms`)}`)
+      this.log(`│  │  │ ⏱️ Operation completed in ${chalk.dim(`${elapsedTimeMs}ms`)}`)
       this.log(`│  ├──╯`)
 
       return {
