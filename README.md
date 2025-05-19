@@ -7,17 +7,16 @@ CLI tool that creates Maven aggregator POMs from a set of repositories. Maven ag
 [![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-24292e.svg)](https://github.com/motlin/aggregator-creator)
 
 <!-- toc -->
-
-- [aggregator-creator](#aggregator-creator)
-- [Overview](#overview)
-- [Environment Setup](#environment-setup)
-- [Usage](#usage)
-- [Complete Workflow](#complete-workflow)
-- [Run the workflow test](#run-the-workflow-test)
-- [Run workflow test and keep temporary files](#run-workflow-test-and-keep-temporary-files)
-- [Directory Structure](#directory-structure)
-- [License](#license)
-- [Commands](#commands)
+* [aggregator-creator](#aggregator-creator)
+* [Overview](#overview)
+* [Environment Setup](#environment-setup)
+* [Usage](#usage)
+* [Complete Workflow](#complete-workflow)
+* [Run the workflow test](#run-the-workflow-test)
+* [Run workflow test and keep temporary files](#run-workflow-test-and-keep-temporary-files)
+* [Directory Structure](#directory-structure)
+* [License](#license)
+* [Commands](#commands)
 <!-- tocstop -->
 
 # Overview
@@ -118,13 +117,12 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 # Commands
 
 <!-- commands -->
-
-- [`aggregator aggregator create DIRECTORY`](#aggregator-aggregator-create-directory)
-- [`aggregator help [COMMAND]`](#aggregator-help-command)
-- [`aggregator repo clone TARGETDIRECTORY`](#aggregator-repo-clone-targetdirectory)
-- [`aggregator repo list`](#aggregator-repo-list)
-- [`aggregator repo tag DIRECTORY`](#aggregator-repo-tag-directory)
-- [`aggregator repo validate REPOPATH`](#aggregator-repo-validate-repopath)
+* [`aggregator aggregator create DIRECTORY`](#aggregator-aggregator-create-directory)
+* [`aggregator help [COMMAND]`](#aggregator-help-command)
+* [`aggregator repo clone TARGETDIRECTORY`](#aggregator-repo-clone-targetdirectory)
+* [`aggregator repo list`](#aggregator-repo-list)
+* [`aggregator repo tag DIRECTORY`](#aggregator-repo-tag-directory)
+* [`aggregator repo validate REPOPATH`](#aggregator-repo-validate-repopath)
 
 ## `aggregator aggregator create DIRECTORY`
 
@@ -159,6 +157,8 @@ EXAMPLES
   $ aggregator aggregator create ./maven-repos --force
 
   $ aggregator aggregator create ./maven-repos --json
+
+  $ aggregator repo:list --user someuser --limit 100 --json | aggregator aggregator create ./maven-repos
 ```
 
 _See code: [src/commands/aggregator/create.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/aggregator/create.ts)_
@@ -213,13 +213,20 @@ List GitHub repositories based on filters
 
 ```
 USAGE
-  $ aggregator repo list [--json] [-u <value>] [-t <value>...] [-g <value>...] [-l <value>]
+  $ aggregator repo list [--json] [-u <value>] [-t <value>...] [-g <value>...] [--include-forks]
+    [--include-archived] [--visibility public|private|all] [--type user|org|all] [-l <value>]
 
 FLAGS
   -g, --language=<value>...  Language filter
   -l, --limit=<value>        Max repositories
   -t, --topic=<value>...     Topic filter
-  -u, --user=<value>         GitHub username/org
+  -u, --user=<value>         GitHub username/org to filter by
+      --include-archived     Include archived repositories
+      --include-forks        Include forked repositories
+      --type=<option>        [default: org] Repository owner type filter
+                             <options: user|org|all>
+      --visibility=<option>  [default: public] Repository visibility filter
+                             <options: public|private|all>
 
 GLOBAL FLAGS
   --json  Format output as json.
@@ -228,6 +235,8 @@ DESCRIPTION
   List GitHub repositories based on filters
 
 EXAMPLES
+  $ aggregator repo list --limit 100
+
   $ aggregator repo list --user motlin --limit 100
 
   $ aggregator repo list --user motlin --language Java --limit 100
@@ -235,6 +244,14 @@ EXAMPLES
   $ aggregator repo list --user motlin --topic maven --language Java --json
 
   $ aggregator repo list --user motlin --limit 100 --json
+
+  $ aggregator repo list --include-forks --include-archived
+
+  $ aggregator repo list --visibility public --type org
+
+  $ aggregator repo list --visibility private --type user
+
+  $ aggregator repo list --visibility all --type all
 ```
 
 _See code: [src/commands/repo/list.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/list.ts)_
@@ -245,7 +262,7 @@ Tag valid Maven repositories with GitHub topics
 
 ```
 USAGE
-  $ aggregator repo tag DIRECTORY -t <value> [-d] [-v] [-y]
+  $ aggregator repo tag DIRECTORY -t <value> [--json] [-d] [-y]
 
 ARGUMENTS
   DIRECTORY  Directory containing cloned repos
@@ -253,8 +270,10 @@ ARGUMENTS
 FLAGS
   -d, --dryRun         Show changes without applying them
   -t, --topic=<value>  (required) Topic to synchronize
-  -v, --verbose        Show verbose output during operation
   -y, --yes            Automatically answer "yes" to all prompts
+
+GLOBAL FLAGS
+  --json  Format output as json.
 
 DESCRIPTION
   Tag valid Maven repositories with GitHub topics
@@ -273,7 +292,7 @@ Validates if directories contain valid Maven repositories
 
 ```
 USAGE
-  $ aggregator repo validate REPOPATH [-v] [-o <value>] [-c <value>]
+  $ aggregator repo validate REPOPATH [--json] [-v] [-o <value>] [-c <value>]
 
 ARGUMENTS
   REPOPATH  Path to the repository or directory of repositories to validate
@@ -282,6 +301,9 @@ FLAGS
   -c, --copyTo=<value>  Directory to copy validated repositories into
   -o, --output=<value>  Output file to write validated repository list
   -v, --verbose         Show verbose output during validation
+
+GLOBAL FLAGS
+  --json  Format output as json.
 
 DESCRIPTION
   Validates if directories contain valid Maven repositories
@@ -294,8 +316,9 @@ EXAMPLES
   $ aggregator repo validate ./repos-dir --output ./validated-repos.txt
 
   $ aggregator repo validate ./repos-dir --copyTo ./validated-repos
+
+  $ aggregator repo validate ./repos-dir --json
 ```
 
 _See code: [src/commands/repo/validate.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/validate.ts)_
-
 <!-- commandsstop -->

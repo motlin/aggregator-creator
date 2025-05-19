@@ -41,6 +41,8 @@ test: build
 #   just repo-list motlin --language Java
 #   just repo-list motlin --topic maven
 #   just repo-list motlin --language Java --limit 100
+#   just repo-list motlin --visibility public --type org
+#   just repo-list motlin --visibility all --type all
 #
 # Short flag alternatives:
 #   -l = --limit
@@ -81,8 +83,8 @@ workflow-test CLEAN="true": build
     fi
 
     echo "Step 1: List repositories using repo:list"
-    echo "📋 Manual command: ./bin/run.js repo:list --user motlin --language Java --limit 100 --json > repos.json"
-    ./bin/run.js repo:list --user motlin --language Java --limit 100 --json > "${TEST_DIR}/repos.json"
+    echo "📋 Manual command: ./bin/run.js repo:list --user motlin --language Java --visibility all --type all --limit 100 --json > repos.json"
+    ./bin/run.js repo:list --user motlin --language Java --visibility all --type all --limit 100 --json > "${TEST_DIR}/repos.json"
     cat "${TEST_DIR}/repos.json" | jq -r '.[] | .owner.login + "/" + .name' > "${TEST_DIR}/repos-to-clone.txt"
     echo "📋 Found $(wc -l < "${TEST_DIR}/repos-to-clone.txt") repositories"
 
@@ -105,8 +107,8 @@ workflow-test CLEAN="true": build
         ./bin/run.js repo:tag "${VALIDATED_REPOS}" --topic maven
 
         echo "Step 5: List repositories with maven topic"
-        echo "📋 Manual command: ./bin/run.js repo:list --user motlin --topic maven --language Java --limit 100 --json > maven-repos.json"
-        ./bin/run.js repo:list --user motlin --topic maven --language Java --limit 100 --json > "${TEST_DIR}/maven-repos.json"
+        echo "📋 Manual command: ./bin/run.js repo:list --user motlin --topic maven --language Java --visibility public --type all --limit 100 --json > maven-repos.json"
+        ./bin/run.js repo:list --user motlin --topic maven --language Java --visibility public --type all --limit 100 --json > "${TEST_DIR}/maven-repos.json"
 
         echo "Step 6: Clone maven-tagged repositories"
         echo "📋 Manual command: cat maven-repos.json | ./bin/run.js repo:clone ./final-repos"

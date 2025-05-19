@@ -13,6 +13,9 @@ export default class RepoList extends Command {
     '<%= config.bin %> <%= command.id %> --user motlin --topic maven --language Java --json',
     '<%= config.bin %> <%= command.id %> --user motlin --limit 100 --json',
     '<%= config.bin %> <%= command.id %> --include-forks --include-archived',
+    '<%= config.bin %> <%= command.id %> --visibility public --type org',
+    '<%= config.bin %> <%= command.id %> --visibility private --type user',
+    '<%= config.bin %> <%= command.id %> --visibility all --type all',
   ]
 
   static override enableJsonFlag = true
@@ -23,6 +26,16 @@ export default class RepoList extends Command {
     language: Flags.string({char: 'g', description: 'Language filter', multiple: true}),
     'include-forks': Flags.boolean({description: 'Include forked repositories', default: false}),
     'include-archived': Flags.boolean({description: 'Include archived repositories', default: false}),
+    visibility: Flags.string({
+      description: 'Repository visibility filter',
+      options: ['public', 'private', 'all'],
+      default: 'public',
+    }),
+    type: Flags.string({
+      description: 'Repository owner type filter',
+      options: ['user', 'org', 'all'],
+      default: 'org',
+    }),
     limit: Flags.integer({char: 'l', description: 'Max repositories'}),
   }
 
@@ -38,6 +51,8 @@ export default class RepoList extends Command {
     archived: z.boolean(),
     disabled: z.boolean(),
     is_template: z.boolean(),
+    private: z.boolean(),
+    visibility: z.string(),
   })
 
   private repositoriesSchema = z.array(this.repoSchema)
@@ -49,6 +64,8 @@ export default class RepoList extends Command {
     limit: number | undefined,
     includeForks: boolean,
     includeArchived: boolean,
+    visibility: string,
+    type: string,
     execa: typeof execa_,
   ): Promise<z.infer<typeof this.repositoriesSchema>> {
     this.log(`├──╮ 🔍 Fetching GitHub repositories${username ? ` for user: ${chalk.yellow(username)}` : ''}`)
@@ -61,6 +78,14 @@ export default class RepoList extends Command {
 
       if (username) {
         query += `user:${username} `
+      }
+
+      if (type !== 'all') {
+        query += `type:${type} `
+      }
+
+      if (visibility !== 'all') {
+        query += `is:${visibility} `
       }
 
       query += `${topicQueries} ${languageQueries}`
@@ -158,6 +183,8 @@ export default class RepoList extends Command {
         flags.limit,
         flags['include-forks'],
         flags['include-archived'],
+        flags.visibility,
+        flags.type,
         execa,
       )
 
@@ -173,8 +200,11 @@ export default class RepoList extends Command {
         const language = repo.language || 'No language'
         const topics = repo.topics && repo.topics.length > 0 ? `Topics: [${repo.topics.join(', ')}]` : 'No topics'
 
+        const visibilityTag =
+          repo.visibility === 'public' ? chalk.green(`[${repo.visibility}]`) : chalk.red(`[${repo.visibility}]`)
+
         this.log(
-          `│  │  │ ${chalk.yellow(repo.owner.login)}/${chalk.yellow(repo.name)} (${chalk.yellow(language)}) ${topics}`,
+          `│  │  │ ${chalk.yellow(repo.owner.login)}/${chalk.yellow(repo.name)} ${visibilityTag} (${chalk.yellow(language)}) ${topics}`,
         )
       }
       this.log(`│  ├──╯ ✅`)
