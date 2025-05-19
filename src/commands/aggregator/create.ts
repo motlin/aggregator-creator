@@ -88,20 +88,21 @@ export default class AggregatorCreate extends Command {
         'mvn',
         ['-f', pomFile, 'help:evaluate', `-Dexpression=${attribute}`, '--quiet', '-DforceStdout'],
         {silent: true},
-        execaFn
+        execaFn,
       )
       if (typeof result.stdout === 'string') {
         return result.stdout
       }
 
-      this.error(`│  ╰ ❌ Failed: ${result.stderr}`, {
-        exit: 1,
-      })
+      throw new Error(`Failed to evaluate Maven expression: ${result.stderr}`)
     } catch (error: unknown) {
-      this.error(`│  ╰ ❌ Failed: ${error instanceof Error ? error.message : String(error)}`, {
-        exit: 1,
-      })
-      throw error
+      // Rethrow the error instead of terminating, so callers can handle it
+      const errorMessage = error instanceof Error ? error.message : String(error)
+
+      // Log debug information but don't terminate
+      this.debug(`Maven error evaluating ${attribute} in ${pomFile}: ${errorMessage}`)
+
+      throw new Error(`Failed to get Maven attribute ${attribute} from ${pomFile}: ${errorMessage}`)
     }
   }
 
@@ -116,10 +117,22 @@ export default class AggregatorCreate extends Command {
       this.log(`│  │ ❌ ${chalk.yellow(pomFile)} is not a parent POM`)
       return false
     } catch (error: unknown) {
-      this.error(`│  ╰ ❌ Failed: ${error instanceof Error ? error.message : String(error)}`, {
-        exit: 1,
-      })
-      throw error
+      // Instead of failing the whole process, log the error and treat it as a non-parent POM
+      const errorMessage = error instanceof Error ? error.message : String(error)
+
+      // If this is a parent POM resolution error, log it and continue
+      if (
+        errorMessage.includes('Non-resolvable parent POM') ||
+        errorMessage.includes('parent.relativePath') ||
+        errorMessage.includes('Could not find artifact')
+      ) {
+        this.log(`│  │ ⚠️ ${chalk.yellow(pomFile)} has parent POM resolution issues, treating as non-parent POM`)
+        return false
+      }
+
+      // For other errors, still log but don't fail the whole process
+      this.log(`│  ╰ ❌ Failed to determine if ${chalk.yellow(pomFile)} is a parent POM: ${errorMessage}`)
+      return false
     }
   }
 
@@ -129,9 +142,14 @@ export default class AggregatorCreate extends Command {
     )
 
     const gavPromises = allPoms.map(async (pom) => {
-      const parentPom = await this.isParentPom(pom, execaFn)
-      if (!parentPom) {
-        return this.getGAVFromPom(pom, execaFn)
+      try {
+        const parentPom = await this.isParentPom(pom, execaFn)
+        if (!parentPom) {
+          return this.getGAVFromPom(pom, execaFn)
+        }
+      } catch {
+        // If isParentPom throws, log and continue
+        this.log(`│  │ ⚠️ Could not determine if ${chalk.yellow(pom)} is a parent POM, skipping`)
       }
       return null
     })
@@ -143,11 +161,12 @@ export default class AggregatorCreate extends Command {
       this.log(`│  │ 📝 Adding to the dependencyManagement section of the aggregator...`)
       for (const gav of allGAVs) {
         this.log(
-          `│  │ ✅ Adding group ID: ${chalk.yellow(gav.getGroupId())}, artifact ID: ${chalk.yellow(gav.getArtifactId())}, and version: ${chalk.yellow(gav.getVersion())}`
+          `│  │ ✅ Adding group ID: ${chalk.yellow(gav.getGroupId())}, artifact ID: ${chalk.yellow(gav.getArtifactId())}, and version: ${chalk.yellow(gav.getVersion())}`,
         )
       }
     } else {
       this.log(`│  │ No GAVs found to add to the dependencyManagement section of the aggregator...`)
+      this.log(`│  │ ℹ️ This may be due to Maven parent POM resolution issues in some repositories`)
     }
     return allGAVs
   }
@@ -190,7 +209,7 @@ export default class AggregatorCreate extends Command {
     return pomFiles
   }
 
-  private async getGAVFromPom(pomFile: string, execaFn = _execa): Promise<MavenGAVCoords> {
+  private async getGAVFromPom(pomFile: string, execaFn = _execa): Promise<MavenGAVCoords | null> {
     try {
       const groupId = await this.getMavenProjectAttribute(pomFile, 'project.groupId', execaFn)
       const artifactId = await this.getMavenProjectAttribute(pomFile, 'project.artifactId', execaFn)
@@ -198,13 +217,23 @@ export default class AggregatorCreate extends Command {
 
       return new MavenGAVCoords(groupId, artifactId, version)
     } catch (error: unknown) {
-      this.error(
-        `│  ╰ ❌ Failed to collect GAV from ${pomFile}: ${error instanceof Error ? error.message : String(error)}`,
-        {
-          exit: 1,
-        },
-      )
-      throw error
+      const errorMessage = error instanceof Error ? error.message : String(error)
+
+      // Check if this is a parent POM resolution error
+      if (
+        errorMessage.includes('Non-resolvable parent POM') ||
+        errorMessage.includes('parent.relativePath') ||
+        errorMessage.includes('Could not find artifact')
+      ) {
+        this.log(
+          `│  │ ⚠️ Could not process ${chalk.yellow(pomFile)} due to parent POM resolution issues: ${errorMessage}`,
+        )
+      } else {
+        this.log(`│  │ ❌ Failed to collect GAV from ${chalk.yellow(pomFile)}: ${errorMessage}`)
+      }
+
+      // Return null instead of throwing to allow processing to continue
+      return null
     }
   }
 
