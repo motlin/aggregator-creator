@@ -82,41 +82,72 @@ workflow-test CLEAN="true": build
         exit 1
     fi
 
-    echo "Step 1: List repositories using repo:list"
-    echo "📋 Manual command: ./bin/run.js repo:list --user motlin --language Java --visibility all --type all --limit 100 --json > repos.json"
-    ./bin/run.js repo:list --user motlin --language Java --visibility all --type all --limit 100 --json > "${TEST_DIR}/repos.json"
-    cat "${TEST_DIR}/repos.json" | jq -r '.[] | .owner.login + "/" + .name' > "${TEST_DIR}/repos-to-clone.txt"
+    # Function to run and display command
+    run_command() {
+        local step_num="$1"
+        local step_desc="$2"
+        local cmd="$3"
+        local redirect="${4:-}"
+
+        echo "Step ${step_num}: ${step_desc}"
+        if [ -n "$redirect" ]; then
+            echo "📋 Manual command: ${cmd} ${redirect}"
+            eval "${cmd} ${redirect}"
+        else
+            echo "📋 Manual command: ${cmd}"
+            eval "${cmd}"
+        fi
+    }
+
+    # Step 1: List repositories
+    LIST_CMD="./bin/run.js repo:list --user motlin --language Java --visibility all --type all --limit 100 --json"
+    LIST_OUTPUT="${TEST_DIR}/repos.json"
+
+    run_command "1" "List repositories using repo:list" "${LIST_CMD}" "> ${LIST_OUTPUT}"
+    cat "${LIST_OUTPUT}" | jq -r '.[] | .owner.login + "/" + .name' > "${TEST_DIR}/repos-to-clone.txt"
     echo "📋 Found $(wc -l < "${TEST_DIR}/repos-to-clone.txt") repositories"
 
-    echo "Step 2: Clone repositories using repo:clone"
-    echo "📋 Manual command: cat repos.json | ./bin/run.js repo:clone ./repos-directory"
-    cat "${TEST_DIR}/repos.json" | ./bin/run.js repo:clone "${REPOS_DIR}"
+    # Step 2: Clone repositories
+    CLONE_CMD="./bin/run.js repo:clone"
+    CLONE_FULL_CMD="cat ${LIST_OUTPUT} | ${CLONE_CMD} ${REPOS_DIR}"
 
-    echo "Step 3: Validate repositories using repo:validate"
-    echo "📋 Manual command: ./bin/run.js repo:validate ./repos-directory --output validated-repos.txt --copyTo ./validated-repos"
+    run_command "2" "Clone repositories using repo:clone" "${CLONE_FULL_CMD}"
 
-    # Run validation with built-in copying and output file generation
-    ./bin/run.js repo:validate "${REPOS_DIR}" --output "${TEST_DIR}/validated-repos.txt" --copyTo "${VALIDATED_REPOS}"
+    # Step 3: Validate repositories
+    VALIDATE_CMD="./bin/run.js repo:validate"
+    VALIDATE_PARAMS="--output ${TEST_DIR}/validated-repos.txt --copyTo ${VALIDATED_REPOS}"
+    VALIDATE_FULL_CMD="${VALIDATE_CMD} ${REPOS_DIR} ${VALIDATE_PARAMS}"
+
+    run_command "3" "Validate repositories using repo:validate" "${VALIDATE_FULL_CMD}"
 
     # Count validated repos for next steps
     VALIDATED_COUNT=$(wc -l < "${TEST_DIR}/validated-repos.txt" || echo 0)
 
     if [ "${VALIDATED_COUNT}" -gt 0 ]; then
-        echo "Step 4: Tag validated repositories using repo:tag"
-        echo "📋 Manual command: ./bin/run.js repo:tag ./validated-repos --topic maven"
-        ./bin/run.js repo:tag "${VALIDATED_REPOS}" --topic maven
+        # Step 4: Tag validated repositories
+        TAG_CMD="./bin/run.js repo:tag"
+        TAG_PARAMS="--topic maven"
+        TAG_FULL_CMD="${TAG_CMD} ${VALIDATED_REPOS} ${TAG_PARAMS}"
 
-        echo "Step 5: List repositories with maven topic"
-        echo "📋 Manual command: ./bin/run.js repo:list --user motlin --topic maven --language Java --visibility public --type all --limit 100 --json > maven-repos.json"
-        ./bin/run.js repo:list --user motlin --topic maven --language Java --visibility public --type all --limit 100 --json > "${TEST_DIR}/maven-repos.json"
+        run_command "4" "Tag validated repositories using repo:tag" "${TAG_FULL_CMD}"
 
-        echo "Step 6: Clone maven-tagged repositories"
-        echo "📋 Manual command: cat maven-repos.json | ./bin/run.js repo:clone ./final-repos"
-        cat "${TEST_DIR}/maven-repos.json" | ./bin/run.js repo:clone "${FINAL_REPOS}"
+        # Step 5: List tagged repositories
+        MAVEN_LIST_CMD="./bin/run.js repo:list --user motlin --topic maven --language Java --visibility public --type all --limit 100 --json"
+        MAVEN_LIST_OUTPUT="${TEST_DIR}/maven-repos.json"
 
-        echo "Step 7: Create aggregator POM"
-        echo "📋 Manual command: ./bin/run.js aggregator:create ./final-repos --groupId org.example --artifactId maven-aggregator --yes"
-        ./bin/run.js aggregator:create "${FINAL_REPOS}" --groupId org.example --artifactId maven-aggregator --yes
+        run_command "5" "List repositories with maven topic" "${MAVEN_LIST_CMD}" "> ${MAVEN_LIST_OUTPUT}"
+
+        # Step 6: Clone maven-tagged repositories
+        MAVEN_CLONE_FULL_CMD="cat ${MAVEN_LIST_OUTPUT} | ${CLONE_CMD} ${FINAL_REPOS}"
+
+        run_command "6" "Clone maven-tagged repositories" "${MAVEN_CLONE_FULL_CMD}"
+
+        # Step 7: Create aggregator POM
+        AGGREGATOR_CMD="./bin/run.js aggregator:create"
+        AGGREGATOR_PARAMS="--groupId org.example --artifactId maven-aggregator --yes"
+        AGGREGATOR_FULL_CMD="${AGGREGATOR_CMD} ${FINAL_REPOS} ${AGGREGATOR_PARAMS}"
+
+        run_command "7" "Create aggregator POM" "${AGGREGATOR_FULL_CMD}"
 
         # Verify the aggregator POM was created
         if [ -f "${FINAL_REPOS}/pom.xml" ]; then
