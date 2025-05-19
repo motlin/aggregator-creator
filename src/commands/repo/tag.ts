@@ -47,7 +47,7 @@ export default class RepoTag extends Command {
       verbose: (verboseLine: string, {type}: {type: string}) => {
         switch (type) {
           case 'command': {
-            this.log(`│  │  ├──╮ ${verboseLine}`)
+            this.log(`│  │  │ ${verboseLine}`)
             break
           }
           case 'duration': {
@@ -68,10 +68,10 @@ export default class RepoTag extends Command {
       },
     })
 
-    this.log(`╭─── 🏷️ Adding ${chalk.cyan(topic)} topic to validated repositories...`)
+    this.log(`╭─── 🏷️ Adding ${chalk.yellow(topic)} topic to validated repositories...`)
     this.log(`│`)
     this.log(
-      `├──╮ 🔍 Scanning directory: ${chalk.cyan(directory)} for repositories to tag with topic: ${chalk.cyan(topic)}`,
+      `├──╮ 🔍 Scanning directory: ${chalk.yellow(directory)} for repositories to tag with topic: ${chalk.yellow(topic)}`,
     )
     if (dryRun) {
       this.warn(`│  │ Running in dry-run mode - no changes will be applied`)
@@ -83,7 +83,7 @@ export default class RepoTag extends Command {
 
       const ownerDirs = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name)
 
-      this.log(`│  │ Found ${chalk.cyan(ownerDirs.length)} owner directories to check`)
+      this.log(`│  │ Found ${chalk.yellow(ownerDirs.length)} owner directories to check`)
 
       const validRepos: Array<{
         path: string
@@ -105,10 +105,10 @@ export default class RepoTag extends Command {
           const repoPath = path.join(ownerPath, repoDir)
           const repoName = repoDir
 
-          this.log(`│  ├──╮ Processing repository: ${chalk.cyan(`${ownerDir}/${repoName}`)}`)
+          this.log(`│  ├──╮ Processing repository: ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)}`)
 
           if (!(await this.isGitRepository(repoPath))) {
-            this.log(`│  │  │ ${chalk.yellow(`Skipping ${ownerDir}/${repoName} - not a git repository`)}`)
+            this.log(`│  │  │ Skipping ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)} - not a git repository`)
             this.log(`│  │  │`)
             continue
           }
@@ -116,7 +116,7 @@ export default class RepoTag extends Command {
           const isValid = await this.validateMavenRepo(repoPath, execa)
 
           if (isValid) {
-            this.log(`│  │  │ ${chalk.green(`✓ Valid Maven repository: ${ownerDir}/${repoName}`)}`)
+            this.log(`│  │  │ ${chalk.green('✓')} Valid Maven repository: ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)}`);
 
             validRepos.push({
               path: repoPath,
@@ -125,7 +125,7 @@ export default class RepoTag extends Command {
               repoName,
             })
           } else {
-            this.log(`│  │  │ ${chalk.yellow(`Skipping ${ownerDir}/${repoName} - not a valid Maven repository`)}`)
+            this.log(`│  │  │ Skipping ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)} - not a valid Maven repository`)
           }
           this.log(`│  ├──╯`)
         }
@@ -266,7 +266,7 @@ export default class RepoTag extends Command {
     try {
       const pomExists = await fs.pathExists(pomPath)
       if (!pomExists) {
-        this.warn(`│  │  │ No pom.xml found at: ${chalk.yellow(pomPath)}`)
+        this.log(`│  │  │ No pom.xml found at: ${chalk.yellow(pomPath)}`)
         return false
       }
     } catch {

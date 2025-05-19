@@ -1,6 +1,7 @@
 import {Command, Flags} from '@oclif/core'
 import {execa as execa_} from 'execa'
 import {z} from 'zod'
+import chalk from 'chalk'
 
 export default class RepoList extends Command {
   static override description = 'List GitHub repositories based on filters'
@@ -50,7 +51,7 @@ export default class RepoList extends Command {
     includeArchived: boolean,
     execa: typeof execa_,
   ): Promise<z.infer<typeof this.repositoriesSchema>> {
-    this.log(`├──╮ 🔍 Fetching GitHub repositories${username ? ` for user: ${username}` : ''}`)
+    this.log(`├──╮ 🔍 Fetching GitHub repositories${username ? ` for user: ${chalk.yellow(username)}` : ''}`)
 
     try {
       this.log(`│  ├──╮ Building search query`)
@@ -72,7 +73,7 @@ export default class RepoList extends Command {
         query += ' archived:false'
       }
 
-      this.log(`│  │  │ Query: ${query}`)
+      this.log(`│  │  │ Query: ${chalk.yellow(query)}`)
       this.log(`│  ├──╯`)
 
       this.log(`│  ├──╮ Executing GitHub API search`)
@@ -81,7 +82,7 @@ export default class RepoList extends Command {
 
       if (limit) {
         args.splice(6, 0, '-f', `per_page=${limit}`)
-        this.log(`│  │  │ Limit: ${limit}`)
+        this.log(`│  │  │ Limit: ${chalk.yellow(limit)}`)
       }
 
       const {stdout} = await execa('gh', args)
@@ -166,13 +167,13 @@ export default class RepoList extends Command {
         return []
       }
 
-      this.log(`│  ├──╮ 📋 Results: ${repositories.length} repositories`)
+      this.log(`│  ├──╮ 📋 Results: ${chalk.yellow(repositories.length)} repositories`)
 
       for (const repo of repositories) {
         const language = repo.language || 'No language'
         const topics = repo.topics && repo.topics.length > 0 ? `Topics: [${repo.topics.join(', ')}]` : 'No topics'
 
-        this.log(`│  │  │ ${repo.owner.login}/${repo.name} (${language}) ${topics}`)
+        this.log(`│  │  │ ${chalk.yellow(repo.owner.login)}/${chalk.yellow(repo.name)} (${chalk.yellow(language)}) ${topics}`)
       }
       this.log(`│  ├──╯ ✅`)
       this.log(`├──╯ 🔍`)

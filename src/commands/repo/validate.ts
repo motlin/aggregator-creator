@@ -128,10 +128,10 @@ export default class RepoValidate extends Command {
       for (const [i, repo] of repos.entries()) {
         const repoFullName = `${repo.owner}/${repo.name}`
 
-        this.log(`├──╮ 🔍 [${chalk.yellow(i + 1)}/${repos.length}] ${chalk.yellow(repoFullName)}`)
+        this.log(`├──╮    🔍 [${chalk.yellow(i + 1)}/${repos.length}] ${chalk.yellow(repoFullName)}`)
 
         if (!repo.hasPom) {
-          this.log(`├──╯ ⏩ Skipping non-Maven repository: ${chalk.yellow(repoFullName)}`)
+          this.log(`├──╯    ⏩ Skipping non-Maven repository: ${chalk.yellow(repoFullName)}`)
           this.log(`│`)
           continue
         }

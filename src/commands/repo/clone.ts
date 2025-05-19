@@ -89,7 +89,7 @@ export default class RepoClone extends Command {
           const validRepos = jsonData.filter((repo) => repo.owner?.login && repo.name)
           const total = validRepos.length
 
-          this.log(`├──╮ 🚀 Cloning ${total} repositories`)
+          this.log(`├──╮ 🚀 Cloning ${chalk.yellow(total)} repositories`)
 
           for (const [i, repo] of validRepos.entries()) {
             const repoFullName = `${repo.owner.login}/${repo.name}`
@@ -101,7 +101,7 @@ export default class RepoClone extends Command {
           this.log(`╰─── ✅ All done`)
         } else if (jsonData.owner?.login && jsonData.name) {
           const total = 1
-          this.log(`├──╮ 🚀 Cloning 1 repository`)
+          this.log(`├──╮ 🚀 Cloning ${chalk.yellow(1)} repository`)
 
           const repoFullName = `${jsonData.owner.login}/${jsonData.name}`
           await this.cloneRepository(repoFullName, targetDirectory, 1, total, execa)
@@ -116,7 +116,7 @@ export default class RepoClone extends Command {
 
         const total = validLines.length
 
-        this.log(`├──╮ 🚀 Cloning ${total} ${total === 1 ? 'repository' : 'repositories'}`)
+        this.log(`├──╮ 🚀 Cloning ${chalk.yellow(total)} ${total === 1 ? 'repository' : 'repositories'}`)
 
         for (const [i, trimmedLine] of validLines.entries()) {
           try {
