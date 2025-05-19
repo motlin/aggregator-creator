@@ -105,7 +105,7 @@ export default class RepoTag extends Command {
           const repoPath = path.join(ownerPath, repoDir)
           const repoName = repoDir
 
-          this.log(`│  │  │ Processing repository: ${chalk.cyan(`${ownerDir}/${repoName}`)}`)
+          this.log(`│  ├──╮ Processing repository: ${chalk.cyan(`${ownerDir}/${repoName}`)}`)
 
           if (!(await this.isGitRepository(repoPath))) {
             this.log(`│  │  │ ${chalk.yellow(`Skipping ${ownerDir}/${repoName} - not a git repository`)}`)
@@ -215,42 +215,43 @@ export default class RepoTag extends Command {
     execa: typeof execa_ = execa_,
   ): Promise<void> {
     try {
-      await execa('gh', ['api', `repos/${owner}/${name}/topics`, '--method', 'GET'], {
+      // Use await directly instead of chaining with .then() to maintain sequential flow
+      const result = await execa('gh', ['api', `repos/${owner}/${name}/topics`, '--method', 'GET'], {
         reject: false,
-      }).then(async (result) => {
-        if (result.exitCode === 0) {
-          try {
-            const topicsData = JSON.parse(result.stdout)
-            const topics = topicsData.names || []
-
-            if (topics.includes(topic)) {
-              this.log(`│  │  │ ${chalk.blue(`Topic ${topic} already exists on ${owner}/${name}`)}`)
-            } else {
-              topics.push(topic)
-              await execa('gh', [
-                'api',
-                `repos/${owner}/${name}/topics`,
-                '--method',
-                'PUT',
-                '-f',
-                `names[]=${topics.join('&names[]=')}`,
-              ])
-            }
-          } catch (error) {
-            this.log(`│  │  │ ${chalk.red(`Error updating topics: ${error}`)}`)
-          }
-        } else {
-          this.log(`│  │  │ ${chalk.yellow(`Failed to get topics for ${owner}/${name}: ${result.stderr}`)}`)
-        }
       })
+
+      if (result.exitCode === 0) {
+        try {
+          const topicsData = JSON.parse(result.stdout)
+          const topics = topicsData.names || []
+
+          if (topics.includes(topic)) {
+            this.log(`│  │  │ Topic ${chalk.yellow(topic)} already exists on ${chalk.yellow(owner)}/${chalk.yellow(name)}`)
+          } else {
+            topics.push(topic)
+            await execa('gh', [
+              'api',
+              `repos/${owner}/${name}/topics`,
+              '--method',
+              'PUT',
+              '-f',
+              `names[]=${topics.join('&names[]=')}`,
+            ])
+          }
+        } catch (error) {
+          this.error(`│  │  │ Error updating topics: ${error}`, {exit: false})
+        }
+      } else {
+        this.warn(`│  │  │ Failed to get topics for ${chalk.yellow(owner)}/${chalk.yellow(name)}: ${result.stderr}`)
+      }
     } catch (error) {
-      this.log(`│  │  │ ${chalk.red(`Failed to tag repository ${owner}/${name}: ${error}`)}`)
+      this.error(`│  │  │ Failed to tag repository ${chalk.yellow(owner)}/${chalk.yellow(name)}: ${error}`, {exit: false})
     }
   }
 
   private async validateMavenRepo(repoPath: string, execa: typeof execa_ = execa_): Promise<boolean> {
     const absolutePath = path.resolve(repoPath)
-    this.log(`Validating Maven repo at: ${absolutePath}`)
+    this.log(`│  │  │ Validating Maven repo at: ${chalk.cyan(absolutePath)}`)
 
     try {
       const stats = await fs.stat(absolutePath)
@@ -265,7 +266,7 @@ export default class RepoTag extends Command {
     try {
       const pomExists = await fs.pathExists(pomPath)
       if (!pomExists) {
-        this.log(chalk.yellow(`No pom.xml found at: ${pomPath}`))
+        this.warn(`│  │  │ No pom.xml found at: ${chalk.yellow(pomPath)}`)
         return false
       }
     } catch {
@@ -277,7 +278,7 @@ export default class RepoTag extends Command {
       return true
     } catch (execError) {
       if (execError instanceof Error && execError.message.includes('ENOENT')) {
-        this.log(`│  │ ${chalk.yellow('Maven (mvn) command not found. Please install Maven.')}`)
+        this.warn(`│  │  │ Maven (mvn) command not found. Please install Maven.`)
       }
       return false
     }

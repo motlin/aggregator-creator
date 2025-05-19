@@ -52,18 +52,18 @@ export default class RepoValidate extends Command {
       verbose: (verboseLine: string, {type}: {type: string}) => {
         switch (type) {
           case 'command': {
-            this.log(`│  │  ├──╮ ${verboseLine}`)
+            this.log(`│  ├──╮ ${verboseLine}`)
             break
           }
           case 'duration': {
-            this.log(`│  │  ├──╯ ${verboseLine}`)
+            this.log(`│  ├──╯ ${verboseLine}`)
             break
           }
           case 'output': {
             const MAX_LENGTH = 120
             const truncatedLine =
               verboseLine.length > MAX_LENGTH ? `${verboseLine.slice(0, Math.max(0, MAX_LENGTH))}...` : verboseLine
-            this.log(`│  │  │  │ ${truncatedLine}`)
+            this.log(`│  │  │ ${truncatedLine}`)
             break
           }
           default: {
@@ -151,7 +151,7 @@ export default class RepoValidate extends Command {
       }
 
       this.log(
-        `╰─── ✅ Found ${chalk.green(validCount)} validated Maven ${validCount === 1 ? 'repository' : 'repositories'}`,
+        `├──╮ ✅ Found ${chalk.green(validCount)} validated Maven ${validCount === 1 ? 'repository' : 'repositories'}`,
       )
 
       if (flags.output && validRepos.length > 0) {
@@ -161,24 +161,24 @@ export default class RepoValidate extends Command {
         const validRepoNames = validRepos.map((repo) => `${repo.owner}/${repo.name}`).join('\n')
         await fs.writeFile(outputPath, validRepoNames)
 
-        this.log(`├──╮ 📄 Validated repository list written to: ${chalk.cyan(outputPath)}`)
-        this.log(`├──╯`)
+        this.log(`│  │ 📄 Validated repository list written to: ${chalk.cyan(outputPath)}`)
       }
+      this.log(`├──╯`)
 
       if (flags.copyTo && validRepos.length > 0) {
         const copyPath = path.resolve(flags.copyTo)
         await fs.ensureDir(copyPath)
 
-        this.log(`├──╮ 📦 Copying ${validRepos.length} validated repositories...`)
+        this.log(`├──╮ 📦 Copying ${chalk.yellow(validRepos.length)} validated repositories...`)
 
         for (const repo of validRepos) {
           const destPath = path.join(copyPath, repo.owner, repo.name)
           await fs.ensureDir(path.dirname(destPath))
           await fs.copy(repo.path, destPath)
-          this.log(`│  │ ${chalk.green(`✓ Copied ${repo.owner}/${repo.name}`)}`)
+          this.log(`│  │ ${chalk.green(`✓`)}Copied ${chalk.green(repo.owner)}/${chalk.green(repo.name)}`)
         }
 
-        this.log(`├──╯ ${chalk.green(`✅ Successfully copied repositories to: ${copyPath}`)}`)
+        this.log(`├──╯ ✅ Successfully copied repositories to: ${chalk.green(copyPath)}`)
       }
 
       const elapsedMs = Date.now() - startTime

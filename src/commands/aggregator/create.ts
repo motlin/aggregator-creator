@@ -145,11 +145,14 @@ export default class AggregatorCreate extends Command {
 
     if (allGAVs.length > 0) {
       this.log(`│  │ 📝 Adding to the dependencyManagement section of the aggregator...`)
+      this.log(`│  ├──╮`)
       for (const gav of allGAVs) {
         this.log(
-          `│  │ ✅ Adding group ID: ${chalk.yellow(gav.getGroupId())}, artifact ID: ${chalk.yellow(gav.getArtifactId())}, and version: ${chalk.yellow(gav.getVersion())}`,
+          `│  │  │ Adding group ID: ${chalk.yellow(gav.getGroupId())}, artifact ID: ${chalk.yellow(gav.getArtifactId())}, and version: ${chalk.yellow(gav.getVersion())}`,
         )
       }
+      this.log(`│  ├──╯`)
+
     } else {
       this.log(`│  │ No GAVs found to add to the dependencyManagement section of the aggregator...`)
       this.log(`│  │ ℹ️ This may be due to Maven parent POM resolution issues in some repositories`)
@@ -455,9 +458,9 @@ export default class AggregatorCreate extends Command {
     const allGAVs = await this.processPoms(allPoms, execa)
     this.log(`│  │`)
     this.log(`│  ├──╮ 📊 Repository scan summary:`)
-    this.log(`│  │  │ ✅ Found ${chalk.yellow(mavenRepos.length)} valid Maven repositories`)
+    this.log(`│  │  │ Found ${chalk.yellow(mavenRepos.length)} valid Maven repositories`)
     this.log(
-      `│  │  │ ✅ Found ${chalk.yellow(allGAVs.length)} GAVs to add to the dependencyManagement section of the POM`,
+      `│  │  │ Found ${chalk.yellow(allGAVs.length)} GAVs to add to the dependencyManagement section of the POM`,
     )
     if (skippedRepos.length > 0) {
       this.log(`│  │  │ ⚠️ Skipped ${chalk.yellow(skippedRepos.length)} repositories`)
