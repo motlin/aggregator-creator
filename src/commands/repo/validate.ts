@@ -131,10 +131,11 @@ export default class RepoValidate extends Command {
       for (const [i, repo] of repos.entries()) {
         const repoFullName = `${repo.owner}/${repo.name}`
 
-        this.log(`├──╮    🔍 [${chalk.yellow(i + 1)}/${repos.length}] ${chalk.yellow(repoFullName)}`)
+        this.log(`├──╮ 🔍 [${chalk.yellow(i + 1)}/${repos.length}] ${chalk.yellow(repoFullName)}`)
+        this.log(`│  │ Validating Maven repo at: ${chalk.cyan(repo.path)}`)
 
         if (!repo.hasPom) {
-          this.log(`├──╯    ⏩ Skipping non-Maven repository: ${chalk.yellow(repoFullName)}`)
+          this.log(`├──╯ ⏩ Skipping non-Maven repository: ${chalk.yellow(repoFullName)}`)
           this.log(`│`)
           continue
         }
@@ -173,15 +174,19 @@ export default class RepoValidate extends Command {
         await fs.ensureDir(copyPath)
 
         this.log(`├──╮ 📦 Copying ${chalk.yellow(validRepos.length)} validated repositories...`)
+        this.log(`│  ├──╮`)
 
         for (const repo of validRepos) {
           const destPath = path.join(copyPath, repo.owner, repo.name)
           await fs.ensureDir(path.dirname(destPath))
           await fs.copy(repo.path, destPath)
-          this.log(`│  │ ${chalk.green(`✓`)}Copied ${chalk.green(repo.owner)}/${chalk.green(repo.name)}`)
+          this.log(`│  │  │ Copied ${chalk.green(repo.owner)}/${chalk.green(repo.name)}`)
         }
 
+        this.log(`│  ├──╯`)
         this.log(`├──╯ ✅ Successfully copied repositories to: ${chalk.green(copyPath)}`)
+        this.log(`│`)
+        this.log(`╰─── ✅ All done`)
       }
 
       const elapsedMs = Date.now() - startTime

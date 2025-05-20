@@ -57,7 +57,7 @@ export default class RepoTag extends Command {
       verbose: (verboseLine: string, {type}: {type: string}) => {
         switch (type) {
           case 'command': {
-            this.log(`│  │  │ ${verboseLine}`)
+            this.log(`│  │  ├──╮ ${verboseLine}`)
             break
           }
           case 'duration': {
@@ -115,21 +115,23 @@ export default class RepoTag extends Command {
           const repoPath = path.join(ownerPath, repoDir)
           const repoName = repoDir
 
-          this.log(`│  ├──╮ Processing repository: ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)}`)
+          this.log(`│  ├──╮`)
+          this.log(
+            `│  │  🔍 [${chalk.yellow(totalRepos)}/${chalk.yellow(repoDirs.length)} in ${chalk.yellow(ownerDir)}] ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)}`,
+          )
 
           if (!(await this.isGitRepository(repoPath))) {
             this.log(`│  │  │ Skipping ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)} - not a git repository`)
             skipped.push({owner: ownerDir, name: repoName, reason: 'not a git repository'})
-            this.log(`│  │  │`)
+            this.log(`│  ├──╯ ⏩ Repository skipped`)
             continue
           }
 
+          this.log(`│  │  │ Validating Maven repo at: ${chalk.cyan(path.resolve(repoPath))}`)
           const isValid = await this.validateMavenRepo(repoPath, execa)
 
           if (isValid) {
-            this.log(
-              `│  │  │ ${chalk.green('✓')} Valid Maven repository: ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)}`,
-            )
+            this.log(`│  ├──╯ ✅ Valid Maven repository: ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)}`)
 
             validRepos.push({
               path: repoPath,
@@ -142,8 +144,8 @@ export default class RepoTag extends Command {
               `│  │  │ Skipping ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)} - not a valid Maven repository`,
             )
             skipped.push({owner: ownerDir, name: repoName, reason: 'not a valid Maven repository'})
+            this.log(`│  ├──╯ ⏩ Repository skipped`)
           }
-          this.log(`│  ├──╯`)
         }
       }
 
@@ -155,7 +157,7 @@ export default class RepoTag extends Command {
 
       if (validRepos.length === 0) {
         this.warn(`│  │  │ No valid Maven repositories found to tag.`)
-        this.log(`│  ├──╯`)
+        this.log(`│  ├──╯ ℹ️ Nothing to tag`)
         return {
           success: true,
           topic,
@@ -169,7 +171,7 @@ export default class RepoTag extends Command {
       for (const repo of validRepos) {
         this.log(`│  │  │ - ${chalk.yellow(repo.owner)}/${chalk.yellow(repo.repoName)}`)
       }
-      this.log(`│  ├──╯`)
+      this.log(`│  ├──╯ ✅ Analysis complete`)
 
       let proceed = dryRun || yes
 
@@ -192,7 +194,7 @@ export default class RepoTag extends Command {
 
         if (!proceed) {
           this.warn(`│  │  │ Operation canceled by user.`)
-          this.log(`│  ├──╯`)
+          this.log(`│  ├──╯ ❌ Operation canceled`)
           return {
             success: false,
             topic,
@@ -200,16 +202,16 @@ export default class RepoTag extends Command {
             skipped,
           }
         }
-        this.log(`│  ├──╯`)
+        this.log(`│  ├──╯ ✅ Confirmed`)
       }
 
       this.log(`│  │`)
       this.log(`│  ├──╮ 🏷️ Tagging repositories...`)
 
-      for (const repo of validRepos) {
+      for (const [i, repo] of validRepos.entries()) {
         if (dryRun) {
           this.log(
-            `│  │  │ ${chalk.blue('[DRY RUN]')} Would tag ${chalk.yellow(repo.owner)}/${chalk.yellow(repo.repoName)} with topic: ${chalk.cyan(topic)}`,
+            `│  │  │ ${chalk.blue('[DRY RUN]')} [${chalk.yellow(i + 1)}/${validRepos.length}] Would tag ${chalk.yellow(repo.owner)}/${chalk.yellow(repo.repoName)} with topic: ${chalk.cyan(topic)}`,
           )
           tagged.push({owner: repo.owner, name: repo.repoName})
         } else {
@@ -220,7 +222,7 @@ export default class RepoTag extends Command {
           tagged.push({owner: repo.owner, name: repo.repoName})
         }
       }
-      this.log(`│  ├──╯`)
+      this.log(`│  ├──╯ ✅ Tagging complete`)
 
       this.log(`│`)
       this.log(`╰─── ✅ Repository tagging process completed`)
@@ -299,7 +301,6 @@ export default class RepoTag extends Command {
 
   private async validateMavenRepo(repoPath: string, execa: typeof execa_ = execa_): Promise<boolean> {
     const absolutePath = path.resolve(repoPath)
-    this.log(`│  │  │ Validating Maven repo at: ${chalk.cyan(absolutePath)}`)
 
     try {
       const stats = await fs.stat(absolutePath)

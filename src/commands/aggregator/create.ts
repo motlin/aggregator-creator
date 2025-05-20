@@ -561,6 +561,7 @@ export default class AggregatorCreate extends Command {
       const elapsedTimeMs = Date.now() - startTime
       this.log(`│  │  │ ⏱️ Operation completed in ${chalk.dim(`${elapsedTimeMs}ms`)}`)
       this.log(`│  ├──╯`)
+      this.log(`├──╯ 📄 Successfully created aggregator POM at: ${chalk.yellow(pomPath)}`)
 
       return {
         success: true,
