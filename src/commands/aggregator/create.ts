@@ -54,7 +54,7 @@ export default class AggregatorCreate extends Command {
   }
 
   private async execute(command: string, args: string[] = [], execaFn = _execa): Promise<Result> {
-    this.log(`├─ Executing: ${chalk.yellow(command)} ${chalk.yellow(args.join(' '))}`)
+    this.log(`│  ├──╮`)
 
     try {
       return await execaFn(command, args)
@@ -156,21 +156,24 @@ export default class AggregatorCreate extends Command {
 
     const allGAVs = gavResults.filter((gav): gav is MavenGAVCoords => gav !== null)
 
+    this.log(`│  │ `)
+    this.log(`│  ├──╮ 📝 Adding to the dependencyManagement section of the aggregator...`)
+
     if (allGAVs.length > 0) {
-      this.log(`│  │ 📝 Adding to the dependencyManagement section of the aggregator...`)
-      this.log(`│  ├──╮`)
       for (const gav of allGAVs) {
         this.log(
           `│  │  │ Adding group ID: ${chalk.yellow(gav.getGroupId())}, artifact ID: ${chalk.yellow(gav.getArtifactId())}, and version: ${chalk.yellow(gav.getVersion())}`,
         )
       }
-      this.log(`│  ├──╯`)
     } else {
-      this.log(`│  │ No GAVs found to add to the dependencyManagement section of the aggregator...`)
-      this.log(`│  │ ℹ️ This may be due to Maven parent POM resolution issues in some repositories`)
+      this.log(`│  │  │ ℹ️ No GAVs found to add to the dependencyManagement section of the aggregator...`)
     }
+
+    this.log(`│  ├──╯`)
+
     return allGAVs
   }
+
 
   private async findPomFiles(dir: string, parallel = true): Promise<string[]> {
     try {
@@ -517,8 +520,7 @@ export default class AggregatorCreate extends Command {
     }
 
     if (!proceed) {
-      this.warn(`│  │  │ Operation canceled by user.`)
-      this.log(`│  ├──╯`)
+      this.warn(`│  ├──╯ Operation canceled by user.`)
       const elapsedTimeMs = Date.now() - startTime
 
       return {
@@ -559,9 +561,10 @@ export default class AggregatorCreate extends Command {
       this.log(`│  │  │ 📋 Included ${chalk.yellow(validModules.length)} modules`)
 
       const elapsedTimeMs = Date.now() - startTime
-      this.log(`│  │  │ ⏱️ Operation completed in ${chalk.dim(`${elapsedTimeMs}ms`)}`)
-      this.log(`│  ├──╯`)
-      this.log(`├──╯ 📄 Successfully created aggregator POM at: ${chalk.yellow(pomPath)}`)
+      this.log(`│  ├──╯ ⏱️ Operation completed in ${chalk.dim(`${elapsedTimeMs}ms`)}`)
+      this.log(`├──╯`)
+      this.log(`│`)
+      this.log(`╰─── ✅ Successfully created aggregator POM at: ${chalk.yellow(pomPath)}`)
 
       return {
         success: true,
