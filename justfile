@@ -126,7 +126,7 @@ workflow-test CLEAN="true": build
     if [ "${VALIDATED_COUNT}" -gt 0 ]; then
         # Step 4: Tag validated repositories
         TAG_CMD="./bin/run.js repo:tag"
-        TAG_PARAMS="--topic maven"
+        TAG_PARAMS="--topic maven --yes"
         TAG_FULL_CMD="${TAG_CMD} ${VALIDATED_REPOS} ${TAG_PARAMS}"
 
         run_command "4" "Tag validated repositories using repo:tag" "${TAG_FULL_CMD}"
