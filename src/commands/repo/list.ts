@@ -9,6 +9,7 @@ export default class RepoList extends Command {
   static override examples = [
     '<%= config.bin %> <%= command.id %> --limit 100',
     '<%= config.bin %> <%= command.id %> --user motlin --limit 100',
+    '<%= config.bin %> <%= command.id %> --user motlin --user liftwizard --limit 100',
     '<%= config.bin %> <%= command.id %> --user motlin --language Java --limit 100',
     '<%= config.bin %> <%= command.id %> --user motlin --topic maven --language Java --json',
     '<%= config.bin %> <%= command.id %> --user motlin --limit 100 --json',
@@ -21,7 +22,7 @@ export default class RepoList extends Command {
   static override enableJsonFlag = true
 
   static override flags = {
-    user: Flags.string({char: 'u', description: 'GitHub username/org to filter by'}),
+    user: Flags.string({char: 'u', description: 'GitHub username/org to filter by', multiple: true}),
     topic: Flags.string({char: 't', description: 'Topic filter', multiple: true}),
     language: Flags.string({char: 'g', description: 'Language filter', multiple: true}),
     'include-forks': Flags.boolean({description: 'Include forked repositories', default: false}),
@@ -58,7 +59,7 @@ export default class RepoList extends Command {
   private repositoriesSchema = z.array(this.repoSchema)
 
   private async fetchRepositories(
-    username: string | undefined,
+    usernames: string[] = [],
     topics: string[] = [],
     languages: string[] = [],
     limit: number | undefined,
@@ -68,7 +69,9 @@ export default class RepoList extends Command {
     type: string,
     execa: typeof execa_,
   ): Promise<z.infer<typeof this.repositoriesSchema>> {
-    this.log(`├──╮ 🔍 Fetching GitHub repositories${username ? ` for user: ${chalk.yellow(username)}` : ''}`)
+    this.log(
+      `├──╮ 🔍 Fetching GitHub repositories${usernames.length > 0 ? ` for users: ${chalk.yellow(usernames.join(', '))}` : ''}`,
+    )
 
     try {
       this.log(`│  ├──╮ Building search query`)
@@ -76,8 +79,9 @@ export default class RepoList extends Command {
       const languageQueries = languages.map((language) => `language:${language}`).join(' ')
       let query = ''
 
-      if (username) {
-        query += `user:${username} `
+      if (usernames.length > 0) {
+        const userQueries = usernames.map((username) => `user:${username}`).join(' ')
+        query += `${userQueries} `
       }
 
       if (type !== 'all') {
@@ -177,7 +181,7 @@ export default class RepoList extends Command {
 
     try {
       const repositories = await this.fetchRepositories(
-        flags.user,
+        flags.user ? (Array.isArray(flags.user) ? flags.user : [flags.user]) : [],
         flags.topic ? (Array.isArray(flags.topic) ? flags.topic : [flags.topic]) : [],
         flags.language ? (Array.isArray(flags.language) ? flags.language : [flags.language]) : [],
         flags.limit,
