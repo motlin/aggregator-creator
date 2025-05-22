@@ -1,12 +1,15 @@
 {
-  "extends": "../tsconfig",
   "compilerOptions": {
     "noEmit": true,
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
-    "noImplicitAny": false,
-    "strict": false,
-    "strictFunctionTypes": false
+    "strict": true,
+    "module": "Node16",
+    "target": "es2022",
+    "moduleResolution": "node16",
+    "composite": true,
+    "esModuleInterop": true
   },
-  "references": [{"path": ".."}]
+  "include": ["./**/*"],
+  "references": [{"path": "../src"}]
 }

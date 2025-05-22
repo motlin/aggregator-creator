@@ -1,15 +1,12 @@
 {
-  "compilerOptions": {
-    "declaration": true,
-    "module": "Node16",
-    "outDir": "dist",
-    "rootDir": "src",
-    "strict": true,
-    "target": "es2022",
-    "moduleResolution": "node16"
-  },
-  "include": ["./src/**/*"],
+  "files": [],
+  "references": [{"path": "./src"}, {"path": "./test"}],
   "ts-node": {
-    "esm": true
+    "esm": true,
+    "transpileOnly": true,
+    "compilerOptions": {
+      "module": "esnext",
+      "target": "es2022"
+    }
   }
 }

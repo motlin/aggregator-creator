@@ -4,11 +4,9 @@ import fs from 'fs-extra'
 import path from 'node:path'
 
 describe('repo:tag', () => {
-  let sandbox = createSandbox()
+  const sandbox = createSandbox()
 
   beforeEach(() => {
-    sandbox = createSandbox()
-
     sandbox.stub(fs, 'readdir').resolves([
       {name: 'repo1', isDirectory: () => true},
       {name: 'repo2', isDirectory: () => true},
@@ -27,10 +25,7 @@ describe('repo:tag', () => {
   })
 
   afterEach(() => {
-    if (sandbox) {
-      sandbox.restore()
-      sandbox = null
-    }
+    sandbox.restore()
   })
 
   it('should output JSON for tag command', () => {

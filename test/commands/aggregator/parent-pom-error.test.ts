@@ -5,9 +5,11 @@ import path from 'node:path'
 import * as os from 'node:os'
 import {createSandbox} from 'sinon'
 import * as execa from 'execa'
+import type {Result} from 'execa'
+import {createMockResult} from '../../utils/mock-result.js'
 
 // Mock for parent POM resolution error
-const parentPomErrorMock = async (command: string, args?: string[]): Promise<execa.r> => {
+const parentPomErrorMock = async (command: string, args?: string[]): Promise<Result> => {
   if (command === 'mvn' && args?.includes('help:evaluate') && args?.includes('-Dexpression=project.modules')) {
     // Simulate Maven parent POM resolution error for project.modules
     throw new Error('Command failed with exit code 1: mvn help:evaluate: Non-resolvable parent POM')
@@ -15,29 +17,21 @@ const parentPomErrorMock = async (command: string, args?: string[]): Promise<exe
 
   // For other Maven commands, return success
   if (command === 'mvn' && args?.includes('help:effective-pom')) {
-    return {
+    return createMockResult({
       command: 'mvn help:effective-pom',
       exitCode: 0,
       stdout: 'effective-pom',
       stderr: '',
-      failed: false,
-      isCanceled: false,
-      killed: false,
-      timedOut: false,
-    } as execa.Result
+    })
   }
 
   // Default response for other commands
-  return {
+  return createMockResult({
     stdout: '',
     stderr: '',
     exitCode: 0,
     command: `${command} ${args?.join(' ') || ''}`,
-    failed: false,
-    isCanceled: false,
-    killed: false,
-    timedOut: false,
-  } as execa.Result
+  })
 }
 
 describe('aggregator:create with parent POM resolution errors', () => {
