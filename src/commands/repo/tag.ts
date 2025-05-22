@@ -4,6 +4,7 @@ import {execa as execa_} from 'execa'
 import fs from 'fs-extra'
 import path from 'node:path'
 import inquirer from 'inquirer'
+import {validateMavenRepo} from '../../utils/maven-validation.js'
 
 export default class RepoTag extends Command {
   static override args = {
@@ -128,7 +129,7 @@ export default class RepoTag extends Command {
           }
 
           this.log(`│  │  │ Validating Maven repo at: ${chalk.cyan(path.resolve(repoPath))}`)
-          const isValid = await this.validateMavenRepo(repoPath, execa)
+          const isValid = await validateMavenRepo(repoPath, execa, this)
 
           if (isValid) {
             this.log(`│  ├──╯ ✅ Valid Maven repository: ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)}`)
@@ -293,41 +294,6 @@ export default class RepoTag extends Command {
       this.error(`│  │  │ Failed to tag repository ${chalk.yellow(owner)}/${chalk.yellow(name)}: ${error}`, {
         exit: false,
       })
-    }
-  }
-
-  // TODO 2025-05-22: We shouldn't duplicate this, it's already in the validate command
-  private async validateMavenRepo(repoPath: string, execa: typeof execa_ = execa_): Promise<boolean> {
-    const absolutePath = path.resolve(repoPath)
-
-    try {
-      const stats = await fs.stat(absolutePath)
-      if (!stats.isDirectory()) {
-        return false
-      }
-    } catch {
-      return false
-    }
-
-    const pomPath = path.join(absolutePath, 'pom.xml')
-    try {
-      const pomExists = await fs.pathExists(pomPath)
-      if (!pomExists) {
-        this.log(`│  │  │ No pom.xml found at: ${chalk.yellow(pomPath)}`)
-        return false
-      }
-    } catch {
-      return false
-    }
-
-    try {
-      await execa('mvn', ['help:effective-pom', '--quiet', '--file', pomPath])
-      return true
-    } catch (execError) {
-      if (execError instanceof Error && execError.message.includes('ENOENT')) {
-        this.warn(`│  │  │ Maven (mvn) command not found. Please install Maven.`)
-      }
-      return false
     }
   }
 }

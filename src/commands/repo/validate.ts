@@ -3,6 +3,7 @@ import chalk from 'chalk'
 import {execa as execa_} from 'execa'
 import fs from 'fs-extra'
 import path from 'node:path'
+import {validateMavenRepo} from '../../utils/maven-validation.js'
 
 type RepoInfo = {
   path: string
@@ -140,7 +141,7 @@ export default class RepoValidate extends Command {
           continue
         }
 
-        const isValid = await this.validateMavenRepo(repo.path, execa, flags.verbose)
+        const isValid = await validateMavenRepo(repo.path, execa, this)
         repo.valid = isValid
 
         if (isValid) {
@@ -199,39 +200,6 @@ export default class RepoValidate extends Command {
     } catch (error) {
       this.error(`Error validating repositories: ${error}`, {exit: 1})
       return {validRepos: [], validCount: 0}
-    }
-  }
-
-  public async validateMavenRepo(repoPath: string, execa: typeof execa_, _verbose = false): Promise<boolean> {
-    const absolutePath = path.resolve(repoPath)
-
-    try {
-      const stats = await fs.stat(absolutePath)
-      if (!stats.isDirectory()) {
-        return false
-      }
-    } catch {
-      return false
-    }
-
-    const pomPath = path.join(absolutePath, 'pom.xml')
-    try {
-      const pomExists = await fs.pathExists(pomPath)
-      if (!pomExists) {
-        return false
-      }
-    } catch {
-      return false
-    }
-
-    try {
-      await execa('mvn', ['help:effective-pom', '--quiet', '--file', pomPath])
-      return true
-    } catch (execError) {
-      if (execError instanceof Error && execError.message.includes('ENOENT')) {
-        this.warn(`│  │ Maven (mvn) command not found. Please install Maven.`)
-      }
-      return false
     }
   }
 }
