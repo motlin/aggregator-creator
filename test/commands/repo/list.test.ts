@@ -1,8 +1,6 @@
 import {runCommand} from '@oclif/test'
 import {expect} from 'chai'
 
-import './mock-execa-list'
-
 describe('repo:list', () => {
   it('should fetch repositories from all organizations when no user flag is provided', async () => {
     const {stdout} = await runCommand('repo:list')

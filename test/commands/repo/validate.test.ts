@@ -4,8 +4,6 @@ import fs from 'fs-extra'
 import path from 'node:path'
 import {createSandbox} from 'sinon'
 
-import './mock-execa-validate'
-
 describe('repo:validate', () => {
   let tempDir: string
   const sandbox = createSandbox()

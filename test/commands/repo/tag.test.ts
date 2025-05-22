@@ -3,8 +3,6 @@ import {createSandbox} from 'sinon'
 import fs from 'fs-extra'
 import path from 'node:path'
 
-import './mock-execa-tag'
-
 describe('repo:tag', () => {
   let sandbox = createSandbox()
 
