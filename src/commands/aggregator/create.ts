@@ -174,7 +174,6 @@ export default class AggregatorCreate extends Command {
     return allGAVs
   }
 
-
   private async findPomFiles(dir: string, parallel = true): Promise<string[]> {
     try {
       await fs.ensureDir(path.dirname(dir))

@@ -14,9 +14,6 @@ export default class RepoList extends Command {
     '<%= config.bin %> <%= command.id %> --user motlin --topic maven --language Java --json',
     '<%= config.bin %> <%= command.id %> --user motlin --limit 100 --json',
     '<%= config.bin %> <%= command.id %> --include-forks --include-archived',
-    '<%= config.bin %> <%= command.id %> --visibility public --type org',
-    '<%= config.bin %> <%= command.id %> --visibility private --type user',
-    '<%= config.bin %> <%= command.id %> --visibility all --type all',
   ]
 
   static override enableJsonFlag = true
@@ -31,11 +28,6 @@ export default class RepoList extends Command {
       description: 'Repository visibility filter',
       options: ['public', 'private', 'all'],
       default: 'public',
-    }),
-    type: Flags.string({
-      description: 'Repository owner type filter',
-      options: ['user', 'org', 'all'],
-      default: 'org',
     }),
     limit: Flags.integer({char: 'l', description: 'Max repositories'}),
   }
@@ -66,7 +58,6 @@ export default class RepoList extends Command {
     includeForks: boolean,
     includeArchived: boolean,
     visibility: string,
-    type: string,
     execa: typeof execa_,
   ): Promise<z.infer<typeof this.repositoriesSchema>> {
     this.log(
@@ -82,10 +73,6 @@ export default class RepoList extends Command {
       if (usernames.length > 0) {
         const userQueries = usernames.map((username) => `user:${username}`).join(' ')
         query += `${userQueries} `
-      }
-
-      if (type !== 'all') {
-        query += `type:${type} `
       }
 
       if (visibility !== 'all') {
@@ -188,7 +175,6 @@ export default class RepoList extends Command {
         flags['include-forks'],
         flags['include-archived'],
         flags.visibility,
-        flags.type,
         execa,
       )
 

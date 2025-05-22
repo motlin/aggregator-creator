@@ -116,7 +116,9 @@ export default class RepoTag extends Command {
           const repoName = repoDir
 
           this.log(`│  │`)
-          this.log(`│  ├──╮ 🔍 [${chalk.yellow(totalRepos)}/${repoDirs.length} in ${chalk.yellow(ownerDir)}] ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)}`)
+          this.log(
+            `│  ├──╮ 🔍 [${chalk.yellow(totalRepos)}/${repoDirs.length} in ${chalk.yellow(ownerDir)}] ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)}`,
+          )
 
           if (!(await this.isGitRepository(repoPath))) {
             this.log(`│  │  │ Skipping ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)} - not a git repository`)
@@ -173,7 +175,9 @@ export default class RepoTag extends Command {
       let proceed = dryRun || yes
 
       if (!proceed) {
-        this.log(`│  ├──╮ 🤔 Do you want to tag these ${chalk.yellow(validRepos.length)} repositories with the '${chalk.yellow(topic)}' topic?`)
+        this.log(
+          `│  ├──╮ 🤔 Do you want to tag these ${chalk.yellow(validRepos.length)} repositories with the '${chalk.yellow(topic)}' topic?`,
+        )
 
         const {confirmed} = await inquirer.prompt([
           {
