@@ -1,5 +1,6 @@
 import {Command, Flags} from '@oclif/core'
 import {execa as execa_} from 'execa'
+
 import {z} from 'zod'
 import chalk from 'chalk'
 
@@ -14,6 +15,7 @@ export default class RepoList extends Command {
     '<%= config.bin %> <%= command.id %> --user motlin --topic maven --language Java --json',
     '<%= config.bin %> <%= command.id %> --user motlin --limit 100 --json',
     '<%= config.bin %> <%= command.id %> --include-forks --include-archived',
+    '<%= config.bin %> <%= command.id %> --visibility public',
   ]
 
   static override enableJsonFlag = true
@@ -211,7 +213,7 @@ export default class RepoList extends Command {
       if (repositories.length === 0) {
         this.log(`├──╯ ℹ️ No repositories found matching the criteria.`)
         this.log(`│`)
-        return []
+        return this.repositoriesSchema.parse([])
       }
 
       this.log(`│  ├──╮ 📋 Results: ${chalk.yellow(repositories.length)} repositories`)

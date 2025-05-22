@@ -28,6 +28,7 @@ describe('repo:tag', () => {
     sandbox.restore()
   })
 
+  // TODO 2025-05-20: This isn't a real test of the tag command
   it('should output JSON for tag command', () => {
     const expectedJson = {
       success: true,

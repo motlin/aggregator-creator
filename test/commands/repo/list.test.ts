@@ -4,6 +4,7 @@ import {expect} from 'chai'
 describe('repo:list', () => {
   it('should fetch repositories from all organizations when no user flag is provided', async () => {
     const {stdout} = await runCommand('repo:list --json --limit 2')
+
     expect(JSON.parse(stdout)).to.deep.equal([
       {
         name: 'freeCodeCamp',
@@ -50,13 +51,51 @@ describe('repo:list', () => {
   })
 
   it('should fetch repositories for specified user', async () => {
-    const {stdout} = await runCommand('repo:list --user motlin --json --limit 1')
-    expect(JSON.parse(stdout)).to.deep.equal([
+    const expected = [
       {
         name: 'jetbrains-settings',
         owner: {login: 'motlin', type: 'User'},
         language: null,
         topics: [],
+        fork: false,
+        archived: false,
+        disabled: false,
+        is_template: false,
+        private: false,
+        visibility: 'public',
+      },
+    ]
+
+    const {stdout} = await runCommand('repo:list --user motlin --json --limit 1')
+    expect(JSON.parse(stdout)).to.deep.equal(expected)
+  })
+
+  it('should fetch repositories for freeCodeCamp user', async () => {
+    const {stdout} = await runCommand('repo:list --user freeCodeCamp --json --limit 1')
+
+    expect(JSON.parse(stdout)).to.deep.equal([
+      {
+        name: 'freeCodeCamp',
+        owner: {login: 'freeCodeCamp', type: 'Organization'},
+        language: 'TypeScript',
+        topics: [
+          'careers',
+          'certification',
+          'community',
+          'curriculum',
+          'd3',
+          'education',
+          'freecodecamp',
+          'hacktoberfest',
+          'javascript',
+          'learn-to-code',
+          'math',
+          'nodejs',
+          'nonprofits',
+          'programming',
+          'react',
+          'teachers',
+        ],
         fork: false,
         archived: false,
         disabled: false,

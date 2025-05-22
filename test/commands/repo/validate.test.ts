@@ -2,19 +2,15 @@ import {runCommand} from '@oclif/test'
 import {expect} from 'chai'
 import fs from 'fs-extra'
 import path from 'node:path'
-import {createSandbox} from 'sinon'
 
 describe('repo:validate', () => {
   let tempDir: string
-  const sandbox = createSandbox()
 
   beforeEach(() => {
     tempDir = path.join(process.cwd(), 'test-temp-dir')
   })
 
   afterEach(async () => {
-    sandbox.restore()
-
     if (fs.existsSync(tempDir)) {
       await fs.remove(tempDir)
     }
@@ -42,6 +38,7 @@ describe('repo:validate', () => {
     })
   })
 
+  // TODO 2025-05-20: Improve this test since it can't be differentiated from the previous test's assertions. This one should have 1 valid repo at the root.
   it('should succeed for valid Maven repo', async () => {
     await fs.ensureDir(tempDir)
     await fs.writeFile(path.join(tempDir, 'pom.xml'), '<project></project>')
@@ -53,4 +50,6 @@ describe('repo:validate', () => {
       validRepos: [],
     })
   })
+
+  // TODO 2025-05-20: Add a test of a directory with nested org/repo directories
 })
