@@ -259,7 +259,6 @@ export default class RepoTag extends Command {
     execa: typeof execa_ = execa_,
   ): Promise<void> {
     try {
-      // Use await directly instead of chaining with .then() to maintain sequential flow
       const result = await execa('gh', ['api', `repos/${owner}/${name}/topics`, '--method', 'GET'], {
         reject: false,
       })
