@@ -46,6 +46,11 @@ export default class AggregatorCreate extends Command {
       description: 'Automatically answer "yes" to all prompts',
       default: false,
     }),
+    parallel: Flags.boolean({
+      description: 'Enable parallel processing',
+      default: true,
+      allowNo: true,
+    }),
   }
 
   private async execute(command: string, args: string[] = [], execaFn = _execa): Promise<Result> {
@@ -119,12 +124,12 @@ export default class AggregatorCreate extends Command {
     }
   }
 
-  private async processPoms(allPoms: string[], execaFn = _execa) {
+  private async processPoms(allPoms: string[], execaFn = _execa, parallel = true) {
     this.log(
       `│  │ ⏳ Processing all found POM files for non parent POM files to add to the dependencyManagement section...`,
     )
 
-    const gavPromises = allPoms.map(async (pom) => {
+    const processGAV = async (pom: string) => {
       try {
         const parentPom = await this.isParentPom(pom, execaFn)
         if (!parentPom) {
@@ -134,9 +139,21 @@ export default class AggregatorCreate extends Command {
         this.log(`│  │ ⚠️ Could not determine if ${chalk.yellow(pom)} is a parent POM, skipping`)
       }
       return null
-    })
+    }
 
-    const gavResults = await Promise.all(gavPromises)
+    let gavResults: (MavenGAVCoords | null)[]
+
+    if (parallel) {
+      const gavPromises = allPoms.map((pom) => processGAV(pom))
+      gavResults = await Promise.all(gavPromises)
+    } else {
+      gavResults = []
+      for (const pom of allPoms) {
+        const result = await processGAV(pom)
+        gavResults.push(result)
+      }
+    }
+
     const allGAVs = gavResults.filter((gav): gav is MavenGAVCoords => gav !== null)
 
     if (allGAVs.length > 0) {
@@ -155,7 +172,7 @@ export default class AggregatorCreate extends Command {
     return allGAVs
   }
 
-  private async findPomFiles(dir: string): Promise<string[]> {
+  private async findPomFiles(dir: string, parallel = true): Promise<string[]> {
     try {
       await fs.ensureDir(path.dirname(dir))
     } catch (error: unknown) {
@@ -169,15 +186,27 @@ export default class AggregatorCreate extends Command {
       try {
         const files = await fs.readdir(currentDir)
         if (files.length > 0) {
-          const statPromises = files.map(async (file) => {
-            const filepath = path.join(currentDir, file)
-            const stat = await fs.stat(filepath)
-            return {filepath, stat, file}
-          })
-          const results = await Promise.all(statPromises)
-          for (const result of results) {
-            if (result) {
-              const {filepath, stat, file} = result
+          if (parallel) {
+            const statPromises = files.map(async (file) => {
+              const filepath = path.join(currentDir, file)
+              const stat = await fs.stat(filepath)
+              return {filepath, stat, file}
+            })
+            const results = await Promise.all(statPromises)
+            for (const result of results) {
+              if (result) {
+                const {filepath, stat, file} = result
+                if (stat && stat.isDirectory()) {
+                  dirsToExplore.push(filepath)
+                } else if (stat && stat.isFile() && file === 'pom.xml') {
+                  pomFiles.push(filepath)
+                }
+              }
+            }
+          } else {
+            for (const file of files) {
+              const filepath = path.join(currentDir, file)
+              const stat = await fs.stat(filepath)
               if (stat && stat.isDirectory()) {
                 dirsToExplore.push(filepath)
               } else if (stat && stat.isFile() && file === 'pom.xml') {
@@ -449,8 +478,8 @@ export default class AggregatorCreate extends Command {
     for (const repo of mavenRepos) {
       this.log(`│  │ ✅ Found valid Maven repository: ${chalk.yellow(repo.relativePath)}`)
     }
-    const allPoms = await this.findPomFiles(directoryPath)
-    const allGAVs = await this.processPoms(allPoms, execa)
+    const allPoms = await this.findPomFiles(directoryPath, flags.parallel)
+    const allGAVs = await this.processPoms(allPoms, execa, flags.parallel)
     this.log(`│  │`)
     this.log(`│  ├──╮ 📊 Repository scan summary:`)
     this.log(`│  │  │ Found ${chalk.yellow(mavenRepos.length)} valid Maven repositories`)

@@ -144,7 +144,7 @@ workflow-test CLEAN="true": build
 
         # Step 7: Create aggregator POM
         AGGREGATOR_CMD="./bin/run.js aggregator:create"
-        AGGREGATOR_PARAMS="--groupId org.example --artifactId maven-aggregator --yes"
+        AGGREGATOR_PARAMS="--groupId org.example --artifactId maven-aggregator --yes --no-parallel"
         AGGREGATOR_FULL_CMD="${AGGREGATOR_CMD} ${FINAL_REPOS} ${AGGREGATOR_PARAMS}"
 
         run_command "7" "Create aggregator POM" "${AGGREGATOR_FULL_CMD}"
