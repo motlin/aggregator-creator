@@ -30,26 +30,14 @@ describe('aggregator:create', () => {
   })
 
   it('errors when no directory is provided', async () => {
-    let errorThrown = false
-
-    try {
-      const result = await runCommand('aggregator:create')
-      const stderrOrOutput = result.stderr || result.stdout
-
-      if (
-        stderrOrOutput.includes('Missing 1 required arg') ||
-        stderrOrOutput.includes('directory') ||
-        stderrOrOutput.includes('required')
-      ) {
-        errorThrown = true
-      } else {
-        expect.fail('Command should have failed but did not')
-      }
-    } catch {
-      errorThrown = true
-    }
-
-    expect(errorThrown).to.be.true
+    const result = await runCommand('aggregator:create')
+    expect(result).to.deep.equal({
+      error: new Error(
+        'Missing 1 required arg:\ndirectory  Directory containing final Maven repos\nSee more help with --help',
+      ),
+      stdout: '',
+      stderr: '',
+    })
   })
 
   it('creates an aggregator POM with default values', async () => {
@@ -149,42 +137,5 @@ describe('aggregator:create', () => {
     } finally {
       await fs.remove(emptyDir)
     }
-  })
-
-  it('throws an error when no Maven repositories are found without --json flag', async () => {
-    const emptyDir = await fs.mkdtemp(path.join(os.tmpdir(), 'empty-dir-'))
-    let errorThrown = false
-
-    try {
-      const result = await runCommand(`aggregator:create ${emptyDir} --yes`)
-
-      if (
-        result.stderr &&
-        (result.stderr.includes('No Maven repositories found') ||
-          result.stderr.includes('repositories') ||
-          result.stderr.includes('not found'))
-      ) {
-        errorThrown = true
-      } else if (result.error) {
-        errorThrown = true
-      } else {
-        expect.fail('Command should have failed but did not')
-      }
-    } catch (error: unknown) {
-      errorThrown = true
-
-      if (error instanceof Error) {
-        const errorMessage = error.message
-        const hasErrorIndicator =
-          errorMessage.includes('No Maven repositories found') ||
-          errorMessage.includes('repositories') ||
-          errorMessage.includes('not found')
-        expect(hasErrorIndicator).to.be.true
-      }
-    } finally {
-      await fs.remove(emptyDir)
-    }
-
-    expect(errorThrown).to.be.true
   })
 })

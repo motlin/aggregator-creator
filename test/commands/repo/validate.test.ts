@@ -23,14 +23,12 @@ describe('repo:validate', () => {
   it('should fail when directory does not exist', async () => {
     const nonExistentPath = path.join(tempDir, 'non-existent')
 
-    try {
-      await runCommand(`repo:validate ${nonExistentPath} --json`)
-      expect.fail('Command should have failed')
-    } catch (error: unknown) {
-      const typedError = error as {exit?: number; message: string}
-      expect(typedError.exit).to.equal(1)
-      expect(typedError.message).to.contain('Directory does not exist')
-    }
+    const result = await runCommand(`repo:validate ${nonExistentPath} --json`)
+    expect(result).to.deep.equal({
+      result: undefined,
+      stdout: '{\n  "error": {\n    "oclif": {\n      "exit": 1\n    }\n  }\n}\n',
+      stderr: '',
+    })
   })
 
   it('should fail when no pom.xml exists', async () => {

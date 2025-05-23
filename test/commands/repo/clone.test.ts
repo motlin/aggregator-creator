@@ -7,50 +7,23 @@ describe('repo:clone', () => {
   })
 
   it('errors when no arguments provided', async () => {
-    let errorThrown = false
-
-    try {
-      const result = await runCommand('repo:clone')
-      errorThrown = true
-      console.log('Command completed with result:', result)
-    } catch (error: unknown) {
-      errorThrown = true
-      console.log('Caught error:', String(error))
-    }
-
-    expect(errorThrown).to.be.true
+    const result = await runCommand('repo:clone')
+    expect(result).to.deep.equal({
+      error: new Error(
+        'Missing 1 required arg:\ntargetDirectory  Directory to clone repositories into\nSee more help with --help',
+      ),
+      stdout: '',
+      stderr: '',
+    })
   })
 
   it('errors when no stdin input provided', async () => {
-    let errorThrown = false
+    const result = await runCommand('repo:clone ./test-dir')
 
-    try {
-      const result = await runCommand('repo:clone ./test-dir')
-
-      const stderrOrOutput = result.stderr || result.stdout
-      if (stderrOrOutput && stderrOrOutput.includes('No input provided')) {
-        errorThrown = true
-      } else if (result.error) {
-        const errorMsg = String(result.error)
-        console.log('Error object:', errorMsg)
-
-        if (errorMsg.includes('No input provided')) {
-          errorThrown = true
-        } else {
-          expect.fail('Command failed but not with the expected message')
-        }
-      } else {
-        expect.fail('Command should have failed but did not')
-      }
-    } catch (error: unknown) {
-      errorThrown = true
-      const errorMessage = String(error)
-      console.log('Caught error:', errorMessage)
-
-      const hasInputError = errorMessage.includes('No input provided')
-      console.log('Has expected error message?', hasInputError)
-    }
-
-    expect(errorThrown).to.be.true
+    expect(result).to.deep.equal({
+      error: new Error('No input provided. This command expects repository data from stdin.'),
+      stdout: '',
+      stderr: '',
+    })
   })
 })
