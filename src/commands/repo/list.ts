@@ -115,7 +115,7 @@ export default class RepoList extends Command {
     }
   }
 
-  public async run(): Promise<Record<string, unknown>[] | z.infer<typeof this.repositoriesSchema>> {
+  public async run(): Promise<z.infer<typeof this.repositoriesSchema>> {
     const {flags} = await this.parse(RepoList)
 
     const execa = execa_({
