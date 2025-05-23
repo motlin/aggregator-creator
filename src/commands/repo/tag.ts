@@ -232,7 +232,23 @@ export default class RepoTag extends Command {
         skipped,
       }
     } catch (error) {
-      this.error(`Failed to process repositories: ${error}`, {exit: 1})
+      let errorMessage = 'Unknown error'
+      let errorCode: string | undefined
+
+      if (error instanceof Error) {
+        errorMessage = error.message
+        errorCode = 'code' in error ? (error.code as string) : undefined
+      }
+
+      this.error(`Failed to process repositories: ${error}`, {
+        exit: 1,
+        code: errorCode,
+        suggestions: [
+          errorMessage,
+          'Ensure the directory contains git repositories',
+          'Check that you have proper file system permissions',
+        ],
+      })
 
       return {
         success: false,

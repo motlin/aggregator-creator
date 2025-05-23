@@ -50,7 +50,15 @@ export default class RepoClone extends Command {
     })
 
     if (process.stdin.isTTY) {
-      this.error('No input provided. This command expects repository data from stdin.', {exit: 1})
+      this.error('No input provided. This command expects repository data from stdin.', {
+        exit: 1,
+        code: 'NO_INPUT',
+        suggestions: [
+          'Pipe repository data into this command',
+          'Example: echo "owner/repo" | pjt repo:clone ./target-dir',
+          'Example: pjt repo:list --user someuser --json | pjt repo:clone ./target-dir',
+        ],
+      })
     } else {
       this.log(`╭─── 📦 Cloning repositories...`)
       this.log(`│`)
@@ -63,6 +71,12 @@ export default class RepoClone extends Command {
       } catch {
         this.error('GitHub CLI (gh) is not installed or not in PATH. Please install it from https://cli.github.com/', {
           exit: 1,
+          code: 'GH_NOT_FOUND',
+          suggestions: [
+            'Install GitHub CLI from https://cli.github.com/',
+            'On macOS: brew install gh',
+            'On Linux: See installation instructions at https://cli.github.com/manual/installation',
+          ],
         })
       }
 
@@ -71,7 +85,15 @@ export default class RepoClone extends Command {
         await execa('gh', ['auth', 'status'])
         this.log(`│  │`)
       } catch {
-        this.error('Not authenticated with GitHub. Please run `gh auth login` first.', {exit: 1})
+        this.error('Not authenticated with GitHub. Please run `gh auth login` first.', {
+          exit: 1,
+          code: 'GH_AUTH_REQUIRED',
+          suggestions: [
+            'Run: gh auth login',
+            'Follow the prompts to authenticate with GitHub',
+            'Ensure you have the necessary permissions for the repositories',
+          ],
+        })
       }
 
       this.log(`├──╯ ✅ Prerequisites complete`)
@@ -123,7 +145,15 @@ export default class RepoClone extends Command {
             this.repoNameSchema.parse(trimmedLine)
           } catch (error: unknown) {
             if (error instanceof z.ZodError) {
-              this.error(`Invalid repository format: ${trimmedLine} - must be in format "owner/repo"`, {exit: 1})
+              this.error(`Invalid repository format: ${trimmedLine} - must be in format "owner/repo"`, {
+                exit: 1,
+                code: 'INVALID_REPO_FORMAT',
+                suggestions: [
+                  'Repository must be in format "owner/repo"',
+                  'Example: facebook/react',
+                  'Example: microsoft/typescript',
+                ],
+              })
             }
             throw error
           }
@@ -173,6 +203,12 @@ export default class RepoClone extends Command {
       this.log(`│  │`)
       this.error('Repository cloning failed', {
         exit: 1,
+        code: 'CLONE_FAILED',
+        suggestions: [
+          'Check if the repository exists and is accessible',
+          'Verify your GitHub authentication status: gh auth status',
+          'Ensure you have permission to clone the repository',
+        ],
       })
       throw error
     }

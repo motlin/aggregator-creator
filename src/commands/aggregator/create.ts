@@ -178,7 +178,23 @@ export default class AggregatorCreate extends Command {
     try {
       await fs.ensureDir(path.dirname(dir))
     } catch (error: unknown) {
-      this.error(`Failed to access directory: ${error instanceof Error ? error.message : String(error)}`, {exit: 1})
+      let errorMessage = 'Unknown error'
+      let errorCode: string | undefined
+
+      if (error instanceof Error) {
+        errorMessage = error.message
+        errorCode = 'code' in error ? (error.code as string) : undefined
+      }
+
+      this.error(`Failed to access directory: ${errorMessage}`, {
+        exit: 1,
+        code: errorCode || 'DIRECTORY_ACCESS_ERROR',
+        suggestions: [
+          'Check if the directory exists',
+          'Verify you have read permissions for the directory',
+          `Try: mkdir -p "${dir}"`,
+        ],
+      })
     }
     this.log(`│  │ 🔍  Scanning: ${chalk.yellow(dir)} for all pom.xml files...`)
     const pomFiles = []
@@ -339,7 +355,23 @@ export default class AggregatorCreate extends Command {
     try {
       await fs.ensureDir(directoryPath)
     } catch (error: unknown) {
-      this.error(`Failed to access directory: ${error instanceof Error ? error.message : String(error)}`, {exit: 1})
+      let errorMessage = 'Unknown error'
+      let errorCode: string | undefined
+
+      if (error instanceof Error) {
+        errorMessage = error.message
+        errorCode = 'code' in error ? (error.code as string) : undefined
+      }
+
+      this.error(`Failed to access directory: ${errorMessage}`, {
+        exit: 1,
+        code: errorCode || 'DIRECTORY_ACCESS_ERROR',
+        suggestions: [
+          'Check if the directory path is valid',
+          'Verify you have read/write permissions',
+          `Try: mkdir -p "${directoryPath}"`,
+        ],
+      })
     }
 
     this.log(`╭─── 📄 Creating aggregator POM...`)
@@ -388,7 +420,15 @@ export default class AggregatorCreate extends Command {
       }
 
       if (!this.jsonEnabled()) {
-        this.error(result.error, {exit: 1})
+        this.error(result.error, {
+          exit: 1,
+          code: 'NO_MAVEN_REPOS',
+          suggestions: [
+            'Ensure the directory contains Maven projects with pom.xml files',
+            'Check that repository directories follow the expected structure',
+            'Verify that pom.xml files exist in the repository directories',
+          ],
+        })
       }
 
       return result
@@ -469,7 +509,15 @@ export default class AggregatorCreate extends Command {
       }
 
       if (!this.jsonEnabled()) {
-        this.error(result.error, {exit: 1})
+        this.error(result.error, {
+          exit: 1,
+          code: 'NO_MAVEN_REPOS',
+          suggestions: [
+            'Ensure the directory contains Maven projects with pom.xml files',
+            'Check that repository directories follow the expected structure',
+            'Verify that pom.xml files exist in the repository directories',
+          ],
+        })
       }
 
       return result
@@ -592,7 +640,23 @@ export default class AggregatorCreate extends Command {
         },
       }
     } catch (error: unknown) {
-      this.error(`Failed to write aggregator POM: ${error instanceof Error ? error.message : String(error)}`, {exit: 1})
+      let errorMessage = 'Unknown error'
+      let errorCode: string | undefined
+
+      if (error instanceof Error) {
+        errorMessage = error.message
+        errorCode = 'code' in error ? (error.code as string) : undefined
+      }
+
+      this.error(`Failed to write aggregator POM: ${errorMessage}`, {
+        exit: 1,
+        code: errorCode || 'POM_WRITE_ERROR',
+        suggestions: [
+          'Check if you have write permissions in the directory',
+          'Ensure the directory is not read-only',
+          `Verify the path exists: ${pomPath}`,
+        ],
+      })
     }
   }
 }

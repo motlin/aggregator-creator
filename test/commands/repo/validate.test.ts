@@ -26,7 +26,7 @@ describe('repo:validate', () => {
     const result = await runCommand(`repo:validate ${nonExistentPath} --json`)
     expect(result).to.deep.equal({
       result: undefined,
-      stdout: '{\n  "error": {\n    "oclif": {\n      "exit": 1\n    }\n  }\n}\n',
+      stdout: `{\n  "error": {\n    "code": "ENOENT",\n    "oclif": {\n      "exit": 1\n    },\n    "suggestions": [\n      "ENOENT: no such file or directory, stat '${nonExistentPath}'"\n    ]\n  }\n}\n`,
       stderr: '',
     })
   })

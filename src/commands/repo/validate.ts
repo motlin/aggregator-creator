@@ -83,7 +83,11 @@ export default class RepoValidate extends Command {
     try {
       const stats = await fs.stat(absolutePath)
       if (!stats.isDirectory()) {
-        this.error(`Path is not a directory: ${chalk.yellow(absolutePath)}`, {exit: 1})
+        this.error(`Path is not a directory: ${chalk.yellow(absolutePath)}`, {
+          exit: 1,
+          code: 'ENOTDIR',
+          suggestions: ['Ensure the path points to a directory, not a file', `Try: mkdir -p "${absolutePath}"`],
+        })
       }
 
       const repos: RepoInfo[] = []
@@ -198,7 +202,15 @@ export default class RepoValidate extends Command {
         validCount,
       }
     } catch (error) {
-      this.error(`Error validating repositories: ${error}`, {exit: 1})
+      let errorMessage = 'Unknown error'
+      let errorCode: string | undefined
+
+      if (error instanceof Error) {
+        errorMessage = error.message
+        errorCode = 'code' in error ? (error.code as string) : undefined
+      }
+
+      this.error(`Error validating repositories: ${error}`, {exit: 1, code: errorCode, suggestions: [errorMessage]})
       return {validRepos: [], validCount: 0}
     }
   }

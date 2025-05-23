@@ -107,10 +107,26 @@ export default class RepoList extends Command {
       return this.repositoriesSchema.parse(repositories)
     } catch (error) {
       if (error instanceof z.ZodError) {
-        this.error('Invalid repository data format received from GitHub API', {exit: 1})
+        this.error('Invalid repository data format received from GitHub API', {
+          exit: 1,
+          code: 'INVALID_DATA_FORMAT',
+          suggestions: ['GitHub API response format may have changed', 'Try updating the CLI to the latest version'],
+        })
       }
 
-      this.error(`Failed to fetch repositories: ${(error as Error).message}`, {exit: 1})
+      let errorMessage = 'Unknown error'
+      let errorCode: string | undefined
+
+      if (error instanceof Error) {
+        errorMessage = error.message
+        errorCode = 'code' in error ? (error.code as string) : undefined
+      }
+
+      this.error(`Failed to fetch repositories: ${errorMessage}`, {
+        exit: 1,
+        code: errorCode,
+        suggestions: [errorMessage, 'Check your GitHub authentication with: gh auth status'],
+      })
       throw error
     }
   }
@@ -153,6 +169,12 @@ export default class RepoList extends Command {
     } catch {
       this.error('GitHub CLI (gh) is not installed or not in PATH. Please install it from https://cli.github.com/', {
         exit: 1,
+        code: 'GH_NOT_FOUND',
+        suggestions: [
+          'Install GitHub CLI from https://cli.github.com/',
+          'On macOS: brew install gh',
+          'On Linux: See installation instructions at https://cli.github.com/manual/installation',
+        ],
       })
     }
 
@@ -160,7 +182,15 @@ export default class RepoList extends Command {
       this.log(`│  ├──╮ Check gh auth status`)
       await execa('gh', ['auth', 'status'])
     } catch {
-      this.error('Not authenticated with GitHub. Please run `gh auth login` first.', {exit: 1})
+      this.error('Not authenticated with GitHub. Please run `gh auth login` first.', {
+        exit: 1,
+        code: 'GH_AUTH_REQUIRED',
+        suggestions: [
+          'Run: gh auth login',
+          'Follow the prompts to authenticate with GitHub',
+          'Ensure you have the necessary permissions for the repositories',
+        ],
+      })
     }
 
     this.log(`├──╯ ✅ Prerequisites complete`)
@@ -204,7 +234,19 @@ export default class RepoList extends Command {
       this.log(`╰─── ✅ Repository listing complete`)
       return repositories
     } catch (error) {
-      this.error(`Error: ${(error as Error).message}`, {exit: 1})
+      let errorMessage = 'Unknown error'
+      let errorCode: string | undefined
+
+      if (error instanceof Error) {
+        errorMessage = error.message
+        errorCode = 'code' in error ? (error.code as string) : undefined
+      }
+
+      this.error(`Error: ${errorMessage}`, {
+        exit: 1,
+        code: errorCode,
+        suggestions: [errorMessage],
+      })
       return []
     }
   }

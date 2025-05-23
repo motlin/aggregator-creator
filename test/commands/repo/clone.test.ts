@@ -1,9 +1,23 @@
 import {runCommand} from '@oclif/test'
 import {expect} from 'chai'
+import {createSandbox} from 'sinon'
 
 describe('repo:clone', () => {
+  const sandbox = createSandbox()
+
   beforeEach(() => {
-    Object.defineProperty(process.stdin, 'isTTY', {value: true})
+    // Define the property first since it doesn't exist by default
+    Object.defineProperty(process.stdin, 'isTTY', {
+      value: undefined,
+      writable: true,
+      configurable: true,
+    })
+    // Now stub it
+    sandbox.stub(process.stdin, 'isTTY').value(true)
+  })
+
+  afterEach(() => {
+    sandbox.restore()
   })
 
   it('errors when no arguments provided', async () => {
@@ -20,8 +34,21 @@ describe('repo:clone', () => {
   it('errors when no stdin input provided', async () => {
     const result = await runCommand('repo:clone ./test-dir')
 
+    const expectedError = new Error('No input provided. This command expects repository data from stdin.') as Error & {
+      oclif: {exit: number}
+      code: string
+      suggestions: string[]
+    }
+    expectedError.oclif = {exit: 1}
+    expectedError.code = 'NO_INPUT'
+    expectedError.suggestions = [
+      'Pipe repository data into this command',
+      'Example: echo "owner/repo" | pjt repo:clone ./target-dir',
+      'Example: pjt repo:list --user someuser --json | pjt repo:clone ./target-dir',
+    ]
+
     expect(result).to.deep.equal({
-      error: new Error('No input provided. This command expects repository data from stdin.'),
+      error: expectedError,
       stdout: '',
       stderr: '',
     })
