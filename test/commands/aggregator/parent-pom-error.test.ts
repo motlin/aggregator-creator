@@ -58,11 +58,30 @@ describe('aggregator:create with parent POM resolution errors', () => {
   })
 
   it('should continue processing when Maven parent POM resolution errors occur', async () => {
-    const {stdout} = await runCommand(`aggregator:create ${tempDir} --yes`)
+    const {stdout} = await runCommand(`aggregator:create ${tempDir} --yes --json`)
+    const output = JSON.parse(stdout)
 
-    expect(stdout).to.include('Created aggregator POM')
-
-    expect(stdout).to.include('parent POM resolution issues')
+    expect(output).to.deep.equal({
+      success: true,
+      pomPath: path.join(tempDir, 'pom.xml'),
+      modules: [
+        {
+          path: 'valid-repo1',
+          valid: true,
+        },
+      ],
+      stats: {
+        totalScanned: 2,
+        validRepositories: 1,
+        skippedRepositories: 1,
+        elapsedTimeMs: output.stats.elapsedTimeMs,
+      },
+      mavenCoordinates: {
+        groupId: 'com.example',
+        artifactId: 'aggregator',
+        version: '1.0.0-SNAPSHOT',
+      },
+    })
 
     const pomPath = path.join(tempDir, 'pom.xml')
     expect(fs.existsSync(pomPath)).to.be.true

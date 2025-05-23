@@ -3,72 +3,175 @@ import {expect} from 'chai'
 
 describe('repo:list', () => {
   it('should fetch repositories from all organizations when no user flag is provided', async () => {
-    const {stdout} = await runCommand('repo:list')
-    expect(stdout).to.contain('org1/repo1')
-    expect(stdout).to.contain('org2/repo2')
-    expect(stdout).to.contain('Java')
-    expect(stdout).to.contain('TypeScript')
-  })
-
-  it('should fetch repositories for specified user', async () => {
-    const {stdout} = await runCommand('repo:list --user testuser --json')
+    const {stdout} = await runCommand('repo:list --json --limit 2')
     expect(JSON.parse(stdout)).to.deep.equal([
       {
-        name: 'repo1',
-        owner: {login: 'testuser', type: 'User'},
-        html_url: 'https://github.com/testuser/repo1',
-        description: 'Test repository 1',
-        language: 'Java',
-        topics: ['maven'],
+        name: 'freeCodeCamp',
+        owner: {login: 'freeCodeCamp', type: 'Organization'},
+        language: 'TypeScript',
+        topics: [
+          'careers',
+          'certification',
+          'community',
+          'curriculum',
+          'd3',
+          'education',
+          'freecodecamp',
+          'hacktoberfest',
+          'javascript',
+          'learn-to-code',
+          'math',
+          'nodejs',
+          'nonprofits',
+          'programming',
+          'react',
+          'teachers',
+        ],
         fork: false,
         archived: false,
         disabled: false,
         is_template: false,
+        private: false,
+        visibility: 'public',
+      },
+      {
+        name: 'build-your-own-x',
+        owner: {login: 'codecrafters-io', type: 'Organization'},
+        language: 'Markdown',
+        topics: ['awesome-list', 'free', 'programming', 'tutorial-code', 'tutorial-exercises', 'tutorials'],
+        fork: false,
+        archived: false,
+        disabled: false,
+        is_template: false,
+        private: false,
+        visibility: 'public',
+      },
+    ])
+  })
+
+  it('should fetch repositories for specified user', async () => {
+    const {stdout} = await runCommand('repo:list --user motlin --json --limit 1')
+    expect(JSON.parse(stdout)).to.deep.equal([
+      {
+        name: 'jetbrains-settings',
+        owner: {login: 'motlin', type: 'User'},
+        language: null,
+        topics: [],
+        fork: false,
+        archived: false,
+        disabled: false,
+        is_template: false,
+        private: false,
+        visibility: 'public',
       },
     ])
   })
 
   it('should support multiple language filters', async () => {
-    const {stdout} = await runCommand('repo:list --user testuser --language Java --language TypeScript --json')
+    const {stdout} = await runCommand('repo:list --user motlin --language Java --language TypeScript --json')
     expect(JSON.parse(stdout)).to.deep.equal([
       {
-        name: 'repo1',
-        owner: {login: 'testuser', type: 'User'},
+        name: 'checkstyle-results',
+        owner: {login: 'motlin', type: 'User'},
+        language: 'TypeScript',
+        topics: [],
+        fork: false,
+        archived: false,
+        disabled: false,
+        is_template: false,
+        private: false,
+        visibility: 'public',
+      },
+      {
+        name: 'aggregator-creator',
+        owner: {login: 'motlin', type: 'User'},
+        language: 'TypeScript',
+        topics: [],
+        fork: false,
+        archived: false,
+        disabled: false,
+        is_template: false,
+        private: false,
+        visibility: 'public',
+      },
+      {
+        name: 'factorio-blueprint-playground',
+        owner: {login: 'motlin', type: 'User'},
+        language: 'TypeScript',
+        topics: [],
+        fork: false,
+        archived: false,
+        disabled: false,
+        is_template: false,
+        private: false,
+        visibility: 'public',
+      },
+      {
+        name: 'JUnit-Java-8-Runner',
+        owner: {login: 'motlin', type: 'User'},
         language: 'Java',
         topics: ['maven'],
         fork: false,
         archived: false,
         disabled: false,
         is_template: false,
-      },
-      {
-        name: 'repo2',
-        owner: {login: 'testuser', type: 'User'},
-        language: 'TypeScript',
-        topics: ['webpack'],
-        fork: false,
-        archived: false,
-        disabled: false,
-        is_template: false,
+        private: false,
+        visibility: 'public',
       },
     ])
   })
 
   it('should include forked repositories when --include-forks flag is provided', async () => {
-    const {stdout} = await runCommand('repo:list --include-forks')
-    expect(stdout).to.contain('otheruser/forked-repo')
-    expect(stdout).to.contain('JavaScript')
+    const {stdout} = await runCommand('repo:list --user octocat --include-forks --json --limit 1')
+    expect(JSON.parse(stdout)).to.deep.equal([
+      {
+        name: 'Spoon-Knife',
+        owner: {login: 'octocat', type: 'User'},
+        language: 'HTML',
+        topics: [],
+        fork: false,
+        archived: false,
+        disabled: false,
+        is_template: false,
+        private: false,
+        visibility: 'public',
+      },
+    ])
   })
 
   it('should include archived repositories when --include-archived flag is provided', async () => {
-    const {stdout} = await runCommand('repo:list --include-archived')
-    expect(stdout).to.contain('thirduser/archived-repo')
-    expect(stdout).to.contain('Python')
+    const {stdout} = await runCommand('repo:list --user octocat --include-archived --json --limit 1')
+    expect(JSON.parse(stdout)).to.deep.equal([
+      {
+        name: 'Spoon-Knife',
+        owner: {login: 'octocat', type: 'User'},
+        language: 'HTML',
+        topics: [],
+        fork: false,
+        archived: false,
+        disabled: false,
+        is_template: false,
+        private: false,
+        visibility: 'public',
+      },
+    ])
   })
 
   it('should support combining include flags', async () => {
-    const {stdout} = await runCommand('repo:list --include-forks --include-archived')
-    expect(stdout).to.contain('otheruser/forked-repo')
-    expect(stdout).to.contain('thirduser/archived-repo')
+    const {stdout} = await runCommand('repo:list --user octocat --include-forks --include-archived --json --limit 1')
+    expect(JSON.parse(stdout)).to.deep.equal([
+      {
+        name: 'Spoon-Knife',
+        owner: {login: 'octocat', type: 'User'},
+        language: 'HTML',
+        topics: [],
+        fork: false,
+        archived: false,
+        disabled: false,
+        is_template: false,
+        private: false,
+        visibility: 'public',
+      },
+    ])
   })
 })

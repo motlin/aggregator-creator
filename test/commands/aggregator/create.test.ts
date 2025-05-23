@@ -41,16 +41,34 @@ describe('aggregator:create', () => {
   })
 
   it('creates an aggregator POM with default values', async () => {
-    const {stdout} = await runCommand(`aggregator:create ${tempDir} --yes`)
+    const {stdout} = await runCommand(`aggregator:create ${tempDir} --yes --json`)
+    const output = JSON.parse(stdout)
 
-    expect(stdout).to.include('Found valid Maven repository: valid-repo1')
-    expect(stdout).to.include('Found valid Maven repository: valid-repo2')
-
-    const hasMissingPomIndicator =
-      stdout.includes('Missing pom.xml') || stdout.includes('invalid-repo') || stdout.includes('Skipped')
-    expect(hasMissingPomIndicator).to.be.true
-
-    expect(stdout).to.include('Created aggregator POM')
+    expect(output).to.deep.equal({
+      success: true,
+      pomPath: path.join(tempDir, 'pom.xml'),
+      modules: [
+        {
+          path: 'valid-repo1',
+          valid: true,
+        },
+        {
+          path: 'valid-repo2',
+          valid: true,
+        },
+      ],
+      stats: {
+        totalScanned: 3,
+        validRepositories: 2,
+        skippedRepositories: 0,
+        elapsedTimeMs: output.stats.elapsedTimeMs,
+      },
+      mavenCoordinates: {
+        groupId: 'com.example',
+        artifactId: 'aggregator',
+        version: '1.0.0-SNAPSHOT',
+      },
+    })
 
     const pomPath = path.join(tempDir, 'pom.xml')
     expect(fs.existsSync(pomPath)).to.be.true
@@ -65,10 +83,35 @@ describe('aggregator:create', () => {
 
   it('creates an aggregator POM with custom values', async () => {
     const {stdout} = await runCommand(
-      `aggregator:create ${tempDir} --groupId org.test --artifactId custom-agg --pomVersion 2.0.0 --yes`,
+      `aggregator:create ${tempDir} --groupId org.test --artifactId custom-agg --pomVersion 2.0.0 --yes --json`,
     )
+    const output = JSON.parse(stdout)
 
-    expect(stdout).to.include('Created aggregator POM')
+    expect(output).to.deep.equal({
+      success: true,
+      pomPath: path.join(tempDir, 'pom.xml'),
+      modules: [
+        {
+          path: 'valid-repo1',
+          valid: true,
+        },
+        {
+          path: 'valid-repo2',
+          valid: true,
+        },
+      ],
+      stats: {
+        totalScanned: 3,
+        validRepositories: 2,
+        skippedRepositories: 0,
+        elapsedTimeMs: output.stats.elapsedTimeMs,
+      },
+      mavenCoordinates: {
+        groupId: 'org.test',
+        artifactId: 'custom-agg',
+        version: '2.0.0',
+      },
+    })
 
     const pomPath = path.join(tempDir, 'pom.xml')
     const pomContent = await fs.readFile(pomPath, 'utf8')
