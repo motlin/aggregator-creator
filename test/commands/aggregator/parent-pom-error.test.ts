@@ -16,11 +16,35 @@ describe('aggregator:create with parent POM resolution errors', () => {
     await fs.ensureDir(validRepo1)
     await fs.ensureDir(problematicRepo)
 
-    await fs.writeFile(path.join(validRepo1, 'pom.xml'), '<project><modelVersion>4.0.0</modelVersion></project>')
-    await fs.writeFile(
-      path.join(problematicRepo, 'pom.xml'),
-      '<project><modelVersion>4.0.0</modelVersion><parent><groupId>org.example</groupId><artifactId>parent</artifactId><version>1.0.0</version></parent></project>',
-    )
+    const validPom = `<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.test</groupId>
+    <artifactId>test-project</artifactId>
+    <version>1.0.0</version>
+</project>`
+
+    const problematicPom = `<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.example</groupId>
+        <artifactId>parent</artifactId>
+        <version>1.0.0</version>
+    </parent>
+    <groupId>com.test</groupId>
+    <artifactId>test-project-child</artifactId>
+    <version>1.0.0</version>
+</project>`
+
+    await fs.writeFile(path.join(validRepo1, 'pom.xml'), validPom)
+    await fs.writeFile(path.join(problematicRepo, 'pom.xml'), problematicPom)
   })
 
   afterEach(async () => {
