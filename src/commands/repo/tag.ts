@@ -5,6 +5,7 @@ import fs from 'fs-extra'
 import path from 'node:path'
 import inquirer from 'inquirer'
 import {validateMavenRepo} from '../../utils/maven-validation.js'
+import {validatedRepositoriesSchema} from '../../types/repository.js'
 
 export default class RepoTag extends Command {
   static override args = {
@@ -53,6 +54,12 @@ export default class RepoTag extends Command {
 
     const tagged: {owner: string; name: string}[] = []
     const skipped: {owner: string; name: string; reason: string}[] = []
+    const validRepos: Array<{
+      path: string
+      name: string
+      owner: string
+      repoName: string
+    }> = []
 
     const execa = execa_({
       verbose: (verboseLine: string, {type}: {type: string}) => {
@@ -81,79 +88,121 @@ export default class RepoTag extends Command {
 
     this.log(`╭─── 🏷️ Adding ${chalk.yellow(topic)} topic to validated repositories...`)
     this.log(`│`)
-    this.log(
-      `├──╮ 🔍 Scanning directory: ${chalk.yellow(directory)} for repositories to tag with topic: ${chalk.yellow(topic)}`,
-    )
+
     if (dryRun) {
       this.warn(`│  │ Running in dry-run mode - no changes will be applied`)
     }
 
     try {
-      const absolutePath = path.resolve(directory)
-      const entries = await fs.readdir(absolutePath, {withFileTypes: true})
+      if (!directory && !process.stdin.isTTY) {
+        this.log(`├──╮ 🔍 Reading validated repositories from input...`)
 
-      const ownerDirs = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name)
+        let fullInput = ''
+        for await (const chunk of process.stdin) {
+          fullInput += chunk
+        }
 
-      this.log(`│  │ Found ${chalk.yellow(ownerDirs.length)} owner directories to check`)
+        try {
+          const jsonData = JSON.parse(fullInput)
+          const inputRepos = jsonData.validRepos || jsonData
+          const validatedRepos = validatedRepositoriesSchema.parse(inputRepos).filter((repo) => repo.valid)
 
-      const validRepos: Array<{
-        path: string
-        name: string
-        owner: string
-        repoName: string
-      }> = []
-
-      let totalRepos = 0
-
-      for (const ownerDir of ownerDirs) {
-        const ownerPath = path.join(absolutePath, ownerDir)
-
-        const repoEntries = await fs.readdir(ownerPath, {withFileTypes: true})
-        const repoDirs = repoEntries.filter((entry) => entry.isDirectory()).map((entry) => entry.name)
-
-        for (const repoDir of repoDirs) {
-          totalRepos++
-          const repoPath = path.join(ownerPath, repoDir)
-          const repoName = repoDir
-
-          this.log(`│  │`)
-          this.log(
-            `│  ├──╮ 🔍 [${chalk.yellow(totalRepos)}/${repoDirs.length} in ${chalk.yellow(ownerDir)}] ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)}`,
-          )
-
-          if (!(await this.isGitRepository(repoPath))) {
-            this.log(`│  │  │ Skipping ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)} - not a git repository`)
-            skipped.push({owner: ownerDir, name: repoName, reason: 'not a git repository'})
-            this.log(`│  ├──╯ ⏩ Repository skipped`)
-            continue
+          for (const repo of validatedRepos) {
+            if (await this.isGitRepository(repo.path)) {
+              validRepos.push({
+                path: repo.path,
+                name: repo.name,
+                owner: repo.owner.login,
+                repoName: repo.name,
+              })
+            } else {
+              skipped.push({owner: repo.owner.login, name: repo.name, reason: 'not a git repository'})
+            }
           }
+        } catch {
+          this.error('Invalid JSON input from stdin', {
+            exit: 1,
+            code: 'INVALID_JSON',
+            suggestions: [
+              'Ensure the input is valid JSON',
+              'The input should match the output from repo:validate --json',
+            ],
+          })
+        }
+      } else if (directory) {
+        this.log(
+          `├──╮ 🔍 Scanning directory: ${chalk.yellow(directory)} for repositories to tag with topic: ${chalk.yellow(topic)}`,
+        )
 
-          this.log(`│  │  │ Validating Maven repo at: ${chalk.cyan(path.resolve(repoPath))}`)
-          const isValid = await validateMavenRepo(repoPath, execa, this)
+        const absolutePath = path.resolve(directory)
+        const entries = await fs.readdir(absolutePath, {withFileTypes: true})
 
-          if (isValid) {
-            this.log(`│  ├──╯ ✅ Valid Maven repository: ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)}`)
+        const ownerDirs = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name)
 
-            validRepos.push({
-              path: repoPath,
-              name: repoName,
-              owner: ownerDir,
-              repoName,
-            })
-          } else {
+        this.log(`│  │ Found ${chalk.yellow(ownerDirs.length)} owner directories to check`)
+
+        let totalRepos = 0
+
+        for (const ownerDir of ownerDirs) {
+          const ownerPath = path.join(absolutePath, ownerDir)
+
+          const repoEntries = await fs.readdir(ownerPath, {withFileTypes: true})
+          const repoDirs = repoEntries.filter((entry) => entry.isDirectory()).map((entry) => entry.name)
+
+          for (const repoDir of repoDirs) {
+            totalRepos++
+            const repoPath = path.join(ownerPath, repoDir)
+            const repoName = repoDir
+
+            this.log(`│  │`)
             this.log(
-              `│  ├──╯ ⏩ Skipping ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)} - not a valid Maven repository`,
+              `│  ├──╮ 🔍 [${chalk.yellow(totalRepos)}/${repoDirs.length} in ${chalk.yellow(ownerDir)}] ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)}`,
             )
-            skipped.push({owner: ownerDir, name: repoName, reason: 'not a valid Maven repository'})
+
+            if (!(await this.isGitRepository(repoPath))) {
+              this.log(`│  │  │ Skipping ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)} - not a git repository`)
+              skipped.push({owner: ownerDir, name: repoName, reason: 'not a git repository'})
+              this.log(`│  ├──╯ ⏩ Repository skipped`)
+              continue
+            }
+
+            this.log(`│  │  │ Validating Maven repo at: ${chalk.cyan(path.resolve(repoPath))}`)
+            const isValid = await validateMavenRepo(repoPath, execa, this)
+
+            if (isValid) {
+              this.log(`│  ├──╯ ✅ Valid Maven repository: ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)}`)
+
+              validRepos.push({
+                path: repoPath,
+                name: repoName,
+                owner: ownerDir,
+                repoName,
+              })
+            } else {
+              this.log(
+                `│  ├──╯ ⏩ Skipping ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)} - not a valid Maven repository`,
+              )
+              skipped.push({owner: ownerDir, name: repoName, reason: 'not a valid Maven repository'})
+            }
           }
         }
-      }
 
-      this.log(`│  │`)
-      this.log(`│  ├──╮ 📊 Summary:`)
-      this.log(
-        `│  │  │ Checked ${chalk.yellow(totalRepos)} total repositories across ${chalk.yellow(ownerDirs.length)} owner directories`,
-      )
+        this.log(`│  │`)
+        this.log(`│  ├──╮ 📊 Summary:`)
+        this.log(
+          `│  │  │ Checked ${chalk.yellow(totalRepos)} total repositories across ${chalk.yellow(ownerDirs.length)} owner directories`,
+        )
+      } else {
+        this.error('No input provided. Provide a directory path or pipe JSON data from stdin.', {
+          exit: 1,
+          code: 'NO_INPUT',
+          suggestions: [
+            'Provide a directory path as an argument',
+            'Pipe JSON data from repo:validate command',
+            'Example: aggregator repo:validate ./repos --json | aggregator repo:tag --topic maven',
+          ],
+        })
+      }
 
       if (validRepos.length === 0) {
         this.warn(`│  ├──╯ ℹ️ No valid Maven repositories found to tag.`)

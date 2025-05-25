@@ -60,10 +60,18 @@ describe('repo:validate', () => {
       validRepos: [
         {
           path: tempDir,
-          owner: path.basename(path.dirname(tempDir)),
+          owner: {login: path.basename(path.dirname(tempDir)), type: 'User'},
           name: path.basename(tempDir),
           hasPom: true,
           valid: true,
+          language: null,
+          topics: [],
+          fork: false,
+          archived: false,
+          disabled: false,
+          is_template: false,
+          private: false,
+          visibility: 'public',
         },
       ],
     })
@@ -112,7 +120,9 @@ describe('repo:validate', () => {
     expect(result.validRepos).to.have.lengthOf(3)
 
     // Check that the valid repos are included
-    const validRepoNames = result.validRepos.map((r: {owner: string; name: string}) => `${r.owner}/${r.name}`).sort()
+    const validRepoNames = result.validRepos
+      .map((r: {owner: {login: string}; name: string}) => `${r.owner.login}/${r.name}`)
+      .sort()
     expect(validRepoNames).to.deep.equal(['owner1/repo1', 'owner1/repo2', 'owner2/repo3'])
   })
 
@@ -150,10 +160,10 @@ describe('repo:validate', () => {
     expect(result.validCount).to.equal(1)
     expect(result.validRepos).to.have.lengthOf(1)
     expect(result.validRepos[0]).to.include({
-      owner: 'owner',
       name: 'valid-repo',
       hasPom: true,
       valid: true,
     })
+    expect(result.validRepos[0].owner).to.deep.equal({login: 'owner', type: 'User'})
   })
 })

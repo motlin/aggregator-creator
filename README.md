@@ -117,23 +117,23 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 # Commands
 
 <!-- commands -->
-* [`aggregator aggregator create DIRECTORY`](#aggregator-aggregator-create-directory)
+* [`aggregator aggregator create [DIRECTORY]`](#aggregator-aggregator-create-directory)
 * [`aggregator help [COMMAND]`](#aggregator-help-command)
 * [`aggregator repo clone TARGETDIRECTORY`](#aggregator-repo-clone-targetdirectory)
 * [`aggregator repo list`](#aggregator-repo-list)
 * [`aggregator repo tag DIRECTORY`](#aggregator-repo-tag-directory)
-* [`aggregator repo validate REPOPATH`](#aggregator-repo-validate-repopath)
+* [`aggregator repo validate [REPOPATH]`](#aggregator-repo-validate-repopath)
 
-## `aggregator aggregator create DIRECTORY`
+## `aggregator aggregator create [DIRECTORY]`
 
 Create Maven aggregator POM from a directory of repositories
 
 ```
 USAGE
-  $ aggregator aggregator create DIRECTORY [--json] [-g <value>] [-a <value>] [-v <value>] [-y] [--parallel]
+  $ aggregator aggregator create [DIRECTORY] [--json] [-g <value>] [-a <value>] [-v <value>] [-y] [--parallel]
 
 ARGUMENTS
-  DIRECTORY  Directory containing final Maven repos
+  DIRECTORY  Directory containing final Maven repos (or omit to read from stdin)
 
 FLAGS
   -a, --artifactId=<value>  [default: aggregator] ArtifactId for aggregator POM
@@ -159,7 +159,7 @@ EXAMPLES
 
   $ aggregator aggregator create ./maven-repos --json
 
-  $ aggregator repo:list --user someuser --limit 100 --json | aggregator aggregator create ./maven-repos
+  $ aggregator repo:list --user someuser --json | aggregator repo:validate --json | aggregator aggregator create ./output-dir
 ```
 
 _See code: [src/commands/aggregator/create.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/aggregator/create.ts)_
@@ -283,16 +283,16 @@ EXAMPLES
 
 _See code: [src/commands/repo/tag.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/tag.ts)_
 
-## `aggregator repo validate REPOPATH`
+## `aggregator repo validate [REPOPATH]`
 
 Validates if directories contain valid Maven repositories
 
 ```
 USAGE
-  $ aggregator repo validate REPOPATH [--json] [-v] [-o <value>] [-c <value>]
+  $ aggregator repo validate [REPOPATH] [--json] [-v] [-o <value>] [-c <value>]
 
 ARGUMENTS
-  REPOPATH  Path to the repository or directory of repositories to validate
+  REPOPATH  Path to the repository or directory of repositories to validate (or omit to read from stdin)
 
 FLAGS
   -c, --copyTo=<value>  Directory to copy validated repositories into
@@ -315,6 +315,8 @@ EXAMPLES
   $ aggregator repo validate ./repos-dir --copyTo ./validated-repos
 
   $ aggregator repo validate ./repos-dir --json
+
+  $ aggregator repo:list --user someuser --json | aggregator repo validate --json
 ```
 
 _See code: [src/commands/repo/validate.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/validate.ts)_

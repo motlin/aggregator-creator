@@ -55,8 +55,8 @@ export default class RepoClone extends Command {
         code: 'NO_INPUT',
         suggestions: [
           'Pipe repository data into this command',
-          'Example: echo "owner/repo" | pjt repo:clone ./target-dir',
-          'Example: pjt repo:list --user someuser --json | pjt repo:clone ./target-dir',
+          'Example: echo "owner/repo" | aggregator repo:clone ./target-dir',
+          'Example: aggregator repo:list --user someuser --json | aggregator repo:clone ./target-dir',
         ],
       })
     } else {

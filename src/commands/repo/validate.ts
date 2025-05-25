@@ -4,20 +4,13 @@ import {execa as execa_} from 'execa'
 import fs from 'fs-extra'
 import path from 'node:path'
 import {validateMavenRepo} from '../../utils/maven-validation.js'
-
-type RepoInfo = {
-  path: string
-  owner: string
-  name: string
-  hasPom: boolean
-  valid: boolean
-}
+import {repositoriesSchema, type ValidatedRepository} from '../../types/repository.js'
 
 export default class RepoValidate extends Command {
   static override args = {
     repoPath: Args.string({
-      description: 'Path to the repository or directory of repositories to validate',
-      required: true,
+      description: 'Path to the repository or directory of repositories to validate (or omit to read from stdin)',
+      required: false,
     }),
   }
 
@@ -31,6 +24,7 @@ export default class RepoValidate extends Command {
     '<%= config.bin %> <%= command.id %> ./repos-dir --output ./validated-repos.txt',
     '<%= config.bin %> <%= command.id %> ./repos-dir --copyTo ./validated-repos',
     '<%= config.bin %> <%= command.id %> ./repos-dir --json',
+    '<%= config.bin %> repo:list --user someuser --json | <%= config.bin %> <%= command.id %> --json',
   ]
 
   static override flags = {
@@ -48,7 +42,7 @@ export default class RepoValidate extends Command {
     }),
   }
 
-  public async run(): Promise<{validRepos: RepoInfo[]; validCount: number}> {
+  public async run(): Promise<{validRepos: ValidatedRepository[]; validCount: number}> {
     const {args, flags} = await this.parse(RepoValidate)
     const {repoPath} = args
 
@@ -77,141 +71,197 @@ export default class RepoValidate extends Command {
       },
     })
 
-    const absolutePath = path.resolve(repoPath)
     const startTime = Date.now()
+    const repos: ValidatedRepository[] = []
 
-    try {
-      const stats = await fs.stat(absolutePath)
-      if (!stats.isDirectory()) {
-        this.error(`Path is not a directory: ${chalk.yellow(absolutePath)}`, {
-          exit: 1,
-          code: 'ENOTDIR',
-          suggestions: ['Ensure the path points to a directory, not a file', `Try: mkdir -p "${absolutePath}"`],
-        })
+    if (!repoPath && !process.stdin.isTTY) {
+      let fullInput = ''
+      for await (const chunk of process.stdin) {
+        fullInput += chunk
       }
 
-      const repos: RepoInfo[] = []
+      try {
+        const jsonData = JSON.parse(fullInput)
+        const repositories = repositoriesSchema.parse(jsonData)
 
-      const hasPom = await fs.pathExists(path.join(absolutePath, 'pom.xml'))
+        for (const repo of repositories) {
+          const repoPath = path.join(process.cwd(), 'repos-dir', repo.owner.login, repo.name)
+          const hasPom = await fs.pathExists(path.join(repoPath, 'pom.xml'))
 
-      if (hasPom) {
-        const repoName = path.basename(absolutePath)
-        const ownerName = path.basename(path.dirname(absolutePath))
-
-        repos.push({
-          path: absolutePath,
-          owner: ownerName,
-          name: repoName,
-          hasPom: true,
-          valid: false,
+          repos.push({
+            ...repo,
+            path: repoPath,
+            hasPom,
+            valid: false,
+          })
+        }
+      } catch {
+        this.error('Invalid JSON input from stdin', {
+          exit: 1,
+          code: 'INVALID_JSON',
+          suggestions: ['Ensure the input is valid JSON', 'The input should match the output from repo:list --json'],
         })
-      } else {
-        const ownerDirs = await fs.readdir(absolutePath, {withFileTypes: true})
+      }
+    } else if (repoPath) {
+      const absolutePath = path.resolve(repoPath)
 
-        for (const ownerDir of ownerDirs.filter((entry) => entry.isDirectory())) {
-          const ownerPath = path.join(absolutePath, ownerDir.name)
-          const repoDirs = await fs.readdir(ownerPath, {withFileTypes: true})
+      try {
+        const stats = await fs.stat(absolutePath)
+        if (!stats.isDirectory()) {
+          this.error(`Path is not a directory: ${chalk.yellow(absolutePath)}`, {
+            exit: 1,
+            code: 'ENOTDIR',
+            suggestions: ['Ensure the path points to a directory, not a file', `Try: mkdir -p "${absolutePath}"`],
+          })
+        }
 
-          for (const repoDir of repoDirs.filter((entry) => entry.isDirectory())) {
-            const repoPath = path.join(ownerPath, repoDir.name)
-            const repoHasPom = await fs.pathExists(path.join(repoPath, 'pom.xml'))
+        const hasPom = await fs.pathExists(path.join(absolutePath, 'pom.xml'))
 
-            repos.push({
-              path: repoPath,
-              owner: ownerDir.name,
-              name: repoDir.name,
-              hasPom: repoHasPom,
-              valid: false,
-            })
+        if (hasPom) {
+          const repoName = path.basename(absolutePath)
+          const ownerName = path.basename(path.dirname(absolutePath))
+
+          repos.push({
+            path: absolutePath,
+            owner: {login: ownerName, type: 'User'},
+            name: repoName,
+            hasPom: true,
+            valid: false,
+            language: null,
+            topics: [],
+            fork: false,
+            archived: false,
+            disabled: false,
+            is_template: false,
+            private: false,
+            visibility: 'public',
+          })
+        } else {
+          const ownerDirs = await fs.readdir(absolutePath, {withFileTypes: true})
+
+          for (const ownerDir of ownerDirs.filter((entry) => entry.isDirectory())) {
+            const ownerPath = path.join(absolutePath, ownerDir.name)
+            const repoDirs = await fs.readdir(ownerPath, {withFileTypes: true})
+
+            for (const repoDir of repoDirs.filter((entry) => entry.isDirectory())) {
+              const repoPath = path.join(ownerPath, repoDir.name)
+              const repoHasPom = await fs.pathExists(path.join(repoPath, 'pom.xml'))
+
+              repos.push({
+                path: repoPath,
+                owner: {login: ownerDir.name, type: 'User'},
+                name: repoDir.name,
+                hasPom: repoHasPom,
+                valid: false,
+                language: null,
+                topics: [],
+                fork: false,
+                archived: false,
+                disabled: false,
+                is_template: false,
+                private: false,
+                visibility: 'public',
+              })
+            }
           }
         }
+      } catch (error) {
+        let errorMessage = 'Unknown error'
+        let errorCode: string | undefined
+
+        if (error instanceof Error) {
+          errorMessage = error.message
+          errorCode = 'code' in error ? (error.code as string) : undefined
+        }
+
+        this.error(`Error validating repositories: ${error}`, {exit: 1, code: errorCode, suggestions: [errorMessage]})
+        return {validRepos: [], validCount: 0}
+      }
+    } else {
+      this.error('No input provided. Provide a directory path or pipe JSON data from stdin.', {
+        exit: 1,
+        code: 'NO_INPUT',
+        suggestions: [
+          'Provide a directory path as an argument',
+          'Pipe JSON data from repo:list command',
+          'Example: aggregator repo:list --json | aggregator repo:validate',
+        ],
+      })
+    }
+
+    this.log(`╭─── 🔍 Validating Maven repositories...`)
+    this.log(`│`)
+
+    let validCount = 0
+    const validRepos: ValidatedRepository[] = []
+
+    for (const [i, repo] of repos.entries()) {
+      const repoFullName = `${repo.owner.login}/${repo.name}`
+
+      this.log(`├──╮ 🔍 [${chalk.yellow(i + 1)}/${repos.length}] ${chalk.yellow(repoFullName)}`)
+      this.log(`│  │ Validating Maven repo at: ${chalk.cyan(repo.path)}`)
+
+      if (!repo.hasPom) {
+        this.log(`├──╯ ⏩ Skipping non-Maven repository: ${chalk.yellow(repoFullName)}`)
+        this.log(`│`)
+        continue
       }
 
-      this.log(`╭─── 🔍 Validating Maven repositories...`)
+      const isValid = await validateMavenRepo(repo.path, execa, this)
+      repo.valid = isValid
+
+      if (isValid) {
+        this.log(`├──╯ ✅ Validation successful: ${chalk.green(repoFullName)}`)
+        validCount++
+        validRepos.push(repo)
+      } else {
+        this.log(`├──╯ ❌ Validation failed: ${chalk.red(repoFullName)}`)
+      }
+
       this.log(`│`)
+    }
 
-      let validCount = 0
-      const validRepos: RepoInfo[] = []
+    this.log(
+      `├──╮ ✅ Found ${chalk.green(validCount)} validated Maven ${validCount === 1 ? 'repository' : 'repositories'}`,
+    )
 
-      for (const [i, repo] of repos.entries()) {
-        const repoFullName = `${repo.owner}/${repo.name}`
+    if (flags.output && validRepos.length > 0) {
+      const outputPath = path.resolve(flags.output)
+      await fs.ensureDir(path.dirname(outputPath))
 
-        this.log(`├──╮ 🔍 [${chalk.yellow(i + 1)}/${repos.length}] ${chalk.yellow(repoFullName)}`)
-        this.log(`│  │ Validating Maven repo at: ${chalk.cyan(repo.path)}`)
+      const validRepoNames = validRepos.map((repo) => `${repo.owner.login}/${repo.name}`).join('\n')
+      await fs.writeFile(outputPath, validRepoNames)
 
-        if (!repo.hasPom) {
-          this.log(`├──╯ ⏩ Skipping non-Maven repository: ${chalk.yellow(repoFullName)}`)
-          this.log(`│`)
-          continue
-        }
+      this.log(`│  │ 📄 Validated repository list written to: ${chalk.cyan(outputPath)}`)
+    }
+    this.log(`├──╯`)
 
-        const isValid = await validateMavenRepo(repo.path, execa, this)
-        repo.valid = isValid
+    if (flags.copyTo && validRepos.length > 0) {
+      const copyPath = path.resolve(flags.copyTo)
+      await fs.ensureDir(copyPath)
 
-        if (isValid) {
-          this.log(`├──╯ ✅ Validation successful: ${chalk.green(repoFullName)}`)
-          validCount++
-          validRepos.push(repo)
-        } else {
-          this.log(`├──╯ ❌ Validation failed: ${chalk.red(repoFullName)}`)
-        }
+      this.log(`├──╮ 📦 Copying ${chalk.yellow(validRepos.length)} validated repositories...`)
+      this.log(`│  ├──╮`)
 
-        this.log(`│`)
+      for (const repo of validRepos) {
+        const destPath = path.join(copyPath, repo.owner.login, repo.name)
+        await fs.ensureDir(path.dirname(destPath))
+        await fs.copy(repo.path, destPath)
+        this.log(`│  │  │ Copied ${chalk.green(repo.owner.login)}/${chalk.green(repo.name)}`)
       }
 
-      this.log(
-        `├──╮ ✅ Found ${chalk.green(validCount)} validated Maven ${validCount === 1 ? 'repository' : 'repositories'}`,
-      )
+      this.log(`│  ├──╯`)
+      this.log(`├──╯ ✅ Successfully copied repositories to: ${chalk.green(copyPath)}`)
+      this.log(`│`)
+      this.log(`╰─── ✅ All done`)
+    }
 
-      if (flags.output && validRepos.length > 0) {
-        const outputPath = path.resolve(flags.output)
-        await fs.ensureDir(path.dirname(outputPath))
+    const elapsedMs = Date.now() - startTime
+    this.debug(`Validation completed in ${elapsedMs}ms`)
 
-        const validRepoNames = validRepos.map((repo) => `${repo.owner}/${repo.name}`).join('\n')
-        await fs.writeFile(outputPath, validRepoNames)
-
-        this.log(`│  │ 📄 Validated repository list written to: ${chalk.cyan(outputPath)}`)
-      }
-      this.log(`├──╯`)
-
-      if (flags.copyTo && validRepos.length > 0) {
-        const copyPath = path.resolve(flags.copyTo)
-        await fs.ensureDir(copyPath)
-
-        this.log(`├──╮ 📦 Copying ${chalk.yellow(validRepos.length)} validated repositories...`)
-        this.log(`│  ├──╮`)
-
-        for (const repo of validRepos) {
-          const destPath = path.join(copyPath, repo.owner, repo.name)
-          await fs.ensureDir(path.dirname(destPath))
-          await fs.copy(repo.path, destPath)
-          this.log(`│  │  │ Copied ${chalk.green(repo.owner)}/${chalk.green(repo.name)}`)
-        }
-
-        this.log(`│  ├──╯`)
-        this.log(`├──╯ ✅ Successfully copied repositories to: ${chalk.green(copyPath)}`)
-        this.log(`│`)
-        this.log(`╰─── ✅ All done`)
-      }
-
-      const elapsedMs = Date.now() - startTime
-      this.debug(`Validation completed in ${elapsedMs}ms`)
-
-      return {
-        validRepos,
-        validCount,
-      }
-    } catch (error) {
-      let errorMessage = 'Unknown error'
-      let errorCode: string | undefined
-
-      if (error instanceof Error) {
-        errorMessage = error.message
-        errorCode = 'code' in error ? (error.code as string) : undefined
-      }
-
-      this.error(`Error validating repositories: ${error}`, {exit: 1, code: errorCode, suggestions: [errorMessage]})
-      return {validRepos: [], validCount: 0}
+    return {
+      validRepos,
+      validCount,
     }
   }
 }

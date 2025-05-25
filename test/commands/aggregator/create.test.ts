@@ -31,13 +31,10 @@ describe('aggregator:create', () => {
 
   it('errors when no directory is provided', async () => {
     const result = await runCommand('aggregator:create')
-    expect(result).to.deep.equal({
-      error: new Error(
-        'Missing 1 required arg:\ndirectory  Directory containing final Maven repos\nSee more help with --help',
-      ),
-      stdout: '',
-      stderr: '',
-    })
+    expect(result.error).to.exist
+    expect(result.error?.message).to.equal('No input provided. Provide a directory path or pipe JSON data from stdin.')
+    expect(result.stdout).to.equal('')
+    expect(result.stderr).to.equal('')
   })
 
   it('creates an aggregator POM with default values', async () => {

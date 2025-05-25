@@ -6,10 +6,14 @@ import {create} from 'xmlbuilder2'
 import chalk from 'chalk'
 import inquirer from 'inquirer'
 import MavenGAVCoords from '../../maven-gav.js'
+import {validatedRepositoriesSchema, type ValidatedRepository} from '../../types/repository.js'
 
 export default class AggregatorCreate extends Command {
   static override args = {
-    directory: Args.string({description: 'Directory containing final Maven repos', required: true}),
+    directory: Args.string({
+      description: 'Directory containing final Maven repos (or omit to read from stdin)',
+      required: false,
+    }),
   }
 
   static override description = 'Create Maven aggregator POM from a directory of repositories'
@@ -20,7 +24,7 @@ export default class AggregatorCreate extends Command {
     '<%= config.bin %> <%= command.id %> ./maven-repos --artifactId custom-aggregator --pomVersion 2.0.0',
     '<%= config.bin %> <%= command.id %> ./maven-repos --force',
     '<%= config.bin %> <%= command.id %> ./maven-repos --json',
-    '<%= config.bin %> repo:list --user someuser --limit 100 --json | <%= config.bin %> <%= command.id %> ./maven-repos',
+    '<%= config.bin %> repo:list --user someuser --json | <%= config.bin %> repo:validate --json | <%= config.bin %> <%= command.id %> ./output-dir',
   ]
 
   static override enableJsonFlag = true
@@ -350,140 +354,214 @@ export default class AggregatorCreate extends Command {
 
     const startTime = Date.now()
     const {args, flags} = await this.parse(AggregatorCreate)
-    const directoryPath = path.resolve(args.directory)
+    let directoryPath: string
+    let validRepos: ValidatedRepository[] = []
 
-    try {
-      await fs.ensureDir(directoryPath)
-    } catch (error: unknown) {
-      let errorMessage = 'Unknown error'
-      let errorCode: string | undefined
-
-      if (error instanceof Error) {
-        errorMessage = error.message
-        errorCode = 'code' in error ? (error.code as string) : undefined
+    if (!args.directory && !process.stdin.isTTY) {
+      let fullInput = ''
+      for await (const chunk of process.stdin) {
+        fullInput += chunk
       }
 
-      this.error(`Failed to access directory: ${errorMessage}`, {
+      if (!fullInput.trim()) {
+        this.error('No input provided. Provide a directory path or pipe JSON data from stdin.', {
+          exit: 1,
+          code: 'NO_INPUT',
+          suggestions: [
+            'Provide a directory path as an argument',
+            'Pipe JSON data from repo:validate command',
+            'Example: aggregator repo:validate ./repos --json | aggregator aggregator:create ./output',
+          ],
+        })
+      }
+
+      try {
+        const jsonData = JSON.parse(fullInput)
+        const inputRepos = jsonData.validRepos || jsonData
+        validRepos = validatedRepositoriesSchema.parse(inputRepos).filter((repo) => repo.valid)
+
+        if (validRepos.length === 0) {
+          this.error('No valid repositories found in input', {
+            exit: 1,
+            code: 'NO_VALID_REPOS',
+            suggestions: [
+              'Ensure the input contains valid Maven repositories',
+              'The input should be from repo:validate --json',
+            ],
+          })
+        }
+
+        directoryPath = path.resolve(validRepos[0].path.split('/').slice(0, -2).join('/'))
+      } catch {
+        this.error('Invalid JSON input from stdin', {
+          exit: 1,
+          code: 'INVALID_JSON',
+          suggestions: [
+            'Ensure the input is valid JSON',
+            'The input should match the output from repo:validate --json',
+          ],
+        })
+      }
+    } else if (args.directory) {
+      directoryPath = path.resolve(args.directory)
+
+      try {
+        await fs.ensureDir(directoryPath)
+      } catch (error: unknown) {
+        let errorMessage = 'Unknown error'
+        let errorCode: string | undefined
+
+        if (error instanceof Error) {
+          errorMessage = error.message
+          errorCode = 'code' in error ? (error.code as string) : undefined
+        }
+
+        this.error(`Failed to access directory: ${errorMessage}`, {
+          exit: 1,
+          code: errorCode || 'DIRECTORY_ACCESS_ERROR',
+          suggestions: [
+            'Check if the directory path is valid',
+            'Verify you have read/write permissions',
+            `Try: mkdir -p "${directoryPath}"`,
+          ],
+        })
+      }
+    } else {
+      this.error('No input provided. Provide a directory path or pipe JSON data from stdin.', {
         exit: 1,
-        code: errorCode || 'DIRECTORY_ACCESS_ERROR',
+        code: 'NO_INPUT',
         suggestions: [
-          'Check if the directory path is valid',
-          'Verify you have read/write permissions',
-          `Try: mkdir -p "${directoryPath}"`,
+          'Provide a directory path as an argument',
+          'Pipe JSON data from repo:validate command',
+          'Example: aggregator repo:validate ./repos --json | aggregator aggregator:create ./output',
         ],
       })
     }
 
     this.log(`╭─── 📄 Creating aggregator POM...`)
     this.log(`│`)
-    this.log(`├──╮ 🔍 Scanning for Maven repositories in ${chalk.yellow(directoryPath)}...`)
 
     const mavenRepos: {path: string; relativePath: string}[] = []
     const skippedRepos: {path: string; relativePath: string; reason: string}[] = []
     let totalScanned = 0
 
-    const entries = await fs.readdir(directoryPath)
+    if (validRepos.length > 0) {
+      this.log(`├──╮ 🔍 Using ${chalk.yellow(validRepos.length)} validated repositories from input...`)
 
-    const firstLevelEntries = []
-    for (const entry of entries) {
-      if (entry === 'pom.xml') continue
-
-      const entryPath = path.join(directoryPath, entry)
-      const stats = await fs.stat(entryPath)
-
-      if (stats.isDirectory()) {
-        firstLevelEntries.push(entry)
-      }
-    }
-
-    this.log(`│  │ Found ${chalk.yellow(firstLevelEntries.length)} potential repository containers to scan`)
-
-    if (firstLevelEntries.length === 0) {
-      const elapsedTimeMs = Date.now() - startTime
-
-      const result = {
-        success: false,
-        pomPath: '',
-        modules: [],
-        stats: {
-          totalScanned: 0,
-          validRepositories: 0,
-          skippedRepositories: 0,
-          elapsedTimeMs,
-        },
-        mavenCoordinates: {
-          groupId: flags.groupId,
-          artifactId: flags.artifactId,
-          version: flags.pomVersion,
-        },
-        error: 'No Maven repositories found. Each repository must contain a pom.xml file.',
-      }
-
-      if (!this.jsonEnabled()) {
-        this.error(result.error, {
-          exit: 1,
-          code: 'NO_MAVEN_REPOS',
-          suggestions: [
-            'Ensure the directory contains Maven projects with pom.xml files',
-            'Check that repository directories follow the expected structure',
-            'Verify that pom.xml files exist in the repository directories',
-          ],
-        })
-      }
-
-      return result
-    }
-
-    for (const entry of firstLevelEntries) {
-      this.log(`│  │ ⏳ Examining: ${chalk.yellow(entry)}`)
-
-      const entryPath = path.join(directoryPath, entry)
-      const stats = await fs.stat(entryPath)
-
-      if (!stats.isDirectory()) {
-        throw new Error(`Expected ${entryPath} to be a directory`)
-      }
-
-      totalScanned++
-
-      const hasPom = await this.validateMavenRepo(entryPath)
-      if (hasPom) {
+      for (const repo of validRepos) {
+        const relativePath = path.join(repo.owner.login, repo.name)
         mavenRepos.push({
-          path: entryPath,
-          relativePath: entry,
+          path: repo.path,
+          relativePath,
         })
-        continue
+      }
+      totalScanned = validRepos.length
+    } else {
+      this.log(`├──╮ 🔍 Scanning for Maven repositories in ${chalk.yellow(directoryPath)}...`)
+
+      const entries = await fs.readdir(directoryPath)
+
+      const firstLevelEntries = []
+      for (const entry of entries) {
+        if (entry === 'pom.xml') continue
+
+        const entryPath = path.join(directoryPath, entry)
+        const stats = await fs.stat(entryPath)
+
+        if (stats.isDirectory()) {
+          firstLevelEntries.push(entry)
+        }
       }
 
-      try {
-        const subEntries = await fs.readdir(entryPath)
-        for (const subEntry of subEntries) {
-          const subEntryPath = path.join(entryPath, subEntry)
-          const subStats = await fs.stat(subEntryPath)
+      this.log(`│  │ Found ${chalk.yellow(firstLevelEntries.length)} potential repository containers to scan`)
 
-          if (!subStats.isDirectory()) continue
+      if (firstLevelEntries.length === 0) {
+        const elapsedTimeMs = Date.now() - startTime
 
-          totalScanned++
-          const hasSubPom = await this.validateMavenRepo(subEntryPath)
-          if (hasSubPom) {
-            mavenRepos.push({
-              path: subEntryPath,
-              relativePath: path.join(entry, subEntry),
-            })
-          } else {
-            skippedRepos.push({
-              path: subEntryPath,
-              relativePath: path.join(entry, subEntry),
-              reason: 'Missing pom.xml',
-            })
-          }
+        const result = {
+          success: false,
+          pomPath: '',
+          modules: [],
+          stats: {
+            totalScanned: 0,
+            validRepositories: 0,
+            skippedRepositories: 0,
+            elapsedTimeMs,
+          },
+          mavenCoordinates: {
+            groupId: flags.groupId,
+            artifactId: flags.artifactId,
+            version: flags.pomVersion,
+          },
+          error: 'No Maven repositories found. Each repository must contain a pom.xml file.',
         }
-      } catch (error) {
-        skippedRepos.push({
-          path: entryPath,
-          relativePath: entry,
-          reason: `Error reading directory: ${(error as Error).message}`,
-        })
+
+        if (!this.jsonEnabled()) {
+          this.error(result.error, {
+            exit: 1,
+            code: 'NO_MAVEN_REPOS',
+            suggestions: [
+              'Ensure the directory contains Maven projects with pom.xml files',
+              'Check that repository directories follow the expected structure',
+              'Verify that pom.xml files exist in the repository directories',
+            ],
+          })
+        }
+
+        return result
+      }
+
+      for (const entry of firstLevelEntries) {
+        this.log(`│  │ ⏳ Examining: ${chalk.yellow(entry)}`)
+
+        const entryPath = path.join(directoryPath, entry)
+        const stats = await fs.stat(entryPath)
+
+        if (!stats.isDirectory()) {
+          throw new Error(`Expected ${entryPath} to be a directory`)
+        }
+
+        totalScanned++
+
+        const hasPom = await this.validateMavenRepo(entryPath)
+        if (hasPom) {
+          mavenRepos.push({
+            path: entryPath,
+            relativePath: entry,
+          })
+          continue
+        }
+
+        try {
+          const subEntries = await fs.readdir(entryPath)
+          for (const subEntry of subEntries) {
+            const subEntryPath = path.join(entryPath, subEntry)
+            const subStats = await fs.stat(subEntryPath)
+
+            if (!subStats.isDirectory()) continue
+
+            totalScanned++
+            const hasSubPom = await this.validateMavenRepo(subEntryPath)
+            if (hasSubPom) {
+              mavenRepos.push({
+                path: subEntryPath,
+                relativePath: path.join(entry, subEntry),
+              })
+            } else {
+              skippedRepos.push({
+                path: subEntryPath,
+                relativePath: path.join(entry, subEntry),
+                reason: 'Missing pom.xml',
+              })
+            }
+          }
+        } catch (error) {
+          skippedRepos.push({
+            path: entryPath,
+            relativePath: entry,
+            reason: `Error reading directory: ${(error as Error).message}`,
+          })
+        }
       }
     }
 
