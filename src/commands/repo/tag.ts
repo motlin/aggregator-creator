@@ -339,14 +339,11 @@ export default class RepoTag extends Command {
             )
           } else {
             topics.push(topic)
-            await execa('gh', [
-              'api',
-              `repos/${owner}/${name}/topics`,
-              '--method',
-              'PUT',
-              '-f',
-              `names[]=${topics.join('&names[]=')}`,
-            ])
+            const args = ['api', `repos/${owner}/${name}/topics`, '--method', 'PUT']
+            for (const t of topics) {
+              args.push('-f', `names[]=${t}`)
+            }
+            await execa('gh', args)
           }
         } catch (error) {
           this.error(`│  │  │ Error updating topics: ${error}`, {exit: false})
