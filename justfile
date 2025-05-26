@@ -100,10 +100,18 @@ workflow-test CLEAN="true": build
     }
 
     # Step 1: List repositories
-    LIST_CMD="./bin/run.js repo:list --user motlin --user liftwizard --language Java --visibility all --limit 100 --json"
+    # Define base command first
+    LIST_CMD="./bin/run.js repo:list --user motlin --user liftwizard --language Java --visibility all --limit 100"
+
+    # First, run without --json to show console output
+    LIST_CMD_CONSOLE="${LIST_CMD}"
+    run_command "1a" "List repositories (console output)" "${LIST_CMD_CONSOLE}"
+
+    # Then run with --json for piping to next command
+    LIST_CMD="${LIST_CMD} --json"
     LIST_OUTPUT="${TEST_DIR}/repos.json"
 
-    run_command "1" "List repositories using repo:list" "${LIST_CMD}" "> ${LIST_OUTPUT}"
+    run_command "1b" "List repositories (JSON output)" "${LIST_CMD}" "> ${LIST_OUTPUT}"
     cat "${LIST_OUTPUT}" | jq -r '.[] | .owner.login + "/" + .name' > "${TEST_DIR}/repos-to-clone.txt"
     echo "📋 Found $(wc -l < "${TEST_DIR}/repos-to-clone.txt") repositories"
 
