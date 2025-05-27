@@ -5,7 +5,7 @@ import fs from 'fs-extra'
 import path from 'node:path'
 import inquirer from 'inquirer'
 import {validateMavenRepo} from '../../utils/maven-validation.js'
-import {validatedRepositoriesSchema} from '../../types/repository.js'
+import {githubTopicsResponseSchema, validatedRepositoriesSchema} from '../../types/repository.js'
 
 export default class RepoTag extends Command {
   static override args = {
@@ -330,8 +330,8 @@ export default class RepoTag extends Command {
 
       if (result.exitCode === 0) {
         try {
-          const topicsData = JSON.parse(result.stdout)
-          const topics = topicsData.names || []
+          const topicsData = githubTopicsResponseSchema.parse(JSON.parse(result.stdout))
+          const topics = topicsData.names
 
           if (topics.includes(topic)) {
             this.log(

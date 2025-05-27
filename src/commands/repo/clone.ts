@@ -4,6 +4,7 @@ import path from 'node:path'
 import {execa as execa_} from 'execa'
 import {z} from 'zod'
 import chalk from 'chalk'
+import {repositoriesSchema, repositorySchema} from '../../types/repository.js'
 
 export default class RepoClone extends Command {
   static override description = 'Clone GitHub repositories listed from stdin'
@@ -108,7 +109,7 @@ export default class RepoClone extends Command {
       try {
         const jsonData = JSON.parse(fullInput)
         if (Array.isArray(jsonData)) {
-          const validRepos = jsonData.filter((repo) => repo.owner?.login && repo.name)
+          const validRepos = repositoriesSchema.parse(jsonData)
           const total = validRepos.length
 
           this.log(`├──╮ 🚀 Cloning ${chalk.yellow(total)} repositories`)
@@ -121,18 +122,26 @@ export default class RepoClone extends Command {
           this.log(`├──╯ Cloning complete`)
           this.log(`│`)
           this.log(`╰─── ✅ All done`)
-        } else if (jsonData.owner?.login && jsonData.name) {
+        } else {
+          const validRepo = repositorySchema.parse(jsonData)
           const total = 1
           this.log(`├──╮ 🚀 Cloning ${chalk.yellow(1)} repository`)
 
-          const repoFullName = `${jsonData.owner.login}/${jsonData.name}`
+          const repoFullName = `${validRepo.owner.login}/${validRepo.name}`
           await this.cloneRepository(repoFullName, targetDirectory, 1, total, execa)
 
           this.log(`├──╯ Cloning complete`)
           this.log(`│`)
           this.log(`╰─── ✅ All done`)
         }
-      } catch {
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          // Fall through to handle as plain text input
+        } else if (error instanceof SyntaxError) {
+          // Fall through to handle as plain text input
+        } else {
+          throw error
+        }
         const lines = fullInput.split('\n')
         const validLines = lines.map((line) => line.trim()).filter((line) => line.length > 0)
 

@@ -1,8 +1,9 @@
 import {Command, Flags} from '@oclif/core'
 import {execa as execa_} from 'execa'
 
-import {z} from 'zod'
 import chalk from 'chalk'
+import {z} from 'zod'
+import {repositoriesSchema} from '../../types/repository.js'
 
 export default class RepoList extends Command {
   static override description = 'List GitHub repositories based on filters'
@@ -34,24 +35,6 @@ export default class RepoList extends Command {
     limit: Flags.integer({char: 'l', description: 'Max repositories'}),
   }
 
-  private repoSchema = z.object({
-    name: z.string(),
-    owner: z.object({
-      login: z.string(),
-      type: z.string(),
-    }),
-    language: z.string().nullable(),
-    topics: z.array(z.string()).optional(),
-    fork: z.boolean(),
-    archived: z.boolean(),
-    disabled: z.boolean(),
-    is_template: z.boolean(),
-    private: z.boolean(),
-    visibility: z.string(),
-  })
-
-  private repositoriesSchema = z.array(this.repoSchema)
-
   private async fetchRepositories(
     usernames: string[] = [],
     topics: string[] = [],
@@ -61,7 +44,7 @@ export default class RepoList extends Command {
     includeArchived: boolean,
     visibility: string,
     execa: typeof execa_,
-  ): Promise<z.infer<typeof this.repositoriesSchema>> {
+  ): Promise<z.infer<typeof repositoriesSchema>> {
     this.log(
       `├──╮ 🔍 Fetching GitHub repositories${usernames.length > 0 ? ` for users: ${chalk.yellow(usernames.join(', '))}` : ''}`,
     )
@@ -109,7 +92,7 @@ export default class RepoList extends Command {
       const {stdout} = await execa('gh', args)
 
       const repositories = JSON.parse(stdout)
-      return this.repositoriesSchema.parse(repositories)
+      return repositoriesSchema.parse(repositories)
     } catch (error) {
       if (error instanceof z.ZodError) {
         this.error('Invalid repository data format received from GitHub API', {
@@ -136,7 +119,7 @@ export default class RepoList extends Command {
     }
   }
 
-  public async run(): Promise<z.infer<typeof this.repositoriesSchema>> {
+  public async run(): Promise<z.infer<typeof repositoriesSchema>> {
     const {flags} = await this.parse(RepoList)
 
     const execa = execa_({
@@ -216,7 +199,7 @@ export default class RepoList extends Command {
       if (repositories.length === 0) {
         this.log(`├──╯ ℹ️ No repositories found matching the criteria.`)
         this.log(`│`)
-        return this.repositoriesSchema.parse([])
+        return repositoriesSchema.parse([])
       }
 
       this.log(`│  ├──╮ 📋 Results: ${chalk.yellow(repositories.length)} repositories`)
