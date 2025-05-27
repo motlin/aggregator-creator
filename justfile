@@ -61,11 +61,10 @@ find-validate-repos CLEAN="true": build
     # Set up test directories
     TEST_DIR="$(mktemp -d -t oclif-find-validate-XXXXXXXX)"
     REPOS_DIR="${TEST_DIR}/repos"
-    VALIDATED_REPOS="${TEST_DIR}/validated-repos"
 
     echo "🔍 Finding and validating Maven repositories"
     echo "📂 Test Directory: ${TEST_DIR}"
-    mkdir -p "${REPOS_DIR}" "${VALIDATED_REPOS}"
+    mkdir -p "${REPOS_DIR}"
 
     # Validate GitHub CLI is available
     if ! command -v gh &> /dev/null; then
@@ -123,13 +122,14 @@ find-validate-repos CLEAN="true": build
 
     # Step 3: Validate repositories
     VALIDATE_CMD="./bin/run.js repo:validate"
-    VALIDATE_PARAMS="--output ${TEST_DIR}/validated-repos.txt --copyTo ${VALIDATED_REPOS}"
+    VALIDATE_OUTPUT="${TEST_DIR}/validated-repos.json"
+    VALIDATE_PARAMS="--output ${TEST_DIR}/validated-repos.txt --json"
     VALIDATE_FULL_CMD="${VALIDATE_CMD} ${REPOS_DIR} ${VALIDATE_PARAMS}"
 
-    run_command "3" "Validate Maven repositories" "${VALIDATE_FULL_CMD}"
+    run_command "3" "Validate Maven repositories (JSON output)" "${VALIDATE_FULL_CMD}" "> ${VALIDATE_OUTPUT}"
 
     # Count validated repos for next steps
-    VALIDATED_COUNT=$(wc -l < "${TEST_DIR}/validated-repos.txt" || echo 0)
+    VALIDATED_COUNT=$(cat "${VALIDATE_OUTPUT}" | jq '.validCount' || echo 0)
 
     if [ "${VALIDATED_COUNT}" -gt 0 ]; then
         echo ""
@@ -138,9 +138,9 @@ find-validate-repos CLEAN="true": build
         # Step 4: Tag validated repositories
         TAG_CMD="./bin/run.js repo:tag"
         TAG_PARAMS="--topic maven --yes"
-        TAG_FULL_CMD="${TAG_CMD} ${VALIDATED_REPOS} ${TAG_PARAMS}"
+        TAG_FULL_CMD="cat ${VALIDATE_OUTPUT} | ${TAG_CMD} ${TAG_PARAMS}"
 
-        run_command "4" "Tag validated repositories with 'maven' topic" "${TAG_FULL_CMD}"
+        run_command "4" "Tag validated repositories with 'maven' topic (via JSON pipe)" "${TAG_FULL_CMD}"
 
         echo ""
         echo "🏷️  Successfully tagged ${VALIDATED_COUNT} repositories with 'maven' topic"

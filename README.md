@@ -289,13 +289,12 @@ Validates if directories contain valid Maven repositories
 
 ```
 USAGE
-  $ aggregator repo validate [REPOPATH] [--json] [-v] [-o <value>] [-c <value>]
+  $ aggregator repo validate [REPOPATH] [--json] [-v] [-o <value>]
 
 ARGUMENTS
   REPOPATH  Path to the repository or directory of repositories to validate (or omit to read from stdin)
 
 FLAGS
-  -c, --copyTo=<value>  Directory to copy validated repositories into
   -o, --output=<value>  Output file to write validated repository list
   -v, --verbose         Show verbose output during validation
 
@@ -311,8 +310,6 @@ EXAMPLES
   $ aggregator repo validate /path/to/repos-dir
 
   $ aggregator repo validate ./repos-dir --output ./validated-repos.txt
-
-  $ aggregator repo validate ./repos-dir --copyTo ./validated-repos
 
   $ aggregator repo validate ./repos-dir --json
 

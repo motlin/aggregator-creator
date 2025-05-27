@@ -22,7 +22,6 @@ export default class RepoValidate extends Command {
     '<%= config.bin %> <%= command.id %> ./path/to/repo',
     '<%= config.bin %> <%= command.id %> /path/to/repos-dir',
     '<%= config.bin %> <%= command.id %> ./repos-dir --output ./validated-repos.txt',
-    '<%= config.bin %> <%= command.id %> ./repos-dir --copyTo ./validated-repos',
     '<%= config.bin %> <%= command.id %> ./repos-dir --json',
     '<%= config.bin %> repo:list --user someuser --json | <%= config.bin %> <%= command.id %> --json',
   ]
@@ -35,10 +34,6 @@ export default class RepoValidate extends Command {
     output: Flags.string({
       char: 'o',
       description: 'Output file to write validated repository list',
-    }),
-    copyTo: Flags.string({
-      char: 'c',
-      description: 'Directory to copy validated repositories into',
     }),
   }
 
@@ -236,25 +231,8 @@ export default class RepoValidate extends Command {
     }
     this.log(`├──╯`)
 
-    if (flags.copyTo && validRepos.length > 0) {
-      const copyPath = path.resolve(flags.copyTo)
-      await fs.ensureDir(copyPath)
-
-      this.log(`├──╮ 📦 Copying ${chalk.yellow(validRepos.length)} validated repositories...`)
-      this.log(`│  ├──╮`)
-
-      for (const repo of validRepos) {
-        const destPath = path.join(copyPath, repo.owner.login, repo.name)
-        await fs.ensureDir(path.dirname(destPath))
-        await fs.copy(repo.path, destPath)
-        this.log(`│  │  │ Copied ${chalk.green(repo.owner.login)}/${chalk.green(repo.name)}`)
-      }
-
-      this.log(`│  ├──╯`)
-      this.log(`├──╯ ✅ Successfully copied repositories to: ${chalk.green(copyPath)}`)
-      this.log(`│`)
-      this.log(`╰─── ✅ All done`)
-    }
+    this.log(`│`)
+    this.log(`╰─── ✅ All done`)
 
     const elapsedMs = Date.now() - startTime
     this.debug(`Validation completed in ${elapsedMs}ms`)
