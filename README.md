@@ -130,7 +130,7 @@ Create Maven aggregator POM from a directory of repositories
 
 ```
 USAGE
-  $ aggregator aggregator create DIRECTORY [--json] [-g <value>] [-a <value>] [-v <value>] [-y]
+  $ aggregator aggregator create DIRECTORY [--json] [-g <value>] [-a <value>] [-v <value>] [-y] [--parallel]
 
 ARGUMENTS
   DIRECTORY  Directory containing final Maven repos
@@ -140,6 +140,7 @@ FLAGS
   -g, --groupId=<value>     [default: com.example] GroupId for aggregator POM
   -v, --pomVersion=<value>  [default: 1.0.0-SNAPSHOT] Version for aggregator POM
   -y, --yes                 Automatically answer "yes" to all prompts
+      --[no-]parallel       Enable parallel processing
 
 GLOBAL FLAGS
   --json  Format output as json.
@@ -213,18 +214,16 @@ List GitHub repositories based on filters
 
 ```
 USAGE
-  $ aggregator repo list [--json] [-u <value>] [-t <value>...] [-g <value>...] [--include-forks]
-    [--include-archived] [--visibility public|private|all] [--type user|org|all] [-l <value>]
+  $ aggregator repo list [--json] [-u <value>...] [-t <value>...] [-g <value>...] [--include-forks]
+    [--include-archived] [--visibility public|private|all] [-l <value>]
 
 FLAGS
   -g, --language=<value>...  Language filter
   -l, --limit=<value>        Max repositories
   -t, --topic=<value>...     Topic filter
-  -u, --user=<value>         GitHub username/org to filter by
+  -u, --user=<value>...      GitHub username/org to filter by
       --include-archived     Include archived repositories
       --include-forks        Include forked repositories
-      --type=<option>        [default: org] Repository owner type filter
-                             <options: user|org|all>
       --visibility=<option>  [default: public] Repository visibility filter
                              <options: public|private|all>
 
@@ -239,6 +238,8 @@ EXAMPLES
 
   $ aggregator repo list --user motlin --limit 100
 
+  $ aggregator repo list --user motlin --user liftwizard --limit 100
+
   $ aggregator repo list --user motlin --language Java --limit 100
 
   $ aggregator repo list --user motlin --topic maven --language Java --json
@@ -247,11 +248,7 @@ EXAMPLES
 
   $ aggregator repo list --include-forks --include-archived
 
-  $ aggregator repo list --visibility public --type org
-
-  $ aggregator repo list --visibility private --type user
-
-  $ aggregator repo list --visibility all --type all
+  $ aggregator repo list --visibility public
 ```
 
 _See code: [src/commands/repo/list.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/list.ts)_
