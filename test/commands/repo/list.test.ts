@@ -122,6 +122,18 @@ describe('repo:list', () => {
         visibility: 'public',
       },
       {
+        name: 'motlin.com',
+        owner: {login: 'motlin', type: 'User'},
+        language: 'TypeScript',
+        topics: [],
+        fork: false,
+        archived: false,
+        disabled: false,
+        is_template: false,
+        private: false,
+        visibility: 'public',
+      },
+      {
         name: 'checkstyle-results',
         owner: {login: 'motlin', type: 'User'},
         language: 'TypeScript',
