@@ -110,6 +110,18 @@ describe('repo:list', () => {
     const {stdout} = await runCommand('repo:list --user motlin --language Java --language TypeScript --json')
     expect(JSON.parse(stdout)).to.deep.equal([
       {
+        name: 'hex-flip',
+        owner: {login: 'motlin', type: 'User'},
+        language: 'TypeScript',
+        topics: [],
+        fork: false,
+        archived: false,
+        disabled: false,
+        is_template: false,
+        private: false,
+        visibility: 'public',
+      },
+      {
         name: 'checkstyle-results',
         owner: {login: 'motlin', type: 'User'},
         language: 'TypeScript',
@@ -150,6 +162,18 @@ describe('repo:list', () => {
         owner: {login: 'motlin', type: 'User'},
         language: 'Java',
         topics: ['maven'],
+        fork: false,
+        archived: false,
+        disabled: false,
+        is_template: false,
+        private: false,
+        visibility: 'public',
+      },
+      {
+        name: 'factorio-icon-cdn',
+        owner: {login: 'motlin', type: 'User'},
+        language: 'TypeScript',
+        topics: [],
         fork: false,
         archived: false,
         disabled: false,
