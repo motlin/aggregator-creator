@@ -100,7 +100,7 @@ workflow-test CLEAN="true": build
     }
 
     # Step 1: List repositories
-    LIST_CMD="./bin/run.js repo:list --user motlin --user liftwizard --language Java --visibility all --type all --limit 100 --json"
+    LIST_CMD="./bin/run.js repo:list --user motlin --user liftwizard --language Java --visibility all --limit 100 --json"
     LIST_OUTPUT="${TEST_DIR}/repos.json"
 
     run_command "1" "List repositories using repo:list" "${LIST_CMD}" "> ${LIST_OUTPUT}"
@@ -132,7 +132,7 @@ workflow-test CLEAN="true": build
         run_command "4" "Tag validated repositories using repo:tag" "${TAG_FULL_CMD}"
 
         # Step 5: List tagged repositories
-        MAVEN_LIST_CMD="./bin/run.js repo:list --user motlin --user liftwizard --topic maven --language Java --visibility public --type all --limit 100 --json"
+        MAVEN_LIST_CMD="./bin/run.js repo:list --user motlin --user liftwizard --topic maven --language Java --visibility public --limit 100 --json"
         MAVEN_LIST_OUTPUT="${TEST_DIR}/maven-repos.json"
 
         run_command "5" "List repositories with maven topic" "${MAVEN_LIST_CMD}" "> ${MAVEN_LIST_OUTPUT}"
