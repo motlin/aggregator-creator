@@ -6,7 +6,7 @@ import path from 'node:path';
 import {validateMavenRepo} from '../../utils/maven-validation.js';
 import {repositoriesSchema, type ValidatedRepository} from '../../types/repository.js';
 
-export default class RepoValidate extends Command {
+export default class RepoValidateMany extends Command {
 	static override args = {
 		repoPath: Args.string({
 			description: 'Path to the repository or directory of repositories to validate (or omit to read from stdin)',
@@ -14,7 +14,7 @@ export default class RepoValidate extends Command {
 		}),
 	};
 
-	static override description = 'Validates if directories contain valid Maven repositories';
+	static override description = 'Validates multiple Maven repositories from a directory or stdin';
 
 	static override enableJsonFlag = true;
 
@@ -38,7 +38,7 @@ export default class RepoValidate extends Command {
 	};
 
 	public async run(): Promise<{validRepos: ValidatedRepository[]; validCount: number}> {
-		const {args, flags} = await this.parse(RepoValidate);
+		const {args, flags} = await this.parse(RepoValidateMany);
 		const {repoPath} = args;
 
 		const execa = execa_({
@@ -191,7 +191,7 @@ export default class RepoValidate extends Command {
 				suggestions: [
 					'Provide a directory path as an argument',
 					'Pipe JSON data from repo:list command',
-					'Example: aggregator repo:list --json | aggregator repo:validate',
+					'Example: aggregator repo:list --json | aggregator repo:validate-many',
 				],
 			});
 		}

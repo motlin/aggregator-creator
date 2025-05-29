@@ -127,7 +127,7 @@ export default class RepoTag extends Command {
 						code: 'INVALID_JSON',
 						suggestions: [
 							'Ensure the input is valid JSON',
-							'The input should match the output from repo:validate --json',
+							'The input should match the output from repo:validate-many --json',
 						],
 					});
 				}
@@ -204,8 +204,8 @@ export default class RepoTag extends Command {
 					code: 'NO_INPUT',
 					suggestions: [
 						'Provide a directory path as an argument',
-						'Pipe JSON data from repo:validate command',
-						'Example: aggregator repo:validate ./repos --json | aggregator repo:tag --topic maven',
+						'Pipe JSON data from repo:validate-many command',
+						'Example: aggregator repo:validate-many ./repos --json | aggregator repo:tag --topic maven',
 					],
 				});
 			}

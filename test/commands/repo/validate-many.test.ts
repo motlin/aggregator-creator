@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '../../..');
 
-describe('repo:validate', () => {
+describe('repo:validate-many', () => {
 	let tempDir: string;
 
 	beforeEach(() => {
@@ -23,20 +23,31 @@ describe('repo:validate', () => {
 	it('should fail when directory does not exist', async () => {
 		const nonExistentPath = path.join(tempDir, 'non-existent');
 
-		const result = await runCommand(['repo:validate', nonExistentPath, '--json'], root);
-		expect(result).to.deep.equal({
-			result: undefined,
-			stdout: `{\n  "error": {\n    "code": "ENOENT",\n    "oclif": {\n      "exit": 1\n    },\n    "suggestions": [\n      "ENOENT: no such file or directory, stat '${nonExistentPath}'"\n    ]\n  }\n}\n`,
-			stderr: '',
+		const result = await runCommand(['repo:validate-many', nonExistentPath, '--json'], root);
+		expect(result.stderr).to.equal('');
+		expect(result.result).to.be.undefined;
+
+		const jsonOutput = JSON.parse(result.stdout);
+		expect(jsonOutput).to.deep.equal({
+			error: {
+				code: 'ENOENT',
+				oclif: {
+					exit: 1,
+				},
+				suggestions: [`ENOENT: no such file or directory, stat '${nonExistentPath}'`],
+			},
 		});
 	});
 
 	it('should fail when no pom.xml exists', async () => {
 		await fs.ensureDir(tempDir);
 
-		const {stdout} = await runCommand(['repo:validate', tempDir, '--json'], root);
-		const result = JSON.parse(stdout);
-		expect(result).to.deep.equal({
+		const result = await runCommand(['repo:validate-many', tempDir, '--json'], root);
+		expect(result.stderr).to.equal('');
+		expect(result.error).to.be.undefined;
+
+		const jsonOutput = JSON.parse(result.stdout);
+		expect(jsonOutput).to.deep.equal({
 			validCount: 0,
 			validRepos: [],
 		});
@@ -57,9 +68,12 @@ describe('repo:validate', () => {
 </project>`;
 		await fs.writeFile(path.join(tempDir, 'pom.xml'), validPom);
 
-		const {stdout} = await runCommand(['repo:validate', tempDir, '--json'], root);
-		const result = JSON.parse(stdout);
-		expect(result).to.deep.equal({
+		const result = await runCommand(['repo:validate-many', tempDir, '--json'], root);
+		expect(result.stderr).to.equal('');
+		expect(result.error).to.be.undefined;
+
+		const jsonOutput = JSON.parse(result.stdout);
+		expect(jsonOutput).to.deep.equal({
 			validCount: 1,
 			validRepos: [
 				{
@@ -117,14 +131,16 @@ describe('repo:validate', () => {
 		// Create invalid repo (no pom.xml)
 		await fs.ensureDir(invalidRepoPath);
 
-		const {stdout} = await runCommand(['repo:validate', tempDir, '--json'], root);
-		const result = JSON.parse(stdout);
+		const result = await runCommand(['repo:validate-many', tempDir, '--json'], root);
+		expect(result.stderr).to.equal('');
+		expect(result.error).to.be.undefined;
 
-		expect(result.validCount).to.equal(3);
-		expect(result.validRepos).to.have.lengthOf(3);
+		const jsonOutput = JSON.parse(result.stdout);
+		expect(jsonOutput.validCount).to.equal(3);
+		expect(jsonOutput.validRepos).to.have.lengthOf(3);
 
 		// Check that the valid repos are included
-		const validRepoNames = result.validRepos
+		const validRepoNames = jsonOutput.validRepos
 			.map((r: {owner: {login: string}; name: string}) => `${r.owner.login}/${r.name}`)
 			.sort();
 		expect(validRepoNames).to.deep.equal(['owner1/repo1', 'owner1/repo2', 'owner2/repo3']);
@@ -158,16 +174,18 @@ describe('repo:validate', () => {
 		await fs.ensureDir(invalidPomRepoPath);
 		await fs.writeFile(path.join(invalidPomRepoPath, 'pom.xml'), 'invalid xml');
 
-		const {stdout} = await runCommand(['repo:validate', tempDir, '--json'], root);
-		const result = JSON.parse(stdout);
+		const result = await runCommand(['repo:validate-many', tempDir, '--json'], root);
+		expect(result.stderr).to.equal('');
+		expect(result.error).to.be.undefined;
 
-		expect(result.validCount).to.equal(1);
-		expect(result.validRepos).to.have.lengthOf(1);
-		expect(result.validRepos[0]).to.include({
+		const jsonOutput = JSON.parse(result.stdout);
+		expect(jsonOutput.validCount).to.equal(1);
+		expect(jsonOutput.validRepos).to.have.lengthOf(1);
+		expect(jsonOutput.validRepos[0]).to.include({
 			name: 'valid-repo',
 			hasPom: true,
 			valid: true,
 		});
-		expect(result.validRepos[0].owner).to.deep.equal({login: 'owner', type: 'User'});
+		expect(jsonOutput.validRepos[0].owner).to.deep.equal({login: 'owner', type: 'User'});
 	});
 });

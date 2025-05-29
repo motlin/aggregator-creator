@@ -117,7 +117,7 @@ find-validate-repos CLEAN="true": build
     run_command "2" "Clone repositories" "${CLONE_FULL_CMD}"
 
     # Step 3: Validate repositories
-    VALIDATE_CMD="./bin/run.js repo:validate"
+    VALIDATE_CMD="./bin/run.js repo:validate-many"
     VALIDATE_OUTPUT="${TEST_DIR}/validated-repos.json"
     VALIDATE_PARAMS="--output ${TEST_DIR}/validated-repos.txt --json"
     VALIDATE_FULL_CMD="${VALIDATE_CMD} ${REPOS_DIR} ${VALIDATE_PARAMS}"
