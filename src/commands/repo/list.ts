@@ -103,6 +103,9 @@ export default class RepoList extends Command {
         this.log(`│  │  │ Limit: ${chalk.yellow(limit)}`)
       }
 
+      // Add sorting to ensure consistent results
+      args.splice(6, 0, '-f', 'sort=created', '-f', 'order=asc')
+
       const {stdout} = await execa('gh', args)
 
       const repositories = JSON.parse(stdout)
