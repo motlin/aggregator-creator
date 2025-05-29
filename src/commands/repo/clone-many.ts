@@ -6,8 +6,8 @@ import {z} from 'zod';
 import chalk from 'chalk';
 import {repositoriesSchema, repositorySchema} from '../../types/repository.js';
 
-export default class RepoClone extends Command {
-	static override description = 'Clone GitHub repositories listed from stdin';
+export default class RepoCloneMany extends Command {
+	static override description = 'Clone multiple GitHub repositories listed from stdin';
 
 	static override examples = [
 		'echo "owner/repo" | <%= config.bin %> <%= command.id %> ./target-dir',
@@ -22,7 +22,7 @@ export default class RepoClone extends Command {
 	private repoNameSchema = z.string().regex(/^[^/]+\/[^/]+$/, 'Repository must be in format "owner/repo"');
 
 	public async run(): Promise<void> {
-		const {args} = await this.parse(RepoClone);
+		const {args} = await this.parse(RepoCloneMany);
 		const {targetDirectory} = args;
 
 		const execa = execa_({
@@ -58,8 +58,8 @@ export default class RepoClone extends Command {
 				code: 'NO_INPUT',
 				suggestions: [
 					'Pipe repository data into this command',
-					'Example: echo "owner/repo" | aggregator repo:clone ./target-dir',
-					'Example: aggregator repo:list --user someuser --json | aggregator repo:clone ./target-dir',
+					'Example: echo "owner/repo" | aggregator repo:clone-many ./target-dir',
+					'Example: aggregator repo:list --user someuser --json | aggregator repo:clone-many ./target-dir',
 				],
 			});
 		} else {

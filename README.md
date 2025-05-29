@@ -46,7 +46,7 @@ The aggregator-creator CLI provides commands for managing repositories and creat
 The main command groups include:
 
 - `repo:list` - Find GitHub repositories matching specific criteria
-- `repo:clone` - Clone repositories from a list provided via stdin
+- `repo:clone-many` - Clone multiple repositories from a list provided via stdin
 - `repo:validate` - Check if repositories contain valid Maven projects
 - `repo:tag` - Add GitHub topics to validated repositories
 - `aggregator:create` - Generate a Maven aggregator POM from a directory of repositories
@@ -58,7 +58,7 @@ For detailed usage information on each command, see the [Commands](#commands) se
 The typical workflow combines all the commands to discover, clone, validate, tag, and create an aggregator:
 
 1. **Find repositories:** Use `repo:list` to find repositories with specific criteria
-2. **Clone repositories:** Pipe the results to `repo:clone` to download them
+2. **Clone repositories:** Pipe the results to `repo:clone-many` to download them
 3. **Validate repositories:** Use `repo:validate` to check which ones are valid Maven projects
 4. **Tag repositories:** Use `repo:tag` to add relevant topics to valid repositories
 5. **Create aggregator:** Use `aggregator:create` to generate an aggregator POM
@@ -119,7 +119,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 <!-- commands -->
 * [`aggregator aggregator create [DIRECTORY]`](#aggregator-aggregator-create-directory)
 * [`aggregator help [COMMAND]`](#aggregator-help-command)
-* [`aggregator repo clone TARGETDIRECTORY`](#aggregator-repo-clone-targetdirectory)
+* [`aggregator repo clone-many TARGETDIRECTORY`](#aggregator-repo-clone-many-targetdirectory)
 * [`aggregator repo list`](#aggregator-repo-list)
 * [`aggregator repo tag [DIRECTORY]`](#aggregator-repo-tag-directory)
 * [`aggregator repo validate [REPOPATH]`](#aggregator-repo-validate-repopath)
@@ -184,29 +184,29 @@ DESCRIPTION
 
 _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.29/src/commands/help.ts)_
 
-## `aggregator repo clone TARGETDIRECTORY`
+## `aggregator repo clone-many TARGETDIRECTORY`
 
-Clone GitHub repositories listed from stdin
+Clone multiple GitHub repositories listed from stdin
 
 ```
 USAGE
-  $ aggregator repo clone TARGETDIRECTORY
+  $ aggregator repo clone-many TARGETDIRECTORY
 
 ARGUMENTS
   TARGETDIRECTORY  Directory to clone repositories into
 
 DESCRIPTION
-  Clone GitHub repositories listed from stdin
+  Clone multiple GitHub repositories listed from stdin
 
 EXAMPLES
-  echo "owner/repo" | aggregator repo clone ./target-dir
+  echo "owner/repo" | aggregator repo clone-many ./target-dir
 
-  cat repos.txt | aggregator repo clone ./target-dir
+  cat repos.txt | aggregator repo clone-many ./target-dir
 
-  $ aggregator repo:list --user someuser --limit 100 --json | aggregator repo clone ./target-dir
+  $ aggregator repo:list --user someuser --limit 100 --json | aggregator repo clone-many ./target-dir
 ```
 
-_See code: [src/commands/repo/clone.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/clone.ts)_
+_See code: [src/commands/repo/clone-many.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/clone-many.ts)_
 
 ## `aggregator repo list`
 
