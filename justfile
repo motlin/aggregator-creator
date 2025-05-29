@@ -111,7 +111,7 @@ find-validate-repos CLEAN="true": build
     echo "📋 Found $(wc -l < "${TEST_DIR}/repos-to-clone.txt") repositories"
 
     # Step 2: Clone repositories
-    CLONE_CMD="./bin/run.js repo:clone"
+    CLONE_CMD="./bin/run.js repo:clone-many"
     CLONE_FULL_CMD="cat ${LIST_OUTPUT} | ${CLONE_CMD} ${REPOS_DIR}"
 
     run_command "2" "Clone repositories" "${CLONE_FULL_CMD}"
@@ -215,7 +215,7 @@ create-aggregator-from-tagged CLEAN="true": build
 
     if [ "${REPO_COUNT}" -gt 0 ]; then
         # Step 2: Clone maven-tagged repositories
-        CLONE_CMD="./bin/run.js repo:clone"
+        CLONE_CMD="./bin/run.js repo:clone-many"
         CLONE_FULL_CMD="cat ${MAVEN_LIST_OUTPUT} | ${CLONE_CMD} ${MAVEN_REPOS}"
 
         run_command "2" "Clone maven-tagged repositories" "${CLONE_FULL_CMD}"

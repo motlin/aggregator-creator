@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '../../..');
 
-describe('repo:clone', () => {
+describe('repo:clone-many', () => {
 	const sandbox = createSandbox();
 
 	beforeEach(() => {
@@ -26,7 +26,7 @@ describe('repo:clone', () => {
 	});
 
 	it('errors when no arguments provided', async () => {
-		const result = await runCommand(['repo:clone'], root);
+		const result = await runCommand(['repo:clone-many'], root);
 		expect(result).to.deep.equal({
 			error: new Error(
 				'Missing 1 required arg:\ntargetDirectory  Directory to clone repositories into\nSee more help with --help',
@@ -37,7 +37,7 @@ describe('repo:clone', () => {
 	});
 
 	it('errors when no stdin input provided', async () => {
-		const result = await runCommand(['repo:clone', './test-dir'], root);
+		const result = await runCommand(['repo:clone-many', './test-dir'], root);
 
 		const expectedError = new Error(
 			'No input provided. This command expects repository data from stdin.',
@@ -50,8 +50,8 @@ describe('repo:clone', () => {
 		expectedError.code = 'NO_INPUT';
 		expectedError.suggestions = [
 			'Pipe repository data into this command',
-			'Example: echo "owner/repo" | aggregator repo:clone ./target-dir',
-			'Example: aggregator repo:list --user someuser --json | aggregator repo:clone ./target-dir',
+			'Example: echo "owner/repo" | aggregator repo:clone-many ./target-dir',
+			'Example: aggregator repo:list --user someuser --json | aggregator repo:clone-many ./target-dir',
 		];
 
 		expect(result).to.deep.equal({
