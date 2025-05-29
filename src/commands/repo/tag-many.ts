@@ -171,9 +171,9 @@ export default class RepoTagMany extends Command {
 						}
 
 						this.log(`│  │  │ Validating Maven repo at: ${chalk.cyan(path.resolve(repoPath))}`);
-						const isValid = await validateMavenRepo(repoPath, execa, this);
+						const validationResult = await validateMavenRepo(repoPath, execa, this);
 
-						if (isValid) {
+						if (validationResult.valid) {
 							this.log(
 								`│  ├──╯ ✅ Valid Maven repository: ${chalk.yellow(ownerDir)}/${chalk.yellow(repoName)}`,
 							);
