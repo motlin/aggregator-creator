@@ -7,7 +7,7 @@ import inquirer from 'inquirer';
 import {validateMavenRepo} from '../../utils/maven-validation.js';
 import {githubTopicsResponseSchema, validatedRepositoriesSchema} from '../../types/repository.js';
 
-export default class RepoTag extends Command {
+export default class RepoTagMany extends Command {
 	static override args = {
 		directory: Args.string({
 			description: 'Directory containing cloned repos',
@@ -15,7 +15,7 @@ export default class RepoTag extends Command {
 		}),
 	};
 
-	static override description = 'Tag valid Maven repositories with GitHub topics';
+	static override description = 'Tag multiple valid Maven repositories with GitHub topics';
 
 	static override enableJsonFlag = true;
 
@@ -48,7 +48,7 @@ export default class RepoTag extends Command {
 		tagged: {owner: string; name: string}[];
 		skipped: {owner: string; name: string; reason: string}[];
 	}> {
-		const {args, flags} = await this.parse(RepoTag);
+		const {args, flags} = await this.parse(RepoTagMany);
 		const {directory} = args;
 		const {topic, dryRun, yes} = flags;
 

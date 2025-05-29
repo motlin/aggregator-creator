@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '../../..');
 
-describe('repo:tag', () => {
+describe('repo:tag-many', () => {
 	let tempDir: string;
 
 	beforeEach(async () => {
@@ -58,7 +58,7 @@ describe('repo:tag', () => {
 		// Set up invalid repo (no pom.xml)
 		await fs.ensureDir(path.join(invalidRepoPath, '.git'));
 
-		const {stdout} = await runCommand(['repo:tag', tempDir, '--topic', 'maven', '--dryRun', '--json'], root);
+		const {stdout} = await runCommand(['repo:tag-many', tempDir, '--topic', 'maven', '--dryRun', '--json'], root);
 		const result = JSON.parse(stdout);
 
 		expect(result).to.deep.equal({
@@ -92,7 +92,7 @@ describe('repo:tag', () => {
 </project>`;
 		await fs.writeFile(path.join(nonGitRepoPath, 'pom.xml'), validPom);
 
-		const {stdout} = await runCommand(['repo:tag', tempDir, '--topic', 'maven', '--dryRun', '--json'], root);
+		const {stdout} = await runCommand(['repo:tag-many', tempDir, '--topic', 'maven', '--dryRun', '--json'], root);
 		const result = JSON.parse(stdout);
 
 		expect(result).to.deep.equal({
@@ -122,7 +122,7 @@ describe('repo:tag', () => {
 		await fs.writeFile(path.join(repoPath, 'pom.xml'), validPom);
 
 		const {stdout} = await runCommand(
-			['repo:tag', tempDir, '--topic', 'maven', '--yes', '--dryRun', '--json'],
+			['repo:tag-many', tempDir, '--topic', 'maven', '--yes', '--dryRun', '--json'],
 			root,
 		);
 		const result = JSON.parse(stdout);
