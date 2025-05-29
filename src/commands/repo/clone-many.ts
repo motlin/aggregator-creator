@@ -1,10 +1,10 @@
 import {Args, Command} from '@oclif/core';
 import * as fs from 'fs-extra';
-import path from 'node:path';
 import {execa as execa_} from 'execa';
 import {z} from 'zod';
 import chalk from 'chalk';
 import {repositoriesSchema, repositorySchema} from '../../types/repository.js';
+import {cloneSingleRepo} from '../../utils/clone-single-repo.js';
 
 export default class RepoCloneMany extends Command {
 	static override description = 'Clone multiple GitHub repositories listed from stdin';
@@ -104,8 +104,7 @@ export default class RepoCloneMany extends Command {
 					this.log(`├──╮ 🚀 Cloning ${chalk.yellow(total)} repositories`);
 
 					for (const [i, repo] of validRepos.entries()) {
-						const repoFullName = `${repo.owner.login}/${repo.name}`;
-						await this.cloneRepository(repoFullName, targetDirectory, i + 1, total, execa);
+						await this.cloneRepository(repo.owner.login, repo.name, targetDirectory, i + 1, total, execa);
 					}
 
 					this.log(`├──╯ Cloning complete`);
@@ -116,8 +115,7 @@ export default class RepoCloneMany extends Command {
 					const total = 1;
 					this.log(`├──╮ 🚀 Cloning ${chalk.yellow(1)} repository`);
 
-					const repoFullName = `${validRepo.owner.login}/${validRepo.name}`;
-					await this.cloneRepository(repoFullName, targetDirectory, 1, total, execa);
+					await this.cloneRepository(validRepo.owner.login, validRepo.name, targetDirectory, 1, total, execa);
 
 					this.log(`├──╯ Cloning complete`);
 					this.log(`│`);
@@ -156,7 +154,8 @@ export default class RepoCloneMany extends Command {
 						throw error;
 					}
 
-					await this.cloneRepository(trimmedLine, targetDirectory, i + 1, total, execa);
+					const [owner, name] = trimmedLine.split('/');
+					await this.cloneRepository(owner, name, targetDirectory, i + 1, total, execa);
 				}
 
 				this.log(`├──╯ Cloning complete`);
@@ -167,36 +166,24 @@ export default class RepoCloneMany extends Command {
 	}
 
 	private async cloneRepository(
-		repoName: string,
+		owner: string,
+		name: string,
 		targetDirectory: string,
 		index: number,
 		total: number,
 		execa: typeof execa_,
 	): Promise<void> {
-		const [owner, repo] = repoName.split('/');
-		const repoDir = path.join(targetDirectory, owner, repo);
+		const repoFullName = `${owner}/${name}`;
+		this.log(`│  ├──╮ [${chalk.yellow(index)}/${total}] ${chalk.yellow(repoFullName)}`);
 
-		await fs.ensureDir(path.dirname(repoDir));
+		const logger = {
+			log: (message: string) => this.log(`│  │  │ ${message}`),
+		};
 
-		try {
-			const dirContents = await fs.readdir(repoDir);
-			if (dirContents.length > 0) {
-				this.log(`│  ├──╮ [${chalk.yellow(index)}/${total}] ${chalk.yellow(repoName)}`);
-				this.log(`│  │  │ Skipped: Directory already exists and is not empty`);
-				this.log(`│  ├──╯`);
-				this.log(`│  │`);
-				return;
-			}
-		} catch {
-			// Directory doesn't exist, which is fine
-		}
+		const result = await cloneSingleRepo(owner, name, targetDirectory, execa, logger);
 
-		this.log(`│  ├──╮ [${chalk.yellow(index)}/${total}] ${chalk.yellow(repoName)}`);
-
-		try {
-			await execa('gh', ['repo', 'clone', repoName, repoDir]);
-		} catch (error: unknown) {
-			this.log(`│  │  │ ❌ Failed: ${error instanceof Error ? error.message : String(error)}`);
+		if (result.error) {
+			this.log(`│  │  │ ❌ Failed: ${result.error}`);
 			this.log(`│  ├──╯`);
 			this.log(`│  │`);
 			this.error('Repository cloning failed', {
@@ -208,7 +195,12 @@ export default class RepoCloneMany extends Command {
 					'Ensure you have permission to clone the repository',
 				],
 			});
-			throw error;
+		} else if (result.skipped) {
+			this.log(`│  ├──╯`);
+			this.log(`│  │`);
+		} else {
+			this.log(`│  ├──╯`);
+			this.log(`│  │`);
 		}
 	}
 }
