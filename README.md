@@ -121,7 +121,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 * [`aggregator help [COMMAND]`](#aggregator-help-command)
 * [`aggregator repo clone TARGETDIRECTORY`](#aggregator-repo-clone-targetdirectory)
 * [`aggregator repo list`](#aggregator-repo-list)
-* [`aggregator repo tag DIRECTORY`](#aggregator-repo-tag-directory)
+* [`aggregator repo tag [DIRECTORY]`](#aggregator-repo-tag-directory)
 * [`aggregator repo validate [REPOPATH]`](#aggregator-repo-validate-repopath)
 
 ## `aggregator aggregator create [DIRECTORY]`
@@ -253,13 +253,13 @@ EXAMPLES
 
 _See code: [src/commands/repo/list.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/list.ts)_
 
-## `aggregator repo tag DIRECTORY`
+## `aggregator repo tag [DIRECTORY]`
 
 Tag valid Maven repositories with GitHub topics
 
 ```
 USAGE
-  $ aggregator repo tag DIRECTORY -t <value> [--json] [-d] [-y]
+  $ aggregator repo tag [DIRECTORY] -t <value> [--json] [-d] [-y]
 
 ARGUMENTS
   DIRECTORY  Directory containing cloned repos

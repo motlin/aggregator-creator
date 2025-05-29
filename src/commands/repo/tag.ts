@@ -11,7 +11,7 @@ export default class RepoTag extends Command {
   static override args = {
     directory: Args.string({
       description: 'Directory containing cloned repos',
-      required: true,
+      required: false,
     }),
   }
 
