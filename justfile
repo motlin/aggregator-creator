@@ -132,7 +132,7 @@ find-validate-repos CLEAN="true": build
         echo "✅ Found ${VALIDATED_COUNT} valid Maven repositories"
 
         # Step 4: Tag validated repositories
-        TAG_CMD="./bin/run.js repo:tag"
+        TAG_CMD="./bin/run.js repo:tag-many"
         TAG_PARAMS="--topic maven --yes"
         TAG_FULL_CMD="cat ${VALIDATE_OUTPUT} | ${TAG_CMD} ${TAG_PARAMS}"
 
