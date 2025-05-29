@@ -214,10 +214,10 @@ export default class RepoValidateMany extends Command {
 				continue;
 			}
 
-			const isValid = await validateMavenRepo(repo.path, execa, this);
-			repo.valid = isValid;
+			const validationResult = await validateMavenRepo(repo.path, execa, this);
+			repo.valid = validationResult.valid;
 
-			if (isValid) {
+			if (validationResult.valid) {
 				this.log(`├──╯ ✅ Validation successful: ${chalk.green(repoFullName)}`);
 				validCount++;
 				validRepos.push(repo);
