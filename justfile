@@ -2,15 +2,11 @@
 default:
     @just --list --unsorted
 
-# Build project (serves as typecheck)
-typecheck: install
-    npm run build
+# `npm run ci:typecheck`
+typecheck: build
+    npm run ci:typecheck
 
-# Run eslint
-lint: install
-    npm run lint
-
-# Run eslint with auto-fixing
+# `npm run lint:fix`
 lint-fix: install
     npm run lint:fix
 
@@ -289,5 +285,5 @@ workflow-test CLEAN="true": build
     echo "🎉 Complete workflow test finished!"
 
 # Run everything
-precommit: install build lint-fix format test
+precommit: build lint-fix format test
     @echo "✅ All checks and steps completed successfully."
