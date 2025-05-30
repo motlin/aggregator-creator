@@ -2,8 +2,12 @@ import {runCommand} from '@oclif/test'
 import {expect} from 'chai'
 import fs from 'fs-extra'
 import path from 'node:path'
-import * as os from 'node:os'
+import os from 'node:os'
 import {createSandbox} from 'sinon'
+import {fileURLToPath} from 'node:url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const root = path.join(__dirname, '../../..')
 
 describe('aggregator:create', () => {
   let tempDir: string
@@ -30,7 +34,7 @@ describe('aggregator:create', () => {
   })
 
   it('errors when no directory is provided', async () => {
-    const result = await runCommand('aggregator:create')
+    const result = await runCommand(['aggregator:create'], root)
     expect(result.error).to.exist
     expect(result.error?.message).to.equal('No input provided. Provide a directory path or pipe JSON data from stdin.')
     expect(result.stdout).to.equal('')
@@ -38,7 +42,7 @@ describe('aggregator:create', () => {
   })
 
   it('creates an aggregator POM with default values', async () => {
-    const {stdout} = await runCommand(`aggregator:create ${tempDir} --yes --json`)
+    const {stdout} = await runCommand(['aggregator:create', tempDir, '--yes', '--json'], root)
     const output = JSON.parse(stdout)
 
     expect(output).to.deep.equal({
@@ -80,7 +84,19 @@ describe('aggregator:create', () => {
 
   it('creates an aggregator POM with custom values', async () => {
     const {stdout} = await runCommand(
-      `aggregator:create ${tempDir} --groupId org.test --artifactId custom-agg --pomVersion 2.0.0 --yes --json`,
+      [
+        'aggregator:create',
+        tempDir,
+        '--groupId',
+        'org.test',
+        '--artifactId',
+        'custom-agg',
+        '--pomVersion',
+        '2.0.0',
+        '--yes',
+        '--json',
+      ],
+      root,
     )
     const output = JSON.parse(stdout)
 
@@ -118,7 +134,7 @@ describe('aggregator:create', () => {
   })
 
   it('outputs in json format when --json flag is provided', async () => {
-    const {stdout} = await runCommand(`aggregator:create ${tempDir} --json --yes`)
+    const {stdout} = await runCommand(['aggregator:create', tempDir, '--json', '--yes'], root)
 
     const output = JSON.parse(stdout)
 
@@ -153,7 +169,7 @@ describe('aggregator:create', () => {
     const emptyDir = await fs.mkdtemp(path.join(os.tmpdir(), 'empty-dir-'))
 
     try {
-      const {stdout} = await runCommand(`aggregator:create ${emptyDir} --json --yes`)
+      const {stdout} = await runCommand(['aggregator:create', emptyDir, '--json', '--yes'], root)
 
       const output = JSON.parse(stdout)
 

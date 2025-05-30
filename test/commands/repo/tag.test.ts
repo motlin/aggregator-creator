@@ -2,6 +2,10 @@ import {runCommand} from '@oclif/test'
 import {expect} from 'chai'
 import fs from 'fs-extra'
 import path from 'node:path'
+import {fileURLToPath} from 'node:url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const root = path.join(__dirname, '../../..')
 
 describe('repo:tag', () => {
   let tempDir: string
@@ -54,7 +58,7 @@ describe('repo:tag', () => {
     // Set up invalid repo (no pom.xml)
     await fs.ensureDir(path.join(invalidRepoPath, '.git'))
 
-    const {stdout} = await runCommand(`repo:tag ${tempDir} --topic maven --dryRun --json`)
+    const {stdout} = await runCommand(['repo:tag', tempDir, '--topic', 'maven', '--dryRun', '--json'], root)
     const result = JSON.parse(stdout)
 
     expect(result).to.deep.equal({
@@ -88,7 +92,7 @@ describe('repo:tag', () => {
 </project>`
     await fs.writeFile(path.join(nonGitRepoPath, 'pom.xml'), validPom)
 
-    const {stdout} = await runCommand(`repo:tag ${tempDir} --topic maven --dryRun --json`)
+    const {stdout} = await runCommand(['repo:tag', tempDir, '--topic', 'maven', '--dryRun', '--json'], root)
     const result = JSON.parse(stdout)
 
     expect(result).to.deep.equal({
@@ -117,7 +121,7 @@ describe('repo:tag', () => {
 </project>`
     await fs.writeFile(path.join(repoPath, 'pom.xml'), validPom)
 
-    const {stdout} = await runCommand(`repo:tag ${tempDir} --topic maven --yes --dryRun --json`)
+    const {stdout} = await runCommand(['repo:tag', tempDir, '--topic', 'maven', '--yes', '--dryRun', '--json'], root)
     const result = JSON.parse(stdout)
 
     expect(result).to.deep.equal({

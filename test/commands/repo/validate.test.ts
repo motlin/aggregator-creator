@@ -2,6 +2,10 @@ import {runCommand} from '@oclif/test'
 import {expect} from 'chai'
 import fs from 'fs-extra'
 import path from 'node:path'
+import {fileURLToPath} from 'node:url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const root = path.join(__dirname, '../../..')
 
 describe('repo:validate', () => {
   let tempDir: string
@@ -19,7 +23,7 @@ describe('repo:validate', () => {
   it('should fail when directory does not exist', async () => {
     const nonExistentPath = path.join(tempDir, 'non-existent')
 
-    const result = await runCommand(`repo:validate ${nonExistentPath} --json`)
+    const result = await runCommand(['repo:validate', nonExistentPath, '--json'], root)
     expect(result).to.deep.equal({
       result: undefined,
       stdout: `{\n  "error": {\n    "code": "ENOENT",\n    "oclif": {\n      "exit": 1\n    },\n    "suggestions": [\n      "ENOENT: no such file or directory, stat '${nonExistentPath}'"\n    ]\n  }\n}\n`,
@@ -30,7 +34,7 @@ describe('repo:validate', () => {
   it('should fail when no pom.xml exists', async () => {
     await fs.ensureDir(tempDir)
 
-    const {stdout} = await runCommand(`repo:validate ${tempDir} --json`)
+    const {stdout} = await runCommand(['repo:validate', tempDir, '--json'], root)
     const result = JSON.parse(stdout)
     expect(result).to.deep.equal({
       validCount: 0,
@@ -53,7 +57,7 @@ describe('repo:validate', () => {
 </project>`
     await fs.writeFile(path.join(tempDir, 'pom.xml'), validPom)
 
-    const {stdout} = await runCommand(`repo:validate ${tempDir} --json`)
+    const {stdout} = await runCommand(['repo:validate', tempDir, '--json'], root)
     const result = JSON.parse(stdout)
     expect(result).to.deep.equal({
       validCount: 1,
@@ -113,7 +117,7 @@ describe('repo:validate', () => {
     // Create invalid repo (no pom.xml)
     await fs.ensureDir(invalidRepoPath)
 
-    const {stdout} = await runCommand(`repo:validate ${tempDir} --json`)
+    const {stdout} = await runCommand(['repo:validate', tempDir, '--json'], root)
     const result = JSON.parse(stdout)
 
     expect(result.validCount).to.equal(3)
@@ -154,7 +158,7 @@ describe('repo:validate', () => {
     await fs.ensureDir(invalidPomRepoPath)
     await fs.writeFile(path.join(invalidPomRepoPath, 'pom.xml'), 'invalid xml')
 
-    const {stdout} = await runCommand(`repo:validate ${tempDir} --json`)
+    const {stdout} = await runCommand(['repo:validate', tempDir, '--json'], root)
     const result = JSON.parse(stdout)
 
     expect(result.validCount).to.equal(1)

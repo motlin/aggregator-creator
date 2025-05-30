@@ -2,7 +2,11 @@ import {runCommand} from '@oclif/test'
 import {expect} from 'chai'
 import fs from 'fs-extra'
 import path from 'node:path'
-import * as os from 'node:os'
+import os from 'node:os'
+import {fileURLToPath} from 'node:url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const root = path.join(__dirname, '../../..')
 
 describe('aggregator:create with parent POM resolution errors', () => {
   let tempDir: string
@@ -52,7 +56,7 @@ describe('aggregator:create with parent POM resolution errors', () => {
   })
 
   it('should continue processing when Maven parent POM resolution errors occur', async () => {
-    const {stdout} = await runCommand(`aggregator:create ${tempDir} --yes --json`)
+    const {stdout} = await runCommand(['aggregator:create', tempDir, '--yes', '--json'], root)
     const output = JSON.parse(stdout)
 
     expect(output).to.deep.equal({

@@ -1,9 +1,17 @@
 import {runCommand} from '@oclif/test'
 import {expect} from 'chai'
+import path from 'node:path'
+import {fileURLToPath} from 'node:url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const root = path.join(__dirname, '../../..')
 
 describe('repo:list', () => {
   it('should fetch repositories with specific search criteria', async () => {
-    const {stdout} = await runCommand('repo:list --user torvalds --language C --json --limit 2')
+    const {stdout} = await runCommand(
+      ['repo:list', '--user', 'torvalds', '--language', 'C', '--json', '--limit', '2'],
+      root,
+    )
 
     expect(JSON.parse(stdout)).to.deep.equal([
       {
@@ -49,12 +57,12 @@ describe('repo:list', () => {
       },
     ]
 
-    const {stdout} = await runCommand('repo:list --user motlin --json --limit 1')
+    const {stdout} = await runCommand(['repo:list', '--user', 'motlin', '--json', '--limit', '1'], root)
     expect(JSON.parse(stdout)).to.deep.equal(expected)
   })
 
   it('should fetch repositories for freeCodeCamp user', async () => {
-    const {stdout} = await runCommand('repo:list --user freeCodeCamp --json --limit 1')
+    const {stdout} = await runCommand(['repo:list', '--user', 'freeCodeCamp', '--json', '--limit', '1'], root)
 
     expect(JSON.parse(stdout)).to.deep.equal([
       {
@@ -90,7 +98,10 @@ describe('repo:list', () => {
   })
 
   it('should support multiple language filters', async () => {
-    const {stdout} = await runCommand('repo:list --user motlin --language Java --language TypeScript --json')
+    const {stdout} = await runCommand(
+      ['repo:list', '--user', 'motlin', '--language', 'Java', '--language', 'TypeScript', '--json'],
+      root,
+    )
     expect(JSON.parse(stdout)).to.deep.equal([
       {
         name: 'hex-flip',
@@ -180,7 +191,10 @@ describe('repo:list', () => {
   })
 
   it('should include forked repositories when --include-forks flag is provided', async () => {
-    const {stdout} = await runCommand('repo:list --user octocat --language HTML --include-forks --json --limit 1')
+    const {stdout} = await runCommand(
+      ['repo:list', '--user', 'octocat', '--language', 'HTML', '--include-forks', '--json', '--limit', '1'],
+      root,
+    )
     expect(JSON.parse(stdout)).to.deep.equal([
       {
         name: 'Spoon-Knife',
@@ -198,7 +212,10 @@ describe('repo:list', () => {
   })
 
   it('should include archived repositories when --include-archived flag is provided', async () => {
-    const {stdout} = await runCommand('repo:list --user octocat --language HTML --include-archived --json --limit 1')
+    const {stdout} = await runCommand(
+      ['repo:list', '--user', 'octocat', '--language', 'HTML', '--include-archived', '--json', '--limit', '1'],
+      root,
+    )
     expect(JSON.parse(stdout)).to.deep.equal([
       {
         name: 'Spoon-Knife',
@@ -217,7 +234,19 @@ describe('repo:list', () => {
 
   it('should support combining include flags', async () => {
     const {stdout} = await runCommand(
-      'repo:list --user octocat --language HTML --include-forks --include-archived --json --limit 1',
+      [
+        'repo:list',
+        '--user',
+        'octocat',
+        '--language',
+        'HTML',
+        '--include-forks',
+        '--include-archived',
+        '--json',
+        '--limit',
+        '1',
+      ],
+      root,
     )
     expect(JSON.parse(stdout)).to.deep.equal([
       {
