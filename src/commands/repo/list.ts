@@ -166,21 +166,6 @@ export default class RepoList extends Command {
       })
     }
 
-    try {
-      this.log(`│  ├──╮ Check gh auth status`)
-      await execa('gh', ['auth', 'status'])
-    } catch {
-      this.error('Not authenticated with GitHub. Please run `gh auth login` first.', {
-        exit: 1,
-        code: 'GH_AUTH_REQUIRED',
-        suggestions: [
-          'Run: gh auth login',
-          'Follow the prompts to authenticate with GitHub',
-          'Ensure you have the necessary permissions for the repositories',
-        ],
-      })
-    }
-
     this.log(`├──╯ ✅ Prerequisites complete`)
     this.log(`│`)
 
