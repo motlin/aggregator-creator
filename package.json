@@ -38,6 +38,7 @@
     "shx": "^0.3.3",
     "sinon": "^20.0.0",
     "ts-node": "^10",
+    "tsx": "^4.19.4",
     "typescript": "^5"
   },
   "engines": {
