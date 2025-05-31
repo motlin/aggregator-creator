@@ -27,7 +27,7 @@ describe('repo:clone-many', () => {
 
 	it('errors when no arguments provided', async () => {
 		const result = await runCommand(['repo:clone-many'], root);
-		expect(result).to.deep.equal({
+		expect(result, 'runCommand should return proper error structure for missing args').to.deep.equal({
 			error: new Error(
 				'Missing 1 required arg:\ntargetDirectory  Directory to clone repositories into\nSee more help with --help',
 			),
@@ -54,7 +54,7 @@ describe('repo:clone-many', () => {
 			'Example: aggregator repo:list --user someuser --json | aggregator repo:clone-many ./target-dir',
 		];
 
-		expect(result).to.deep.equal({
+		expect(result, 'runCommand should return proper error structure for missing stdin input').to.deep.equal({
 			error: expectedError,
 			stdout: '',
 			stderr: '',
