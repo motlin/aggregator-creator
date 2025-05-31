@@ -4,5 +4,7 @@
 	"watch-extensions": ["ts"],
 	"recursive": true,
 	"reporter": "spec",
-	"timeout": 60000
+	"timeout": 60000,
+	"diff": true,
+	"inline-diffs": true
 }
