@@ -5,11 +5,11 @@
 		"skipDefaultLibCheck": true,
 		"strict": true,
 		"module": "Node16",
-    "target": "es2022",
+		"target": "es2022",
 		"moduleResolution": "node16",
-	"composite": true,
-    "esModuleInterop": true
-  },
-  "include": ["./**/*"],
+		"composite": true,
+		"esModuleInterop": true
+	},
+	"include": ["./**/*"],
 	"references": [{"path": "../src"}]
 }
