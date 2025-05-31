@@ -69,6 +69,10 @@ jobs:
 
       - run: npm ci
 
+      - run: npm run build
+
+      - run: npx oclif manifest
+
       - run: npm test
 
   build:
