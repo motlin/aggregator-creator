@@ -5,7 +5,8 @@ import fs from 'fs-extra';
 import path from 'node:path';
 import inquirer from 'inquirer';
 import {validateMavenRepo} from '../../utils/maven-validation.js';
-import {githubTopicsResponseSchema, validatedRepositoriesSchema} from '../../types/repository.js';
+import {tagSingleRepository} from '../../utils/tag-single-repo.js';
+import {validatedRepositoriesSchema} from '../../types/repository.js';
 
 export default class RepoTagMany extends Command {
 	static override args = {
@@ -236,17 +237,45 @@ export default class RepoTagMany extends Command {
 			this.log(`│  ├──╮ 🏷️ Tagging repositories...`);
 
 			for (const [i, repo] of validRepos.entries()) {
-				if (dryRun) {
-					this.log(
-						`│  │  │ ${chalk.blue('[DRY RUN]')} [${chalk.yellow(i + 1)}/${validRepos.length}] Would tag ${chalk.yellow(repo.owner)}/${chalk.yellow(repo.repoName)} with topic: ${chalk.cyan(topic)}`,
-					);
+				const tagResult = await tagSingleRepository({
+					owner: repo.owner,
+					name: repo.repoName,
+					topic,
+					dryRun,
+					execa,
+					logger: {
+						log: (message: string) => this.log(`│  │  │ ${message}`),
+						warn: (message: string) => this.warn(`│  │  │ ${message}`),
+						error: (message: string, options?: {exit?: boolean}) => {
+							if (options?.exit === false) {
+								this.error(`│  │  │ ${message}`, {exit: false});
+							} else {
+								this.warn(`│  │  │ ${message}`);
+							}
+						},
+					},
+				});
+
+				if (tagResult.success) {
+					if (dryRun) {
+						this.log(
+							`│  │  │ ${chalk.blue('[DRY RUN]')} [${chalk.yellow(i + 1)}/${validRepos.length}] Would tag ${chalk.yellow(repo.owner)}/${chalk.yellow(repo.repoName)} with topic: ${chalk.cyan(topic)}`,
+						);
+					} else if (tagResult.alreadyTagged) {
+						this.log(
+							`│  │  │ ✓ [${chalk.yellow(i + 1)}/${validRepos.length}] ${chalk.yellow(repo.owner)}/${chalk.yellow(repo.repoName)} already has topic: ${chalk.cyan(topic)}`,
+						);
+					} else {
+						this.log(
+							`│  │  │ ✓ [${chalk.yellow(i + 1)}/${validRepos.length}] Tagged ${chalk.yellow(repo.owner)}/${chalk.yellow(repo.repoName)} with topic: ${chalk.cyan(topic)}`,
+						);
+					}
 					tagged.push({owner: repo.owner, name: repo.repoName});
 				} else {
-					await this.tagRepository(repo.owner, repo.repoName, topic, execa);
-					this.log(
-						`│  │  │ ✓ Tagged ${chalk.yellow(repo.owner)}/${chalk.yellow(repo.repoName)} with topic: ${chalk.cyan(topic)}`,
+					this.warn(
+						`│  │  │ ✗ [${chalk.yellow(i + 1)}/${validRepos.length}] Failed to tag ${chalk.yellow(repo.owner)}/${chalk.yellow(repo.repoName)}: ${tagResult.error}`,
 					);
-					tagged.push({owner: repo.owner, name: repo.repoName});
+					skipped.push({owner: repo.owner, name: repo.repoName, reason: tagResult.error || 'tagging failed'});
 				}
 			}
 			this.log(`│  ├──╯`);
@@ -295,49 +324,6 @@ export default class RepoTagMany extends Command {
 			return await fs.pathExists(gitDir);
 		} catch {
 			return false;
-		}
-	}
-
-	private async tagRepository(
-		owner: string,
-		name: string,
-		topic: string,
-		execa: typeof execa_ = execa_,
-	): Promise<void> {
-		try {
-			const result = await execa('gh', ['api', `repos/${owner}/${name}/topics`, '--method', 'GET'], {
-				reject: false,
-			});
-
-			if (result.exitCode === 0) {
-				try {
-					const topicsData = githubTopicsResponseSchema.parse(JSON.parse(result.stdout));
-					const topics = topicsData.names;
-
-					if (topics.includes(topic)) {
-						this.log(
-							`│  │  │ Topic ${chalk.yellow(topic)} already exists on ${chalk.yellow(owner)}/${chalk.yellow(name)}`,
-						);
-					} else {
-						topics.push(topic);
-						const args = ['api', `repos/${owner}/${name}/topics`, '--method', 'PUT'];
-						for (const t of topics) {
-							args.push('-f', `names[]=${t}`);
-						}
-						await execa('gh', args);
-					}
-				} catch (error) {
-					this.error(`│  │  │ Error updating topics: ${error}`, {exit: false});
-				}
-			} else {
-				this.warn(
-					`│  │  │ Failed to get topics for ${chalk.yellow(owner)}/${chalk.yellow(name)}: ${result.stderr}`,
-				);
-			}
-		} catch (error) {
-			this.error(`│  │  │ Failed to tag repository ${chalk.yellow(owner)}/${chalk.yellow(name)}: ${error}`, {
-				exit: false,
-			});
 		}
 	}
 }
