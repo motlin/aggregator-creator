@@ -104,7 +104,7 @@ describe('repo:list', () => {
 		);
 		expect(JSON.parse(stdout)).to.deep.equal([
 			{
-				name: 'hex-flip',
+				name: 'hex-zero',
 				owner: {login: 'motlin', type: 'User'},
 				language: 'TypeScript',
 				topics: [],
