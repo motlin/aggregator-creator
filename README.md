@@ -121,7 +121,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 * [`aggregator help [COMMAND]`](#aggregator-help-command)
 * [`aggregator repo clone-many TARGETDIRECTORY`](#aggregator-repo-clone-many-targetdirectory)
 * [`aggregator repo list`](#aggregator-repo-list)
-* [`aggregator repo tag-many [DIRECTORY]`](#aggregator-repo-tag-many-directory)
+* [`aggregator repo tag-many`](#aggregator-repo-tag-many)
 * [`aggregator repo validate-many [REPOPATH]`](#aggregator-repo-validate-many-repopath)
 
 ## `aggregator aggregator create [DIRECTORY]`
@@ -253,21 +253,19 @@ EXAMPLES
 
 _See code: [src/commands/repo/list.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/list.ts)_
 
-## `aggregator repo tag-many [DIRECTORY]`
+## `aggregator repo tag-many`
 
 Tag multiple valid Maven repositories with GitHub topics
 
 ```
 USAGE
-  $ aggregator repo tag-many [DIRECTORY] -t <value> [--json] [-d] [-y]
-
-ARGUMENTS
-  DIRECTORY  Directory containing cloned repos
+  $ aggregator repo tag-many -t <value> [--json] [--directory <value>] [-d] [-y]
 
 FLAGS
-  -d, --dryRun         Show changes without applying them
-  -t, --topic=<value>  (required) Topic to synchronize
-  -y, --yes            Automatically answer "yes" to all prompts
+  -d, --dryRun             Show changes without applying them
+  -t, --topic=<value>      (required) Topic to synchronize
+  -y, --yes                Automatically answer "yes" to all prompts
+      --directory=<value>  Directory containing cloned repos
 
 GLOBAL FLAGS
   --json  Format output as json.
@@ -276,9 +274,11 @@ DESCRIPTION
   Tag multiple valid Maven repositories with GitHub topics
 
 EXAMPLES
-  $ aggregator repo tag-many ./repos-dir --topic maven
+  $ aggregator repo tag-many --directory ./repos-dir --topic maven
 
-  $ aggregator repo tag-many ./repos-dir --topic maven --dryRun
+  $ aggregator repo tag-many --directory ./repos-dir --topic maven --dryRun
+
+  $ aggregator repo:validate-many ./repos --json | aggregator repo tag-many --topic maven
 ```
 
 _See code: [src/commands/repo/tag-many.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/tag-many.ts)_
