@@ -171,10 +171,8 @@ export default class RepoCloneMany extends Command {
 				],
 			});
 		} else if (result.skipped) {
-			this.log(`│  ├──╯`);
 			this.log(`│  │`);
 		} else {
-			this.log(`│  ├──╯`);
 			this.log(`│  │`);
 		}
 	}
