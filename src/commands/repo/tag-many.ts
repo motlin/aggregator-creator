@@ -1,4 +1,4 @@
-import {Args, Command, Flags} from '@oclif/core';
+import {Command, Flags} from '@oclif/core';
 import chalk from 'chalk';
 import {execa as execa_} from 'execa';
 import fs from 'fs-extra';
@@ -9,23 +9,23 @@ import {tagSingleRepository} from '../../utils/tag-single-repo.js';
 import {validatedRepositoriesSchema} from '../../types/repository.js';
 
 export default class RepoTagMany extends Command {
-	static override args = {
-		directory: Args.string({
-			description: 'Directory containing cloned repos',
-			required: false,
-		}),
-	};
+	static override args = {};
 
 	static override description = 'Tag multiple valid Maven repositories with GitHub topics';
 
 	static override enableJsonFlag = true;
 
 	static override examples = [
-		'<%= config.bin %> <%= command.id %> ./repos-dir --topic maven',
-		'<%= config.bin %> <%= command.id %> ./repos-dir --topic maven --dryRun',
+		'<%= config.bin %> <%= command.id %> --directory ./repos-dir --topic maven',
+		'<%= config.bin %> <%= command.id %> --directory ./repos-dir --topic maven --dryRun',
+		'<%= config.bin %> repo:validate-many ./repos --json | <%= config.bin %> <%= command.id %> --topic maven',
 	];
 
 	static override flags = {
+		directory: Flags.string({
+			description: 'Directory containing cloned repos',
+			required: false,
+		}),
 		topic: Flags.string({
 			char: 't',
 			description: 'Topic to synchronize',
@@ -49,9 +49,8 @@ export default class RepoTagMany extends Command {
 		tagged: {owner: string; name: string}[];
 		skipped: {owner: string; name: string; reason: string}[];
 	}> {
-		const {args, flags} = await this.parse(RepoTagMany);
-		const {directory} = args;
-		const {topic, dryRun, yes} = flags;
+		const {flags} = await this.parse(RepoTagMany);
+		const {directory, topic, dryRun, yes} = flags;
 
 		const tagged: {owner: string; name: string}[] = [];
 		const skipped: {owner: string; name: string; reason: string}[] = [];
@@ -175,13 +174,14 @@ export default class RepoTagMany extends Command {
 					`│  │  │ Checked ${chalk.yellow(totalRepos)} total repositories across ${chalk.yellow(ownerDirs.length)} owner directories`,
 				);
 			} else {
-				this.error('No input provided. Provide a directory path or pipe JSON data from stdin.', {
+				this.error('No input provided. Provide a directory flag or pipe JSON data from stdin.', {
 					exit: 1,
 					code: 'NO_INPUT',
 					suggestions: [
-						'Provide a directory path as an argument',
+						'Provide a directory path using the --directory flag',
 						'Pipe JSON data from repo:validate-many command',
-						'Example: aggregator repo:validate-many ./repos --json | aggregator repo:tag --topic maven',
+						'Example: aggregator repo:tag-many --directory ./repos --topic maven',
+						'Example: aggregator repo:validate-many ./repos --json | aggregator repo:tag-many --topic maven',
 					],
 				});
 			}
