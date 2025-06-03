@@ -47,7 +47,7 @@ describe('repo:list', () => {
 				name: 'jetbrains-settings',
 				owner: {login: 'motlin', type: 'User'},
 				language: null,
-				topics: [],
+				topics: ['color-scheme', 'jetbrains', 'syntax-highlighting'],
 				fork: false,
 				archived: false,
 				disabled: false,
