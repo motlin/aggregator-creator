@@ -1,5 +1,5 @@
 import {execa as execa_} from 'execa';
-import * as fs from 'fs-extra';
+import fs from 'fs-extra';
 import path from 'node:path';
 
 export interface CloneResult {
