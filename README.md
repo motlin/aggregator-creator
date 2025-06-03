@@ -119,6 +119,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 <!-- commands -->
 * [`aggregator aggregator create [DIRECTORY]`](#aggregator-aggregator-create-directory)
 * [`aggregator help [COMMAND]`](#aggregator-help-command)
+* [`aggregator repo clone`](#aggregator-repo-clone)
 * [`aggregator repo clone-many TARGETDIRECTORY`](#aggregator-repo-clone-many-targetdirectory)
 * [`aggregator repo list`](#aggregator-repo-list)
 * [`aggregator repo tag-many`](#aggregator-repo-tag-many)
@@ -183,6 +184,35 @@ DESCRIPTION
 ```
 
 _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.29/src/commands/help.ts)_
+
+## `aggregator repo clone`
+
+Clone a single GitHub repository
+
+```
+USAGE
+  $ aggregator repo clone --output-directory <value> [--json] [-o <value>] [-n <value>]
+
+FLAGS
+  -n, --name=<value>              Repository name (required when not using stdin)
+  -o, --owner=<value>             GitHub username or organization (required when not using stdin)
+      --output-directory=<value>  (required) Directory where the repository will be cloned
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  Clone a single GitHub repository
+
+EXAMPLES
+  $ aggregator repo clone --output-directory ./repos --owner motlin --name JUnit-Java-8-Runner
+
+  echo '{"name": "JUnit-Java-8-Runner", "owner": {"login": "motlin"}}' | aggregator repo clone --output-directory ./repos
+
+  $ aggregator repo:list --user motlin --limit 1 --json | jq -c '.[0]' | aggregator repo clone --output-directory ./repos
+```
+
+_See code: [src/commands/repo/clone.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/clone.ts)_
 
 ## `aggregator repo clone-many TARGETDIRECTORY`
 
