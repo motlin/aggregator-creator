@@ -123,6 +123,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 * [`aggregator repo clone-many TARGETDIRECTORY`](#aggregator-repo-clone-many-targetdirectory)
 * [`aggregator repo list`](#aggregator-repo-list)
 * [`aggregator repo tag-many`](#aggregator-repo-tag-many)
+* [`aggregator repo validate REPOPATH`](#aggregator-repo-validate-repopath)
 * [`aggregator repo validate-many [REPOPATH]`](#aggregator-repo-validate-many-repopath)
 
 ## `aggregator aggregator create [DIRECTORY]`
@@ -312,6 +313,33 @@ EXAMPLES
 ```
 
 _See code: [src/commands/repo/tag-many.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/tag-many.ts)_
+
+## `aggregator repo validate REPOPATH`
+
+Validate a single Maven repository
+
+```
+USAGE
+  $ aggregator repo validate REPOPATH [--json]
+
+ARGUMENTS
+  REPOPATH  Path to the repository to validate
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  Validate a single Maven repository
+
+EXAMPLES
+  $ aggregator repo validate ./path/to/repo
+
+  $ aggregator repo validate /repos/owner/repo-name
+
+  $ aggregator repo validate ./my-maven-project --json
+```
+
+_See code: [src/commands/repo/validate.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/validate.ts)_
 
 ## `aggregator repo validate-many [REPOPATH]`
 
