@@ -122,6 +122,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 * [`aggregator repo clone`](#aggregator-repo-clone)
 * [`aggregator repo clone-many TARGETDIRECTORY`](#aggregator-repo-clone-many-targetdirectory)
 * [`aggregator repo list`](#aggregator-repo-list)
+* [`aggregator repo tag`](#aggregator-repo-tag)
 * [`aggregator repo tag-many`](#aggregator-repo-tag-many)
 * [`aggregator repo validate REPOPATH`](#aggregator-repo-validate-repopath)
 * [`aggregator repo validate-many [REPOPATH]`](#aggregator-repo-validate-many-repopath)
@@ -283,6 +284,38 @@ EXAMPLES
 ```
 
 _See code: [src/commands/repo/list.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/list.ts)_
+
+## `aggregator repo tag`
+
+Tag a single GitHub repository with a topic
+
+```
+USAGE
+  $ aggregator repo tag -t <value> [--json] [-o <value>] [-n <value>] [-d]
+
+FLAGS
+  -d, --dryRun         Show what would be done without making changes
+  -n, --name=<value>   Repository name (required when not using stdin)
+  -o, --owner=<value>  GitHub username or organization (required when not using stdin)
+  -t, --topic=<value>  (required) Topic to add to the repository
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  Tag a single GitHub repository with a topic
+
+EXAMPLES
+  $ aggregator repo tag --owner motlin --name JUnit-Java-8-Runner --topic maven
+
+  $ aggregator repo tag --owner motlin --name JUnit-Java-8-Runner --topic maven --dryRun
+
+  echo '{"name": "JUnit-Java-8-Runner", "owner": {"login": "motlin"}}' | aggregator repo tag --topic maven
+
+  $ aggregator repo:list --user motlin --limit 1 --json | jq -c '.[0]' | aggregator repo tag --topic maven
+```
+
+_See code: [src/commands/repo/tag.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/tag.ts)_
 
 ## `aggregator repo tag-many`
 
