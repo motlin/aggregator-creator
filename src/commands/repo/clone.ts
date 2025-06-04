@@ -52,7 +52,9 @@ export default class RepoClone extends Command {
 		const useStdin = !process.stdin.isTTY && (!flags.owner || !flags.name);
 
 		if (useStdin) {
-			this.log(`🔍 Reading repository information from stdin...`);
+			if (!flags.json) {
+				this.log(`🔍 Reading repository information from stdin...`);
+			}
 
 			let fullInput = '';
 			for await (const chunk of process.stdin) {
