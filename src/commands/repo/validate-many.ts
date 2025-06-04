@@ -1,9 +1,8 @@
 import {Args, Command, Flags} from '@oclif/core';
 import chalk from 'chalk';
-import {execa as execa_} from 'execa';
 import fs from 'fs-extra';
 import path from 'node:path';
-import {validateMavenRepo} from '../../utils/maven-validation.js';
+import RepoValidate from './validate.js';
 import {repositoriesSchema, type ValidatedRepository} from '../../types/repository.js';
 
 export default class RepoValidateMany extends Command {
@@ -40,33 +39,6 @@ export default class RepoValidateMany extends Command {
 	public async run(): Promise<{validRepos: ValidatedRepository[]; validCount: number}> {
 		const {args, flags} = await this.parse(RepoValidateMany);
 		const {repoPath} = args;
-
-		const execa = execa_({
-			verbose: (verboseLine: string, {type}: {type: string}) => {
-				switch (type) {
-					case 'command': {
-						this.log(`│  ├──╮ ${verboseLine}`);
-						break;
-					}
-					case 'duration': {
-						this.log(`│  ├──╯ ${verboseLine}`);
-						break;
-					}
-					case 'output': {
-						const MAX_LENGTH = 120;
-						const truncatedLine =
-							verboseLine.length > MAX_LENGTH
-								? `${verboseLine.slice(0, Math.max(0, MAX_LENGTH))}...`
-								: verboseLine;
-						this.log(`│  │  │ ${truncatedLine}`);
-						break;
-					}
-					default: {
-						this.debug(`${type} ${verboseLine}`);
-					}
-				}
-			},
-		});
 
 		const startTime = Date.now();
 		const repos: ValidatedRepository[] = [];
@@ -214,15 +186,9 @@ export default class RepoValidateMany extends Command {
 				continue;
 			}
 
-			const validationResult = await validateMavenRepo(repo.path, execa, this);
-			repo.valid = validationResult.valid;
-
-			if (validationResult.valid) {
-				this.log(`├──╯ ✅ Validation successful: ${chalk.green(repoFullName)}`);
+			await this.validateRepository(repo, repoFullName, validRepos);
+			if (repo.valid) {
 				validCount++;
-				validRepos.push(repo);
-			} else {
-				this.log(`├──╯ ❌ Validation failed: ${chalk.red(repoFullName)}`);
 			}
 
 			this.log(`│`);
@@ -253,5 +219,51 @@ export default class RepoValidateMany extends Command {
 			validRepos,
 			validCount,
 		};
+	}
+
+	private async validateRepository(
+		repo: ValidatedRepository,
+		repoFullName: string,
+		validRepos: ValidatedRepository[],
+	): Promise<void> {
+		try {
+			// Create a new instance of RepoValidate command with proper arguments
+			const validateCommand = new RepoValidate([repo.path, '--json'], this.config);
+
+			// Suppress the command's own logging by overriding log methods
+			const originalLog = validateCommand.log;
+			const originalExit = validateCommand.exit;
+
+			validateCommand.log = () => {}; // Suppress all log output
+			validateCommand.exit = (code?: number) => {
+				throw new Error(`Command exited with code ${code || 0}`);
+			};
+
+			// Run the command and get the result directly
+			const result = await validateCommand.run();
+
+			// Restore original methods
+			validateCommand.log = originalLog;
+			validateCommand.exit = originalExit;
+
+			repo.valid = result.valid;
+
+			if (result.valid) {
+				this.log(`├──╯ ✅ Validation successful: ${chalk.green(repoFullName)}`);
+				validRepos.push(repo);
+			} else {
+				this.log(`├──╯ ❌ Validation failed: ${chalk.red(repoFullName)}`);
+			}
+		} catch (error) {
+			// Handle the case where the command exits with code 1 (invalid repo)
+			if (error instanceof Error && error.message.includes('Command exited with code 1')) {
+				repo.valid = false;
+				this.log(`├──╯ ❌ Validation failed: ${chalk.red(repoFullName)}`);
+			} else {
+				// Handle other errors
+				repo.valid = false;
+				this.log(`├──╯ ❌ Validation error: ${chalk.red(repoFullName)} - ${error}`);
+			}
+		}
 	}
 }
