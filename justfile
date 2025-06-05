@@ -110,40 +110,55 @@ find-validate-repos CLEAN="true": build
     cat "${LIST_OUTPUT}" | jq -r '.[] | .owner.login + "/" + .name' > "${TEST_DIR}/repos-to-clone.txt"
     echo "📋 Found $(wc -l < "${TEST_DIR}/repos-to-clone.txt") repositories"
 
-    # Step 2: Clone repositories
-    CLONE_CMD="./bin/run.js repo:clone-many"
-    CLONE_FULL_CMD="cat ${LIST_OUTPUT} | ${CLONE_CMD} ${REPOS_DIR}"
+    # Step 2: Process each repository individually using repo:process
+    echo ""
+    echo "Step 2: Process repositories (clone, validate, tag)"
+    echo "📋 Manual command: cat ${LIST_OUTPUT} | jq -c '.[]' | while read repo; do echo \"\$repo\" | ./bin/run.js repo:process ${REPOS_DIR} --tag maven --json; done"
 
-    run_command "2" "Clone repositories" "${CLONE_FULL_CMD}"
+    # Store results for summary
+    RESULTS_FILE="${TEST_DIR}/process-results.jsonl"
+    > "${RESULTS_FILE}"
 
-    # Step 3: Validate repositories
-    VALIDATE_CMD="./bin/run.js repo:validate-many"
-    VALIDATE_OUTPUT="${TEST_DIR}/validated-repos.json"
-    VALIDATE_PARAMS="--output ${TEST_DIR}/validated-repos.txt --json"
-    VALIDATE_FULL_CMD="${VALIDATE_CMD} ${REPOS_DIR} ${VALIDATE_PARAMS}"
-
-    run_command "3" "Validate Maven repositories (JSON output)" "${VALIDATE_FULL_CMD}" "> ${VALIDATE_OUTPUT}"
-
-    # Count validated repos for next steps
-    VALIDATED_COUNT=$(cat "${VALIDATE_OUTPUT}" | jq '.validCount' || echo 0)
-
-    if [ "${VALIDATED_COUNT}" -gt 0 ]; then
-        echo ""
-        echo "✅ Found ${VALIDATED_COUNT} valid Maven repositories"
-
-        # Step 4: Tag validated repositories
-        TAG_CMD="./bin/run.js repo:tag-many"
-        TAG_PARAMS="--topic maven --yes"
-        TAG_FULL_CMD="cat ${VALIDATE_OUTPUT} | ${TAG_CMD} ${TAG_PARAMS}"
-
-        run_command "4" "Tag validated repositories with 'maven' topic (via JSON pipe)" "${TAG_FULL_CMD}"
+    # Process each repository
+    cat "${LIST_OUTPUT}" | jq -c '.[]' | while read repo; do
+        REPO_NAME=$(echo "$repo" | jq -r '.name')
+        REPO_OWNER=$(echo "$repo" | jq -r '.owner.login')
 
         echo ""
-        echo "🏷️  Successfully tagged ${VALIDATED_COUNT} repositories with 'maven' topic"
-    else
-        echo ""
-        echo "⚠️  No validated Maven repositories found"
-    fi
+        echo "🔄 Processing ${REPO_OWNER}/${REPO_NAME}..."
+
+        # Run repo:process and capture the result
+        if RESULT=$(echo "$repo" | ./bin/run.js repo:process "${REPOS_DIR}" --tag maven --json 2>&1); then
+            # Save result to file
+            echo "$RESULT" >> "${RESULTS_FILE}"
+
+            # Parse the JSON result
+            if echo "$RESULT" | jq -e '.valid == true' > /dev/null 2>&1; then
+                if echo "$RESULT" | jq -e '.tagged == true' > /dev/null 2>&1; then
+                    echo "  ✅ Valid Maven repository - tagged with 'maven'"
+                else
+                    echo "  ✅ Valid Maven repository - already tagged"
+                fi
+            else
+                echo "  ❌ Not a valid Maven repository"
+            fi
+        else
+            echo "  ❌ Failed to process repository"
+            # Save error result
+            echo '{"valid": false, "error": "Failed to process"}' >> "${RESULTS_FILE}"
+        fi
+    done
+
+    # Calculate summary from results file
+    TOTAL_COUNT=$(wc -l < "${RESULTS_FILE}")
+    VALID_COUNT=$(cat "${RESULTS_FILE}" | jq -r 'select(.valid == true)' | wc -l)
+    TAGGED_COUNT=$(cat "${RESULTS_FILE}" | jq -r 'select(.valid == true and .tagged == true)' | wc -l)
+
+    echo ""
+    echo "📊 Summary:"
+    echo "  - Total repositories processed: ${TOTAL_COUNT}"
+    echo "  - Valid Maven repositories: ${VALID_COUNT}"
+    echo "  - Repositories tagged: ${TAGGED_COUNT}"
 
     echo ""
     echo "✅ Find and validate workflow completed!"
