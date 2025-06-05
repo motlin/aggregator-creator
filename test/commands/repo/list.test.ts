@@ -143,7 +143,7 @@ describe('repo:list', () => {
 				name: 'aggregator-creator',
 				owner: {login: 'motlin', type: 'User'},
 				language: 'TypeScript',
-				topics: [],
+				topics: ['aggregator', 'maven', 'oclif'],
 				fork: false,
 				archived: false,
 				disabled: false,
