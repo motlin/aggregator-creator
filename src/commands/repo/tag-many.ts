@@ -5,7 +5,7 @@ import fs from 'fs-extra';
 import path from 'node:path';
 import inquirer from 'inquirer';
 import {validateMavenRepo} from '../../utils/maven-validation.js';
-import {tagSingleRepository} from '../../utils/tag-single-repo.js';
+import RepoTag from './tag.js';
 import {validatedRepositoriesSchema} from '../../types/repository.js';
 
 export default class RepoTagMany extends Command {
@@ -237,31 +237,14 @@ export default class RepoTagMany extends Command {
 			this.log(`│  ├──╮ 🏷️ Tagging repositories...`);
 
 			for (const [i, repo] of validRepos.entries()) {
-				const tagResult = await tagSingleRepository({
-					owner: repo.owner,
-					name: repo.repoName,
-					topic,
-					dryRun,
-					execa,
-					logger: {
-						log: (message: string) => this.log(`│  │  │ ${message}`),
-						warn: (message: string) => this.warn(`│  │  │ ${message}`),
-						error: (message: string, options?: {exit?: boolean}) => {
-							if (options?.exit === false) {
-								this.error(`│  │  │ ${message}`, {exit: false});
-							} else {
-								this.warn(`│  │  │ ${message}`);
-							}
-						},
-					},
-				});
+				const result = await this.tagRepository(repo.owner, repo.repoName, topic, dryRun);
 
-				if (tagResult.success) {
+				if (result.success) {
 					if (dryRun) {
 						this.log(
 							`│  │  │ ${chalk.blue('[DRY RUN]')} [${chalk.yellow(i + 1)}/${validRepos.length}] Would tag ${chalk.yellow(repo.owner)}/${chalk.yellow(repo.repoName)} with topic: ${chalk.cyan(topic)}`,
 						);
-					} else if (tagResult.alreadyTagged) {
+					} else if (result.alreadyTagged) {
 						this.log(
 							`│  │  │ ✓ [${chalk.yellow(i + 1)}/${validRepos.length}] ${chalk.yellow(repo.owner)}/${chalk.yellow(repo.repoName)} already has topic: ${chalk.cyan(topic)}`,
 						);
@@ -273,9 +256,9 @@ export default class RepoTagMany extends Command {
 					tagged.push({owner: repo.owner, name: repo.repoName});
 				} else {
 					this.warn(
-						`│  │  │ ✗ [${chalk.yellow(i + 1)}/${validRepos.length}] Failed to tag ${chalk.yellow(repo.owner)}/${chalk.yellow(repo.repoName)}: ${tagResult.error}`,
+						`│  │  │ ✗ [${chalk.yellow(i + 1)}/${validRepos.length}] Failed to tag ${chalk.yellow(repo.owner)}/${chalk.yellow(repo.repoName)}: ${result.error}`,
 					);
-					skipped.push({owner: repo.owner, name: repo.repoName, reason: tagResult.error || 'tagging failed'});
+					skipped.push({owner: repo.owner, name: repo.repoName, reason: result.error || 'tagging failed'});
 				}
 			}
 			this.log(`│  ├──╯`);
@@ -324,6 +307,65 @@ export default class RepoTagMany extends Command {
 			return await fs.pathExists(gitDir);
 		} catch {
 			return false;
+		}
+	}
+
+	private async tagRepository(
+		owner: string,
+		name: string,
+		topic: string,
+		dryRun: boolean,
+	): Promise<{
+		success: boolean;
+		alreadyTagged?: boolean;
+		error?: string;
+	}> {
+		try {
+			// Create a new instance of RepoTag command with proper arguments
+			const tagCommand = new RepoTag(
+				['--owner', owner, '--name', name, '--topic', topic, ...(dryRun ? ['--dryRun'] : []), '--json'],
+				this.config,
+			);
+
+			// Suppress the command's own logging by overriding log methods
+			const originalLog = tagCommand.log;
+			const originalWarn = tagCommand.warn;
+			const originalError = tagCommand.error;
+			const originalExit = tagCommand.exit;
+
+			tagCommand.log = () => {}; // Suppress all log output
+			tagCommand.warn = (input: string | Error) => input; // Suppress all warnings
+			tagCommand.error = (message: string | Error) => {
+				throw new Error(typeof message === 'string' ? message : message.message);
+			};
+			tagCommand.exit = (code?: number) => {
+				throw new Error(`Command exited with code ${code || 0}`);
+			};
+
+			// Run the command and get the result directly
+			const result = await tagCommand.run();
+
+			// Restore original methods
+			tagCommand.log = originalLog;
+			tagCommand.warn = originalWarn;
+			tagCommand.error = originalError;
+			tagCommand.exit = originalExit;
+
+			return {
+				success: true,
+				alreadyTagged: !result.tagged,
+			};
+		} catch (error) {
+			// Handle the case where the command exits with code 1
+			return error instanceof Error && error.message.includes('Command exited with code 1')
+				? {
+						success: false,
+						error: 'Failed to get topics',
+					}
+				: {
+						success: false,
+						error: error instanceof Error ? error.message : 'Unknown error',
+					};
 		}
 	}
 }
