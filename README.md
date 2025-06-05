@@ -12,8 +12,13 @@ CLI tool that creates Maven aggregator POMs from a set of repositories. Maven ag
 * [Environment Setup](#environment-setup)
 * [Usage](#usage)
 * [Complete Workflow](#complete-workflow)
+* [Process repositories individually](#process-repositories-individually)
+* [Then create the aggregator](#then-create-the-aggregator)
 * [Run the workflow test](#run-the-workflow-test)
 * [Run workflow test and keep temporary files](#run-workflow-test-and-keep-temporary-files)
+* [Use exit codes to filter - only process repositories that validate successfully](#use-exit-codes-to-filter---only-process-repositories-that-validate-successfully)
+* [Clone all repositories but only tag Java repositories](#clone-all-repositories-but-only-tag-java-repositories)
+* [See what would be tagged without making changes](#see-what-would-be-tagged-without-making-changes)
 * [Directory Structure](#directory-structure)
 * [License](#license)
 * [Commands](#commands)
@@ -45,17 +50,49 @@ The aggregator-creator CLI provides commands for managing repositories and creat
 
 The main command groups include:
 
+**Single Repository Commands:**
+- `repo:clone` - Clone a single GitHub repository
+- `repo:validate` - Validate a single Maven repository
+- `repo:tag` - Tag a single GitHub repository with a topic
+- `repo:process` - Process a single repository (clone, validate, and tag)
+
+**Multiple Repository Commands:**
 - `repo:list` - Find GitHub repositories matching specific criteria
 - `repo:clone-many` - Clone multiple repositories from a list provided via stdin
 - `repo:validate-many` - Check if repositories contain valid Maven projects
 - `repo:tag-many` - Add GitHub topics to validated repositories
+
+**Aggregator Commands:**
 - `aggregator:create` - Generate a Maven aggregator POM from a directory of repositories
 
 For detailed usage information on each command, see the [Commands](#commands) section below.
 
 # Complete Workflow
 
-The typical workflow combines all the commands to discover, clone, validate, tag, and create an aggregator:
+There are two approaches to process repositories:
+
+## Approach 1: Using Individual Processing (Recommended)
+
+This approach uses `repo:process` to handle each repository individually:
+
+1. **Find repositories:** Use `repo:list` to find repositories with specific criteria
+2. **Process each repository:** Pipe each repository to `repo:process` which handles cloning, validation, and tagging
+3. **Create aggregator:** Use `aggregator:create` to generate an aggregator POM from the processed repositories
+
+Example:
+```bash
+# Process repositories individually
+./bin/run.js repo:list --user motlin --language Java --json | jq -c '.[]' | while read repo; do
+  echo "$repo" | ./bin/run.js repo:process ./repos --tag maven --json
+done
+
+# Then create the aggregator
+./bin/run.js aggregator:create ./repos --groupId org.example
+```
+
+## Approach 2: Using Batch Processing (Legacy)
+
+This approach uses the `-many` commands to process repositories in batches:
 
 1. **Find repositories:** Use `repo:list` to find repositories with specific criteria
 2. **Clone repositories:** Pipe the results to `repo:clone-many` to download them
@@ -71,6 +108,49 @@ just workflow-test
 
 # Run workflow test and keep temporary files
 just workflow-test false
+```
+
+## Command Composition
+
+The single-repository commands can be composed in various ways for different use cases:
+
+### Process only valid Maven repositories
+```bash
+# Use exit codes to filter - only process repositories that validate successfully
+./bin/run.js repo:list --user motlin --json | jq -c '.[]' | while read repo; do
+  if echo "$repo" | ./bin/run.js repo:process ./repos --tag maven --json 2>/dev/null; then
+    echo "Processed valid repository"
+  fi
+done
+```
+
+### Selective processing with custom logic
+```bash
+# Clone all repositories but only tag Java repositories
+./bin/run.js repo:list --user motlin --json | jq -c '.[]' | while read repo; do
+  REPO_NAME=$(echo "$repo" | jq -r '.name')
+  REPO_OWNER=$(echo "$repo" | jq -r '.owner.login')
+  LANGUAGE=$(echo "$repo" | jq -r '.language // empty')
+
+  # Always clone
+  echo "$repo" | ./bin/run.js repo:clone --output-directory ./repos
+
+  # Validate
+  if ./bin/run.js repo:validate "./repos/$REPO_OWNER/$REPO_NAME"; then
+    # Only tag if it's a Java repository
+    if [ "$LANGUAGE" = "Java" ]; then
+      ./bin/run.js repo:tag --owner "$REPO_OWNER" --name "$REPO_NAME" --topic maven
+    fi
+  fi
+done
+```
+
+### Dry run to preview changes
+```bash
+# See what would be tagged without making changes
+./bin/run.js repo:list --user motlin --topic java --json | jq -c '.[]' | while read repo; do
+  echo "$repo" | ./bin/run.js repo:process ./repos --tag maven --dryRun --json
+done | jq -s 'map(select(.valid == true))'
 ```
 
 # Directory Structure
@@ -122,6 +202,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 * [`aggregator repo clone`](#aggregator-repo-clone)
 * [`aggregator repo clone-many TARGETDIRECTORY`](#aggregator-repo-clone-many-targetdirectory)
 * [`aggregator repo list`](#aggregator-repo-list)
+* [`aggregator repo process OUTPUT-DIRECTORY`](#aggregator-repo-process-output-directory)
 * [`aggregator repo tag`](#aggregator-repo-tag)
 * [`aggregator repo tag-many`](#aggregator-repo-tag-many)
 * [`aggregator repo validate REPOPATH`](#aggregator-repo-validate-repopath)
@@ -284,6 +365,44 @@ EXAMPLES
 ```
 
 _See code: [src/commands/repo/list.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/list.ts)_
+
+## `aggregator repo process OUTPUT-DIRECTORY`
+
+Process a single repository: clone, validate, and tag if valid
+
+```
+USAGE
+  $ aggregator repo process OUTPUT-DIRECTORY -t <value> [--json] [-o <value>] [-n <value>] [-d] [-v]
+
+ARGUMENTS
+  OUTPUT-DIRECTORY  Directory where the repository will be cloned
+
+FLAGS
+  -d, --dryRun         Show what would be done without making actual changes
+  -n, --name=<value>   Repository name
+  -o, --owner=<value>  GitHub username or organization
+  -t, --tag=<value>    (required) GitHub topic to add to validated Maven repositories
+  -v, --verbose        Show verbose output during operation
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  Process a single repository: clone, validate, and tag if valid
+
+EXAMPLES
+  $ aggregator repo process ./repos --owner motlin --name JUnit-Java-8-Runner --tag maven
+
+  $ aggregator repo process ./repos --owner motlin --name example-repo --tag maven --dryRun --json
+
+  echo '{"name": "repo", "owner": {"login": "user"}}' | aggregator repo process ./repos --tag maven --json
+
+  $ aggregator repo:list --user motlin --json | jq -c '.[]' | while read repo; do
+    echo "$repo" | aggregator repo process ./repos --tag maven --json
+  done
+```
+
+_See code: [src/commands/repo/process.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/process.ts)_
 
 ## `aggregator repo tag`
 
