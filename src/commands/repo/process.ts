@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import {execa as execa_} from 'execa';
 import {repositorySchema} from '../../types/repository.js';
 import {cloneSingleRepo} from '../../utils/clone-single-repo.js';
-import RepoValidate from './validate.js';
+import {type MavenValidationResult, validateMavenRepo} from '../../utils/maven-validation.js';
 import RepoTag from './tag.js';
 
 export default class RepoProcess extends Command {
@@ -109,7 +109,7 @@ done`,
 					cloned: false,
 					valid: false,
 					tagged: false,
-					error: cloneResult.error || 'Failed to clone repository',
+					error: cloneResult.error,
 				};
 
 				if (flags.json) {
@@ -117,6 +117,7 @@ done`,
 				}
 
 				this.exit(1);
+				return result;
 			}
 
 			if (!flags.json) {
@@ -127,65 +128,17 @@ done`,
 				}
 			}
 
-			// 2. Validate repository using RepoValidate command
+			// 2. Validate repository using validateMavenRepo utility
 			if (!flags.json) {
 				this.log(`│`);
 				this.log(`├──╮ 🔍 Validating repository...`);
 			}
 
-			const validateArgs = [cloneResult.path, '--json'];
-			const validateCommand = new RepoValidate(validateArgs, this.config);
-
-			let validateResult;
-			if (flags.json) {
-				try {
-					const originalExit = validateCommand.exit;
-					validateCommand.exit = (code?: number) => {
-						throw new Error(`Command exited with code ${code || 0}`);
-					};
-
-					validateResult = await validateCommand.run();
-					validateCommand.exit = originalExit;
-				} catch (error) {
-					if (error instanceof Error && error.message === 'Command exited with code 1') {
-						validateResult = {path: cloneResult.path, valid: false, hasPom: false};
-					} else {
-						throw error;
-					}
-				}
-			} else {
-				// Suppress the command's own logging
-				const originalValidateLog = validateCommand.log;
-				const originalValidateWarn = validateCommand.warn;
-				const originalValidateError = validateCommand.error;
-				const originalValidateExit = validateCommand.exit;
-
-				validateCommand.log = () => {}; // Suppress all log output
-				validateCommand.warn = (input: string | Error) => input; // Suppress all warnings
-				validateCommand.error = (message: string | Error) => {
-					throw new Error(typeof message === 'string' ? message : message.message);
-				};
-				validateCommand.exit = (code?: number) => {
-					throw new Error(`Command exited with code ${code || 0}`);
-				};
-
-				try {
-					validateResult = await validateCommand.run();
-				} catch (error) {
-					// Handle the case where the command exits with code 1
-					if (error instanceof Error && error.message === 'Command exited with code 1') {
-						validateResult = {path: cloneResult.path, valid: false, hasPom: false};
-					} else {
-						throw error;
-					}
-				} finally {
-					// Restore original methods
-					validateCommand.log = originalValidateLog;
-					validateCommand.warn = originalValidateWarn;
-					validateCommand.error = originalValidateError;
-					validateCommand.exit = originalValidateExit;
-				}
-			}
+			const validateResult: MavenValidationResult = await validateMavenRepo(
+				cloneResult.path,
+				execa_,
+				flags.json ? undefined : this,
+			);
 
 			if (!validateResult.valid) {
 				if (!flags.json) {
@@ -209,6 +162,7 @@ done`,
 				}
 
 				this.exit(1);
+				return result;
 			}
 
 			if (!flags.json) {
