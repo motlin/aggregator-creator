@@ -4,7 +4,7 @@ import {execa as execa_} from 'execa';
 import {repositorySchema} from '../../types/repository.js';
 import {cloneSingleRepo} from '../../utils/clone-single-repo.js';
 import {type MavenValidationResult, validateMavenRepo} from '../../utils/maven-validation.js';
-import RepoTag from './tag.js';
+import {type TagSingleRepoResult, tagSingleRepository} from '../../utils/tag-single-repo.js';
 
 export default class RepoProcess extends Command {
 	static override args = {
@@ -169,85 +169,65 @@ done`,
 				this.log(`├──╯ ✅ Repository is a valid Maven project`);
 			}
 
-			// 3. Tag repository using RepoTag command (only if valid)
+			// 3. Tag repository using tagSingleRepository utility
 			if (!flags.json) {
 				this.log(`│`);
 				this.log(`├──╮ 🏷️ Tagging repository with topic: ${chalk.cyan(tag)}...`);
 			}
 
-			const tagArgs = [
-				'--owner',
-				repoInfo.owner.login,
-				'--name',
-				repoInfo.name,
-				'--topic',
-				tag,
-				...(dryRun ? ['--dryRun'] : []),
-				'--json',
-			];
+			const tagSingleResult: TagSingleRepoResult = await tagSingleRepository({
+				owner: repoInfo.owner.login,
+				name: repoInfo.name,
+				topic: tag,
+				dryRun,
+				execa: execa_,
+				logger: flags.json
+					? undefined
+					: {
+							log: this.log.bind(this),
+							warn: this.warn.bind(this),
+							error: (message: string, options?: {exit?: boolean}) => {
+								if (options?.exit) {
+									this.error(message);
+								} else {
+									this.error(message, {exit: false});
+								}
+							},
+						},
+			});
 
-			const tagCommand = new RepoTag(tagArgs, this.config);
-
-			let tagResult;
-			if (flags.json) {
-				try {
-					const originalExit = tagCommand.exit;
-					tagCommand.exit = (code?: number) => {
-						throw new Error(`Command exited with code ${code || 0}`);
-					};
-
-					tagResult = await tagCommand.run();
-					tagCommand.exit = originalExit;
-				} catch (error) {
-					if (error instanceof Error && error.message.includes('Command exited with code 1')) {
-						tagResult = {
-							owner: repoInfo.owner.login,
-							name: repoInfo.name,
-							topics: repoInfo.topics || [],
-							tagged: false,
-						};
-					} else {
-						throw error;
-					}
+			if (!tagSingleResult.success) {
+				if (!flags.json) {
+					this.log(`├──╯ ❌ Failed to tag repository: ${tagSingleResult.error || 'Unknown error'}`);
+					this.log(`├──╯`);
+					this.log(`│`);
+					this.log(`╰─── ❌ Processing failed`);
 				}
-			} else {
-				// Suppress the command's own logging
-				const originalTagLog = tagCommand.log;
-				const originalTagWarn = tagCommand.warn;
-				const originalTagError = tagCommand.error;
-				const originalTagExit = tagCommand.exit;
 
-				tagCommand.log = () => {}; // Suppress all log output
-				tagCommand.warn = (input: string | Error) => input; // Suppress all warnings
-				tagCommand.error = (message: string | Error) => {
-					throw new Error(typeof message === 'string' ? message : message.message);
-				};
-				tagCommand.exit = (code?: number) => {
-					throw new Error(`Command exited with code ${code || 0}`);
+				const result = {
+					...repoInfo,
+					path: cloneResult.path,
+					cloned: true,
+					valid: true,
+					tagged: false,
+					error: `Failed to tag repository: ${tagSingleResult.error || 'Unknown error'}`,
 				};
 
-				try {
-					tagResult = await tagCommand.run();
-				} catch (error) {
-					// Handle the case where the command exits with code 1
-					if (error instanceof Error && error.message.includes('Command exited with code 1')) {
-						tagResult = {
-							owner: repoInfo.owner.login,
-							name: repoInfo.name,
-							topics: repoInfo.topics || [],
-							tagged: false,
-						};
-					} else {
-						throw error;
-					}
-				} finally {
-					// Restore original methods
-					tagCommand.log = originalTagLog;
-					tagCommand.warn = originalTagWarn;
-					tagCommand.error = originalTagError;
-					tagCommand.exit = originalTagExit;
+				if (flags.json) {
+					this.logJson(result);
 				}
+
+				this.exit(1);
+				return result;
 			}
+
+			// Map TagSingleRepoResult to expected format
+			const tagResult = {
+				owner: tagSingleResult.owner,
+				name: tagSingleResult.name,
+				topics: tagSingleResult.topics || [],
+				tagged: tagSingleResult.success && !tagSingleResult.alreadyTagged,
+			};
 
 			if (!flags.json) {
 				if (tagResult.tagged) {
