@@ -7,6 +7,7 @@ import chalk from 'chalk';
 import inquirer from 'inquirer';
 import MavenGAVCoords from '../../maven-gav.js';
 import {validatedRepositoriesSchema, type ValidatedRepository} from '../../types/repository.js';
+import {parsePomForGAV} from '../../utils/pom-parser.js';
 
 export default class AggregatorCreate extends Command {
 	static override args = {
@@ -248,6 +249,22 @@ export default class AggregatorCreate extends Command {
 
 	private async getGAVFromPom(pomFile: string, execaFn = _execa): Promise<MavenGAVCoords | null> {
 		try {
+			// First, try to extract GAV coordinates directly from XML
+			const parseResult = await parsePomForGAV(pomFile);
+
+			if (!parseResult.needsMavenFallback) {
+				// Success! We got all coordinates without Maven
+				this.log(`│  │ ⚡ Fast XML parsing: ${chalk.yellow(pomFile)}`);
+				return new MavenGAVCoords(
+					parseResult.gav.groupId!,
+					parseResult.gav.artifactId!,
+					parseResult.gav.version!,
+				);
+			}
+
+			// Fall back to Maven evaluation
+			this.log(`│  │ 🐌 Maven fallback for ${chalk.yellow(pomFile)}: ${parseResult.reason}`);
+
 			const groupId = await this.getMavenProjectAttribute(pomFile, 'project.groupId', execaFn);
 			const artifactId = await this.getMavenProjectAttribute(pomFile, 'project.artifactId', execaFn);
 			const version = await this.getMavenProjectAttribute(pomFile, 'project.version', execaFn);
