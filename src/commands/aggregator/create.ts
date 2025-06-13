@@ -1,6 +1,7 @@
 import {Args, Command, Flags} from '@oclif/core';
 import fs from 'fs-extra';
 import path from 'node:path';
+import https from 'node:https';
 import {execa as _execa, type ExecaReturnValue} from 'execa';
 import {create} from 'xmlbuilder2';
 import chalk from 'chalk';
@@ -247,6 +248,64 @@ export default class AggregatorCreate extends Command {
 		return pomFiles;
 	}
 
+	private async fetchLatestLiftwizardVersion(): Promise<string> {
+		const url =
+			'https://search.maven.org/solrsearch/select?q=g:io.liftwizard+AND+a:liftwizard-profile-parent&rows=1&wt=json';
+
+		this.log(`│  │ 🔍 Fetching latest liftwizard-profile-parent version from Maven Central...`);
+
+		return new Promise((resolve, reject) => {
+			const options = {
+				headers: {
+					'User-Agent': 'aggregator-creator-cli/1.0',
+				},
+			};
+
+			https
+				.get(url, options, (res) => {
+					let data = '';
+
+					res.on('data', (chunk) => {
+						data += chunk;
+					});
+
+					res.on('end', () => {
+						if (res.statusCode !== 200) {
+							reject(new Error(`HTTP error! status: ${res.statusCode}`));
+							return;
+						}
+
+						try {
+							const jsonData: {
+								response: {
+									docs: Array<{
+										latestVersion?: string;
+										v?: string;
+									}>;
+								};
+							} = JSON.parse(data);
+
+							const latestVersion =
+								jsonData.response.docs[0]?.latestVersion || jsonData.response.docs[0]?.v;
+
+							if (!latestVersion) {
+								reject(new Error('Could not find latest version in Maven Central response'));
+								return;
+							}
+
+							this.log(`│  │ ✅ Found latest liftwizard version: ${chalk.yellow(latestVersion)}`);
+							resolve(latestVersion);
+						} catch (error) {
+							reject(new Error(`Failed to parse JSON response: ${error}`));
+						}
+					});
+				})
+				.on('error', (err) => {
+					reject(new Error(`Request failed: ${err.message}`));
+				});
+		});
+	}
+
 	private async getGAVFromPom(pomFile: string, execaFn = _execa): Promise<MavenGAVCoords | null> {
 		try {
 			// First, try to extract GAV coordinates directly from XML
@@ -295,6 +354,7 @@ export default class AggregatorCreate extends Command {
 		version: string,
 		modules: string[],
 		gavs: MavenGAVCoords[],
+		liftwizardVersion: string,
 	): string {
 		// prettier-ignore
 		const pom = create({version: '1.0'})
@@ -304,6 +364,11 @@ export default class AggregatorCreate extends Command {
         'xsi:schemaLocation': 'http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd',
       })
       .ele('modelVersion').txt('4.0.0').up()
+      .ele('parent')
+        .ele('groupId').txt('io.liftwizard').up()
+        .ele('artifactId').txt('liftwizard-profile-parent').up()
+        .ele('version').txt(liftwizardVersion).up()
+      .up()
       .ele('groupId').txt(groupId).up()
       .ele('artifactId').txt(artifactId).up()
       .ele('version').txt(version).up()
@@ -620,6 +685,10 @@ export default class AggregatorCreate extends Command {
 		}
 		this.log(`│  ├──╯`);
 
+		// Fetch latest liftwizard version
+		this.log(`│  │`);
+		const liftwizardVersion = await this.fetchLatestLiftwizardVersion();
+
 		const {yes} = flags;
 		let proceed = yes;
 
@@ -629,6 +698,9 @@ export default class AggregatorCreate extends Command {
 			this.log(`│  │  │ - groupId: ${chalk.yellow(flags.groupId)}`);
 			this.log(`│  │  │ - artifactId: ${chalk.yellow(flags.artifactId)}`);
 			this.log(`│  │  │ - version: ${chalk.yellow(flags.pomVersion)}`);
+			this.log(
+				`│  │  │ - parent: ${chalk.yellow(`io.liftwizard:liftwizard-profile-parent:${liftwizardVersion}`)}`,
+			);
 			this.log(`│  │  │ - modules: ${chalk.yellow(validModules.length)} Maven repositories`);
 
 			const {confirmed} = await inquirer.prompt([
@@ -680,6 +752,7 @@ export default class AggregatorCreate extends Command {
 			flags.pomVersion,
 			validModules,
 			allGAVs,
+			liftwizardVersion,
 		);
 
 		const pomPath = path.join(directoryPath, 'pom.xml');
