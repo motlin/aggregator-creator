@@ -77,6 +77,10 @@ describe('aggregator:create', () => {
 		expect(fs.existsSync(pomPath)).to.be.true;
 
 		const pomContent = await fs.readFile(pomPath, 'utf8');
+		expect(pomContent).to.include('<parent>');
+		expect(pomContent).to.include('<groupId>io.liftwizard</groupId>');
+		expect(pomContent).to.include('<artifactId>liftwizard-profile-parent</artifactId>');
+		expect(pomContent).to.match(/<version>\d+\.\d+\.\d+<\/version>/); // Matches semantic version
 		expect(pomContent).to.include('<groupId>com.example</groupId>');
 		expect(pomContent).to.include('<artifactId>aggregator</artifactId>');
 		expect(pomContent).to.include('<version>1.0.0-SNAPSHOT</version>');
@@ -130,6 +134,10 @@ describe('aggregator:create', () => {
 
 		const pomPath = path.join(tempDir, 'pom.xml');
 		const pomContent = await fs.readFile(pomPath, 'utf8');
+		expect(pomContent).to.include('<parent>');
+		expect(pomContent).to.include('<groupId>io.liftwizard</groupId>');
+		expect(pomContent).to.include('<artifactId>liftwizard-profile-parent</artifactId>');
+		expect(pomContent).to.match(/<version>\d+\.\d+\.\d+<\/version>/); // Matches semantic version
 		expect(pomContent).to.include('<groupId>org.test</groupId>');
 		expect(pomContent).to.include('<artifactId>custom-agg</artifactId>');
 		expect(pomContent).to.include('<version>2.0.0</version>');
