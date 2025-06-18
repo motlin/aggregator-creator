@@ -6,7 +6,54 @@ import {fileURLToPath} from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '../../..');
 
-describe('repo:list', () => {
+describe('repo:list', function () {
+	this.timeout(10_000);
+
+	it('should verify GitHub CLI is authenticated', async () => {
+		const {execa} = await import('execa');
+		try {
+			const {stdout} = await execa('gh', ['auth', 'status']);
+			console.log('GitHub auth status:', stdout);
+		} catch (error) {
+			console.error('GitHub auth check failed:', error instanceof Error ? error.message : error);
+			if (error && typeof error === 'object' && 'stdout' in error) console.log('stdout:', error.stdout);
+			if (error && typeof error === 'object' && 'stderr' in error) console.log('stderr:', error.stderr);
+			throw error;
+		}
+	});
+
+	it('should fetch octocat HTML repos via direct API call', async () => {
+		const {execa} = await import('execa');
+		try {
+			const query = 'user:octocat language:HTML fork:false archived:false';
+			const {stdout} = await execa('gh', [
+				'api',
+				'-X',
+				'GET',
+				'search/repositories',
+				'-f',
+				`q=${query}`,
+				'-f',
+				'per_page=1',
+				'-f',
+				'sort=created',
+				'-f',
+				'order=asc',
+				'--jq',
+				'.items',
+			]);
+			const repos = JSON.parse(stdout);
+			console.log('Direct API response:', JSON.stringify(repos, null, 2));
+			expect(repos).to.have.length(1);
+			expect(repos[0].name).to.equal('Spoon-Knife');
+		} catch (error) {
+			console.error('Direct API call failed:', error instanceof Error ? error.message : error);
+			if (error && typeof error === 'object' && 'stdout' in error) console.log('stdout:', error.stdout);
+			if (error && typeof error === 'object' && 'stderr' in error) console.log('stderr:', error.stderr);
+			throw error;
+		}
+	});
+
 	it('should fetch repositories with specific search criteria', async () => {
 		const {stdout} = await runCommand(
 			['repo:list', '--user', 'torvalds', '--language', 'C', '--json', '--limit', '2'],
@@ -221,7 +268,7 @@ describe('repo:list', () => {
 	});
 
 	it('should support combining include flags', async () => {
-		const {stdout} = await runCommand(
+		const result = await runCommand(
 			[
 				'repo:list',
 				'--user',
@@ -236,6 +283,15 @@ describe('repo:list', () => {
 			],
 			root,
 		);
+
+		if ('error' in result) {
+			console.error('Command failed with error:', result.error);
+			if (result.stderr) {
+				console.error('stderr:', result.stderr);
+			}
+		}
+
+		const {stdout} = result;
 		expect(JSON.parse(stdout)).to.deep.equal([
 			{
 				name: 'Spoon-Knife',
