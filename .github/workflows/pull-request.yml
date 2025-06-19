@@ -67,6 +67,11 @@ jobs:
                   node-version: ${{ matrix.node-version }}
                   cache: 'npm'
 
+            - name: Configure GitHub CLI
+              run: |
+                  echo "${{ secrets.CI_GITHUB_PAT_FOR_TESTS || secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+                  gh auth status
+
             - run: npm ci
 
             - run: npm run build
@@ -74,6 +79,8 @@ jobs:
             - run: npx oclif manifest
 
             - run: npm test
+              env:
+                  GITHUB_TOKEN: ${{ secrets.CI_GITHUB_PAT_FOR_TESTS || secrets.GITHUB_TOKEN }}
 
     build:
         runs-on: ubuntu-latest
@@ -116,4 +123,4 @@ jobs:
             - name: Enable auto-merge for Dependabot PR
               run: gh pr merge --rebase --auto "${{ github.event.pull_request.number }}"
               env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GITHUB_TOKEN: ${{ secrets.CI_GITHUB_PAT_FOR_TESTS || secrets.GITHUB_TOKEN }}
