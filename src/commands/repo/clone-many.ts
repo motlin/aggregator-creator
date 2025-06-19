@@ -25,32 +25,7 @@ export default class RepoCloneMany extends Command {
 		const {args} = await this.parse(RepoCloneMany);
 		const {targetDirectory} = args;
 
-		const execa = execa_({
-			verbose: (verboseLine: string, {type}: {type: string}) => {
-				switch (type) {
-					case 'command': {
-						this.log(`│  │  │ ${verboseLine}`);
-						break;
-					}
-					case 'duration': {
-						this.log(`│  ├──╯ ${verboseLine}`);
-						break;
-					}
-					case 'output': {
-						const MAX_LENGTH = 120;
-						const truncatedLine =
-							verboseLine.length > MAX_LENGTH
-								? `${verboseLine.slice(0, Math.max(0, MAX_LENGTH))}...`
-								: verboseLine;
-						this.log(`│  │  │ ${truncatedLine}`);
-						break;
-					}
-					default: {
-						this.debug(`${type} ${verboseLine}`);
-					}
-				}
-			},
-		});
+		const execa = execa_;
 
 		if (process.stdin.isTTY) {
 			this.error('No input provided. This command expects repository data from stdin.', {

@@ -1,7 +1,7 @@
 import {Args, Command, Flags} from '@oclif/core';
 import fs from 'fs-extra';
 import path from 'node:path';
-import {execa as _execa, type Result} from 'execa';
+import {execa as _execa, type ExecaReturnValue} from 'execa';
 import {create} from 'xmlbuilder2';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
@@ -57,7 +57,7 @@ export default class AggregatorCreate extends Command {
 		}),
 	};
 
-	private async execute(command: string, args: string[] = [], execaFn = _execa): Promise<Result> {
+	private async execute(command: string, args: string[] = [], execaFn = _execa): Promise<ExecaReturnValue> {
 		this.log(`│  ├──╮`);
 
 		try {
@@ -329,32 +329,7 @@ export default class AggregatorCreate extends Command {
 			version: string;
 		};
 	}> {
-		const execa = _execa({
-			verbose: (verboseLine: string, {type}: {type: string}) => {
-				switch (type) {
-					case 'command': {
-						this.log(`│  │  │ ${verboseLine}`);
-						break;
-					}
-					case 'duration': {
-						this.log(`│  ├──╯ ${verboseLine}`);
-						break;
-					}
-					case 'output': {
-						const MAX_LENGTH = 120;
-						const truncatedLine =
-							verboseLine.length > MAX_LENGTH
-								? `${verboseLine.slice(0, Math.max(0, MAX_LENGTH))}...`
-								: verboseLine;
-						this.log(`│  │  │ ${truncatedLine}`);
-						break;
-					}
-					default: {
-						this.debug(`${type} ${verboseLine}`);
-					}
-				}
-			},
-		});
+		const execa = _execa;
 
 		const startTime = Date.now();
 		const {args, flags} = await this.parse(AggregatorCreate);

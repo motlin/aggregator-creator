@@ -125,32 +125,7 @@ export default class RepoList extends Command {
 	public async run(): Promise<z.infer<typeof repositoriesSchema>> {
 		const {flags} = await this.parse(RepoList);
 
-		const execa = execa_({
-			verbose: (verboseLine: string, {type}: {type: string}) => {
-				switch (type) {
-					case 'command': {
-						this.log(`│  │  │ ${verboseLine}`);
-						break;
-					}
-					case 'duration': {
-						this.log(`│  ├──╯ ${verboseLine}`);
-						break;
-					}
-					case 'output': {
-						const MAX_LENGTH = 120;
-						const truncatedLine =
-							verboseLine.length > MAX_LENGTH
-								? `${verboseLine.slice(0, Math.max(0, MAX_LENGTH))}...`
-								: verboseLine;
-						this.log(`│  │  │ ${truncatedLine}`);
-						break;
-					}
-					default: {
-						this.debug(`${type} ${verboseLine}`);
-					}
-				}
-			},
-		});
+		const execa = execa_;
 
 		this.log(`╭─── 🔍 Listing GitHub repositories...`);
 		this.log(`│`);
