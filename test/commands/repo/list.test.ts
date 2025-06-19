@@ -6,6 +6,9 @@ import {fileURLToPath} from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '../../..');
 
+// Skip GitHub API tests in CI to avoid rate limiting issues
+const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+
 describe('repo:list', function () {
 	this.timeout(10_000);
 
@@ -22,7 +25,10 @@ describe('repo:list', function () {
 		}
 	});
 
-	it('should fetch octocat HTML repos via direct API call', async () => {
+	it('should fetch octocat HTML repos via direct API call', async function () {
+		if (isCI) {
+			this.skip();
+		}
 		const {execa} = await import('execa');
 		try {
 			const query = 'user:octocat language:HTML fork:false archived:false';
@@ -54,7 +60,10 @@ describe('repo:list', function () {
 		}
 	});
 
-	it('should fetch repositories with specific search criteria', async () => {
+	it('should fetch repositories with specific search criteria', async function () {
+		if (isCI) {
+			this.skip();
+		}
 		const {stdout} = await runCommand(
 			['repo:list', '--user', 'torvalds', '--language', 'C', '--json', '--limit', '2'],
 			root,
@@ -88,7 +97,10 @@ describe('repo:list', function () {
 		]);
 	});
 
-	it('should fetch repositories for specified user', async () => {
+	it('should fetch repositories for specified user', async function () {
+		if (isCI) {
+			this.skip();
+		}
 		const expected = [
 			{
 				name: 'jetbrains-settings',
@@ -108,7 +120,10 @@ describe('repo:list', function () {
 		expect(JSON.parse(stdout)).to.deep.equal(expected);
 	});
 
-	it('should fetch repositories for freeCodeCamp user', async () => {
+	it('should fetch repositories for freeCodeCamp user', async function () {
+		if (isCI) {
+			this.skip();
+		}
 		const {stdout} = await runCommand(['repo:list', '--user', 'freeCodeCamp', '--json', '--limit', '1'], root);
 
 		expect(JSON.parse(stdout)).to.deep.equal([
@@ -144,7 +159,10 @@ describe('repo:list', function () {
 		]);
 	});
 
-	it('should support multiple language filters', async () => {
+	it('should support multiple language filters', async function () {
+		if (isCI) {
+			this.skip();
+		}
 		const {stdout} = await runCommand(
 			['repo:list', '--user', 'motlin', '--language', 'Java', '--language', 'TypeScript', '--json'],
 			root,
@@ -225,7 +243,10 @@ describe('repo:list', function () {
 		]);
 	});
 
-	it('should include forked repositories when --include-forks flag is provided', async () => {
+	it('should include forked repositories when --include-forks flag is provided', async function () {
+		if (isCI) {
+			this.skip();
+		}
 		const {stdout} = await runCommand(
 			['repo:list', '--user', 'octocat', '--language', 'HTML', '--include-forks', '--json', '--limit', '1'],
 			root,
@@ -246,7 +267,10 @@ describe('repo:list', function () {
 		]);
 	});
 
-	it('should include archived repositories when --include-archived flag is provided', async () => {
+	it('should include archived repositories when --include-archived flag is provided', async function () {
+		if (isCI) {
+			this.skip();
+		}
 		const {stdout} = await runCommand(
 			['repo:list', '--user', 'octocat', '--language', 'HTML', '--include-archived', '--json', '--limit', '1'],
 			root,
@@ -267,7 +291,10 @@ describe('repo:list', function () {
 		]);
 	});
 
-	it('should support combining include flags', async () => {
+	it('should support combining include flags', async function () {
+		if (isCI) {
+			this.skip();
+		}
 		const result = await runCommand(
 			[
 				'repo:list',
