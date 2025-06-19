@@ -20,11 +20,11 @@ jobs:
                   cache: npm
             - name: Configure GitHub CLI
               run: |
-                  echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+                  echo "${{ secrets.CI_GITHUB_PAT_FOR_TESTS || secrets.GITHUB_TOKEN }}" | gh auth login --with-token
                   gh auth status
             - run: npm install
             - run: npm run build
             - run: npx oclif manifest
             - run: npm run test
               env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GITHUB_TOKEN: ${{ secrets.CI_GITHUB_PAT_FOR_TESTS || secrets.GITHUB_TOKEN }}
