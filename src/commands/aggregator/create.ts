@@ -103,15 +103,20 @@ export default class AggregatorCreate extends Command {
 		}
 	}
 
-	private async isParentPom(pomFile: string, execaFn = _execa): Promise<boolean> {
+	private async isParentPom(
+		repositoryBaseDir: string,
+		pomFileRelativePath: string,
+		execaFn = _execa,
+	): Promise<boolean> {
+		const pomFullPath = path.join(repositoryBaseDir, pomFileRelativePath);
 		try {
-			const modules = await this.getMavenProjectAttribute(pomFile, 'project.modules', execaFn);
+			const modules = await this.getMavenProjectAttribute(pomFullPath, 'project.modules', execaFn);
 			if (modules.length > 0 && modules !== '<modules/>') {
-				this.log(`│  │ ✅ ${chalk.yellow(pomFile)} is a parent POM`);
+				this.log(`│  │ ✅ ${chalk.yellow(pomFileRelativePath)} is a parent POM`);
 				return true;
 			}
 
-			this.log(`│  │ ❌ ${chalk.yellow(pomFile)} is not a parent POM`);
+			this.log(`│  │ ❌ ${chalk.yellow(pomFileRelativePath)} is not a parent POM`);
 			return false;
 		} catch (error: unknown) {
 			const errorMessage = error instanceof Error ? error.message : String(error);
@@ -122,29 +127,36 @@ export default class AggregatorCreate extends Command {
 				errorMessage.includes('Could not find artifact')
 			) {
 				this.log(
-					`│  │ ⚠️ ${chalk.yellow(pomFile)} has parent POM resolution issues, treating as non-parent POM`,
+					`│  │ ⚠️ ${chalk.yellow(pomFileRelativePath)} has parent POM resolution issues, treating as non-parent POM`,
 				);
 				return false;
 			}
 
-			this.log(`│  ╰ ❌ Failed to determine if ${chalk.yellow(pomFile)} is a parent POM: ${errorMessage}`);
+			this.log(
+				`│  ╰ ❌ Failed to determine if ${chalk.yellow(pomFileRelativePath)} is a parent POM: ${errorMessage}`,
+			);
 			return false;
 		}
 	}
 
-	private async processPoms(allPoms: string[], execaFn = _execa, parallel = true) {
+	private async processPoms(
+		repositoryBaseDir: string,
+		pomRelativePaths: string[],
+		execaFn = _execa,
+		parallel = true,
+	) {
 		this.log(
 			`│  │ ⏳ Processing all found POM files for non parent POM files to add to the dependencyManagement section...`,
 		);
 
-		const processGAV = async (pom: string) => {
+		const processGAV = async (pomRelativePath: string) => {
 			try {
-				const parentPom = await this.isParentPom(pom, execaFn);
+				const parentPom = await this.isParentPom(repositoryBaseDir, pomRelativePath, execaFn);
 				if (!parentPom) {
-					return this.getGAVFromPom(pom, execaFn);
+					return this.getGAVFromPom(repositoryBaseDir, pomRelativePath, execaFn);
 				}
 			} catch {
-				this.log(`│  │ ⚠️ Could not determine if ${chalk.yellow(pom)} is a parent POM, skipping`);
+				this.log(`│  │ ⚠️ Could not determine if ${chalk.yellow(pomRelativePath)} is a parent POM, skipping`);
 			}
 			return null;
 		};
@@ -152,12 +164,12 @@ export default class AggregatorCreate extends Command {
 		let gavResults: (MavenGAVCoords | null)[];
 
 		if (parallel) {
-			const gavPromises = allPoms.map((pom) => processGAV(pom));
+			const gavPromises = pomRelativePaths.map((pomRelativePath) => processGAV(pomRelativePath));
 			gavResults = await Promise.all(gavPromises);
 		} else {
 			gavResults = [];
-			for (const pom of allPoms) {
-				const result = await processGAV(pom);
+			for (const pomRelativePath of pomRelativePaths) {
+				const result = await processGAV(pomRelativePath);
 				gavResults.push(result);
 			}
 		}
@@ -182,9 +194,9 @@ export default class AggregatorCreate extends Command {
 		return allGAVs;
 	}
 
-	private async findPomFiles(dir: string, parallel = true): Promise<string[]> {
+	private async findPomFiles(repositoryBaseDir: string, parallel = true): Promise<string[]> {
 		try {
-			await fs.ensureDir(path.dirname(dir));
+			await fs.ensureDir(path.dirname(repositoryBaseDir));
 		} catch (error: unknown) {
 			let errorMessage = 'Unknown error';
 			let errorCode: string | undefined;
@@ -200,15 +212,15 @@ export default class AggregatorCreate extends Command {
 				suggestions: [
 					'Check if the directory exists',
 					'Verify you have read permissions for the directory',
-					`Try: mkdir -p "${dir}"`,
+					`Try: mkdir -p "${repositoryBaseDir}"`,
 				],
 			});
 		}
-		this.log(`│  │ 🔍  Scanning: ${chalk.yellow(dir)} for all pom.xml files...`);
-		const pomFiles = [];
-		const dirsToExplore = [dir];
+		this.log(`│  │ 🔍  Scanning: ${chalk.yellow(repositoryBaseDir)} for all pom.xml files...`);
+		const pomRelativePaths: string[] = [];
+		const dirsToExplore = [{currentDir: repositoryBaseDir, relativePath: ''}];
 		while (dirsToExplore.length > 0) {
-			const currentDir = dirsToExplore.pop() as string;
+			const {currentDir, relativePath} = dirsToExplore.pop()!;
 			try {
 				const files = await fs.readdir(currentDir);
 				if (files.length > 0) {
@@ -216,16 +228,17 @@ export default class AggregatorCreate extends Command {
 						const statPromises = files.map(async (file) => {
 							const filepath = path.join(currentDir, file);
 							const stat = await fs.stat(filepath);
-							return {filepath, stat, file};
+							const newRelativePath = relativePath ? path.join(relativePath, file) : file;
+							return {filepath, stat, file, newRelativePath};
 						});
 						const results = await Promise.all(statPromises);
 						for (const result of results) {
 							if (result) {
-								const {filepath, stat, file} = result;
+								const {filepath, stat, file, newRelativePath} = result;
 								if (stat && stat.isDirectory()) {
-									dirsToExplore.push(filepath);
+									dirsToExplore.push({currentDir: filepath, relativePath: newRelativePath});
 								} else if (stat && stat.isFile() && file === 'pom.xml') {
-									pomFiles.push(filepath);
+									pomRelativePaths.push(newRelativePath);
 								}
 							}
 						}
@@ -233,10 +246,11 @@ export default class AggregatorCreate extends Command {
 						for (const file of files) {
 							const filepath = path.join(currentDir, file);
 							const stat = await fs.stat(filepath);
+							const newRelativePath = relativePath ? path.join(relativePath, file) : file;
 							if (stat && stat.isDirectory()) {
-								dirsToExplore.push(filepath);
+								dirsToExplore.push({currentDir: filepath, relativePath: newRelativePath});
 							} else if (stat && stat.isFile() && file === 'pom.xml') {
-								pomFiles.push(filepath);
+								pomRelativePaths.push(newRelativePath);
 							}
 						}
 					}
@@ -245,7 +259,7 @@ export default class AggregatorCreate extends Command {
 				// Directory or file not found, continue on
 			}
 		}
-		return pomFiles;
+		return pomRelativePaths;
 	}
 
 	private async fetchLatestLiftwizardVersion(): Promise<string> {
@@ -306,14 +320,19 @@ export default class AggregatorCreate extends Command {
 		});
 	}
 
-	private async getGAVFromPom(pomFile: string, execaFn = _execa): Promise<MavenGAVCoords | null> {
+	private async getGAVFromPom(
+		repositoryBaseDir: string,
+		pomFileRelativePath: string,
+		execaFn = _execa,
+	): Promise<MavenGAVCoords | null> {
+		const pomFullPath = path.join(repositoryBaseDir, pomFileRelativePath);
 		try {
 			// First, try to extract GAV coordinates directly from XML
-			const parseResult = await parsePomForGAV(pomFile);
+			const parseResult = await parsePomForGAV(pomFullPath);
 
 			if (!parseResult.needsMavenFallback) {
 				// Success! We got all coordinates without Maven
-				this.log(`│  │ ⚡ Fast XML parsing: ${chalk.yellow(pomFile)}`);
+				this.log(`│  │ ⚡ Fast XML parsing: ${chalk.yellow(pomFileRelativePath)}`);
 				return new MavenGAVCoords(
 					parseResult.gav.groupId!,
 					parseResult.gav.artifactId!,
@@ -322,11 +341,11 @@ export default class AggregatorCreate extends Command {
 			}
 
 			// Fall back to Maven evaluation
-			this.log(`│  │ 🐌 Maven fallback for ${chalk.yellow(pomFile)}: ${parseResult.reason}`);
+			this.log(`│  │ 🐌 Maven fallback for ${chalk.yellow(pomFileRelativePath)}: ${parseResult.reason}`);
 
-			const groupId = await this.getMavenProjectAttribute(pomFile, 'project.groupId', execaFn);
-			const artifactId = await this.getMavenProjectAttribute(pomFile, 'project.artifactId', execaFn);
-			const version = await this.getMavenProjectAttribute(pomFile, 'project.version', execaFn);
+			const groupId = await this.getMavenProjectAttribute(pomFullPath, 'project.groupId', execaFn);
+			const artifactId = await this.getMavenProjectAttribute(pomFullPath, 'project.artifactId', execaFn);
+			const version = await this.getMavenProjectAttribute(pomFullPath, 'project.version', execaFn);
 
 			return new MavenGAVCoords(groupId, artifactId, version);
 		} catch (error: unknown) {
@@ -338,10 +357,10 @@ export default class AggregatorCreate extends Command {
 				errorMessage.includes('Could not find artifact')
 			) {
 				this.log(
-					`│  │ ⚠️ Could not process ${chalk.yellow(pomFile)} due to parent POM resolution issues: ${errorMessage}`,
+					`│  │ ⚠️ Could not process ${chalk.yellow(pomFileRelativePath)} due to parent POM resolution issues: ${errorMessage}`,
 				);
 			} else {
-				this.log(`│  │ ❌ Failed to collect GAV from ${chalk.yellow(pomFile)}: ${errorMessage}`);
+				this.log(`│  │ ❌ Failed to collect GAV from ${chalk.yellow(pomFileRelativePath)}: ${errorMessage}`);
 			}
 
 			return null;
@@ -667,8 +686,8 @@ export default class AggregatorCreate extends Command {
 		for (const repo of mavenRepos) {
 			this.log(`│  │ ✅ Found valid Maven repository: ${chalk.yellow(repo.relativePath)}`);
 		}
-		const allPoms = await this.findPomFiles(directoryPath, flags.parallel);
-		const allGAVs = await this.processPoms(allPoms, execa, flags.parallel);
+		const pomRelativePaths = await this.findPomFiles(directoryPath, flags.parallel);
+		const allGAVs = await this.processPoms(directoryPath, pomRelativePaths, execa, flags.parallel);
 		this.log(`│  │`);
 		this.log(`│  ├──╮ 📊 Repository scan summary:`);
 		this.log(`│  │  │ Found ${chalk.yellow(mavenRepos.length)} valid Maven repositories`);
