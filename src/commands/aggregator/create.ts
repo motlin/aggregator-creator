@@ -60,8 +60,6 @@ export default class AggregatorCreate extends Command {
 	};
 
 	private async execute(command: string, args: string[] = [], execaFn = _execa): Promise<ExecaReturnValue> {
-		this.log(`│  ├──╮`);
-
 		try {
 			return await execaFn(command, args);
 		} catch (error: unknown) {
@@ -112,13 +110,10 @@ export default class AggregatorCreate extends Command {
 		try {
 			const modules = await this.getMavenProjectAttribute(pomFullPath, 'project.modules', execaFn);
 			if (modules.length > 0 && modules !== '<modules/>') {
-				this.log(`│  ├──╮`);
 				this.log(`│  │  │ ✅ ${chalk.yellow(pomFileRelativePath)} is a parent POM`);
-				this.log(`│  ├──╯`);
 				return true;
 			}
 
-			this.log(`│  ├──╮`);
 			this.log(`│  │  │ ❌ ${chalk.yellow(pomFileRelativePath)} is not a parent POM`);
 			return false;
 		} catch (error: unknown) {
@@ -129,19 +124,15 @@ export default class AggregatorCreate extends Command {
 				errorMessage.includes('parent.relativePath') ||
 				errorMessage.includes('Could not find artifact')
 			) {
-				this.log(`│  ├──╮`);
 				this.log(
 					`│  │  │ ⚠️ ${chalk.yellow(pomFileRelativePath)} has parent POM resolution issues, treating as non-parent POM`,
 				);
-				this.log(`│  ├──╯`);
 				return false;
 			}
 
-			this.log(`│  ├──╮`);
 			this.log(
 				`│  │  │ ❌ Failed to determine if ${chalk.yellow(pomFileRelativePath)} is a parent POM: ${errorMessage}`,
 			);
-			this.log(`│  ├──╯`);
 			return false;
 		}
 	}
@@ -340,7 +331,6 @@ export default class AggregatorCreate extends Command {
 			if (!parseResult.needsMavenFallback) {
 				// Success! We got all coordinates without Maven
 				this.log(`│  │  │ ⚡ Fast XML parsing`);
-				this.log(`│  ├──╯`);
 				return new MavenGAVCoords(
 					parseResult.gav.groupId!,
 					parseResult.gav.artifactId!,
@@ -355,7 +345,6 @@ export default class AggregatorCreate extends Command {
 			const artifactId = await this.getMavenProjectAttribute(pomFullPath, 'project.artifactId', execaFn);
 			const version = await this.getMavenProjectAttribute(pomFullPath, 'project.version', execaFn);
 
-			this.log(`│  ├──╯`);
 			return new MavenGAVCoords(groupId, artifactId, version);
 		} catch (error: unknown) {
 			const errorMessage = error instanceof Error ? error.message : String(error);
@@ -371,7 +360,6 @@ export default class AggregatorCreate extends Command {
 			} else {
 				this.log(`│  │  │ ❌ Failed to collect GAV from ${chalk.yellow(pomFileRelativePath)}: ${errorMessage}`);
 			}
-			this.log(`│  ├──╯`);
 
 			return null;
 		}
