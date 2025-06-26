@@ -417,6 +417,10 @@ export default class AggregatorCreate extends Command {
 			dependencyEle.ele('artifactId').txt(gav.getArtifactId());
 			dependencyEle.ele('version').txt(gav.getVersion());
 		}
+
+		// Add build section with default goal
+		pom.ele('build').ele('defaultGoal').txt('verify').up();
+
 		return pom.end({prettyPrint: true});
 	}
 
