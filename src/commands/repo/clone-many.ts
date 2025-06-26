@@ -150,6 +150,8 @@ export default class RepoCloneMany extends Command {
 			} else if (result.cloned) {
 				this.log(`│  │  │ ✅ Successfully cloned`);
 			}
+			this.log(`│  ├──╯`);
+			this.log(`│  │`);
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 			this.log(`│  │  │ ❌ Failed: ${errorMessage}`);

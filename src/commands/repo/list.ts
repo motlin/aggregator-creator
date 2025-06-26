@@ -91,6 +91,9 @@ export default class RepoList extends Command {
 
 			const {stdout} = await execa('gh', args);
 
+			this.log(`│  ├──╯`);
+			this.log(`│  │`);
+
 			const repositories = JSON.parse(stdout);
 			return repositoriesSchema.parse(repositories);
 		} catch (error) {
@@ -170,7 +173,7 @@ export default class RepoList extends Command {
 				return repositoriesSchema.parse([]);
 			}
 
-			this.log(`│  ├──╮ 📋 Results: ${chalk.yellow(repositories.length)} repositories`);
+			this.log(`├──╮ 📋 Results: ${chalk.yellow(repositories.length)} repositories`);
 
 			for (const repo of repositories) {
 				const language = repo.language || 'No language';
@@ -183,11 +186,10 @@ export default class RepoList extends Command {
 						: chalk.red(`[${repo.visibility}]`);
 
 				this.log(
-					`│  │  │ ${chalk.yellow(repo.owner.login)}/${chalk.yellow(repo.name)} ${visibilityTag} (${chalk.yellow(language)}) ${topics}`,
+					`│  │ ${chalk.yellow(repo.owner.login)}/${chalk.yellow(repo.name)} ${visibilityTag} (${chalk.yellow(language)}) ${topics}`,
 				);
 			}
-			this.log(`│  ├──╯ ✅`);
-			this.log(`├──╯ 🔍`);
+			this.log(`├──╯ ✅`);
 
 			this.log(`│`);
 			this.log(`╰─── ✅ Repository listing complete`);

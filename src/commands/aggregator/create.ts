@@ -148,13 +148,21 @@ export default class AggregatorCreate extends Command {
 		);
 
 		const processGAV = async (pomRelativePath: string) => {
+			this.log(`│  ├──╮ 📄 Processing ${chalk.yellow(pomRelativePath)}`);
 			try {
 				const parentPom = await this.isParentPom(repositoryBaseDir, pomRelativePath, execaFn);
 				if (!parentPom) {
-					return this.getGAVFromPom(repositoryBaseDir, pomRelativePath, execaFn);
+					const result = await this.getGAVFromPom(repositoryBaseDir, pomRelativePath, execaFn);
+					this.log(`│  ├──╯`);
+					return result;
 				}
+				this.log(`│  │  │ ❌ ${chalk.yellow(pomRelativePath)} is not a parent POM`);
+				this.log(`│  ├──╯`);
 			} catch {
-				this.log(`│  │ ⚠️ Could not determine if ${chalk.yellow(pomRelativePath)} is a parent POM, skipping`);
+				this.log(
+					`│  │  │ ⚠️ Could not determine if ${chalk.yellow(pomRelativePath)} is a parent POM, skipping`,
+				);
+				this.log(`│  ├──╯`);
 			}
 			return null;
 		};
