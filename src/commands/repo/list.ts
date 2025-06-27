@@ -92,7 +92,7 @@ export default class RepoList extends Command {
 			const {stdout} = await execa('gh', args);
 
 			this.log(`│  ├──╯`);
-			this.log(`│  │`);
+			this.log(`├──╯`);
 
 			const repositories = JSON.parse(stdout);
 			return repositoriesSchema.parse(repositories);

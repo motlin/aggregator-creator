@@ -137,31 +137,32 @@ export default class AggregatorCreate extends Command {
 		}
 	}
 
-	private async processPoms(
+	private async processPomsForJarModules(
 		repositoryBaseDir: string,
 		pomRelativePaths: string[],
 		execaFn = _execa,
 		parallel = true,
 	) {
 		this.log(
-			`│  │ ⏳ Processing all found POM files for non parent POM files to add to the dependencyManagement section...`,
+			`│  │ ⏳ Processing all found POM files for jar/bundle modules to add to the dependencyManagement section...`,
 		);
 
 		const processGAV = async (pomRelativePath: string) => {
 			this.log(`│  ├──╮ 📄 Processing ${chalk.yellow(pomRelativePath)}`);
 			try {
-				const parentPom = await this.isParentPom(repositoryBaseDir, pomRelativePath, execaFn);
-				if (!parentPom) {
+				const pomFullPath = path.join(repositoryBaseDir, pomRelativePath);
+				const packaging = await this.getPackagingType(pomFullPath, execaFn);
+
+				if (packaging === 'jar' || packaging === 'bundle') {
+					this.log(`│  │  │ ✅ Has ${chalk.yellow(packaging)} packaging`);
 					const result = await this.getGAVFromPom(repositoryBaseDir, pomRelativePath, execaFn);
 					this.log(`│  ├──╯`);
 					return result;
 				}
-				this.log(`│  │  │ ❌ ${chalk.yellow(pomRelativePath)} is not a parent POM`);
+				this.log(`│  │  │ ⏩ Skipping ${chalk.yellow(packaging)} packaging`);
 				this.log(`│  ├──╯`);
 			} catch {
-				this.log(
-					`│  │  │ ⚠️ Could not determine if ${chalk.yellow(pomRelativePath)} is a parent POM, skipping`,
-				);
+				this.log(`│  │  │ ⚠️ Could not determine packaging type, skipping`);
 				this.log(`│  ├──╯`);
 			}
 			return null;
@@ -188,7 +189,7 @@ export default class AggregatorCreate extends Command {
 		if (allGAVs.length > 0) {
 			for (const gav of allGAVs) {
 				this.log(
-					`│  │  │ Adding group ID: ${chalk.yellow(gav.getGroupId())}, artifact ID: ${chalk.yellow(gav.getArtifactId())}, and version: ${chalk.yellow(gav.getVersion())}`,
+					`│  │  │ Adding group: ${chalk.yellow(gav.getGroupId())}, artifact: ${chalk.yellow(gav.getArtifactId())}, and version: ${chalk.yellow(gav.getVersion())}`,
 				);
 			}
 		} else {
@@ -200,7 +201,32 @@ export default class AggregatorCreate extends Command {
 		return allGAVs;
 	}
 
-	private async findPomFiles(repositoryBaseDir: string, parallel = true): Promise<string[]> {
+	private async getModulesFromPom(pomFullPath: string, execaFn = _execa): Promise<string[]> {
+		try {
+			const modulesString = await this.getMavenProjectAttribute(pomFullPath, 'project.modules', execaFn);
+			if (!modulesString || modulesString === '<modules/>' || modulesString.trim() === '') {
+				return [];
+			}
+			// Parse the Maven output which returns modules as a comma-separated list
+			return modulesString
+				.split(',')
+				.map((m) => m.trim())
+				.filter((m) => m.length > 0);
+		} catch {
+			return [];
+		}
+	}
+
+	private async getPackagingType(pomFullPath: string, execaFn = _execa): Promise<string> {
+		try {
+			const packaging = await this.getMavenProjectAttribute(pomFullPath, 'project.packaging', execaFn);
+			return packaging || 'jar'; // Default Maven packaging is jar
+		} catch {
+			return 'jar';
+		}
+	}
+
+	private async findPomFiles(repositoryBaseDir: string): Promise<string[]> {
 		try {
 			await fs.ensureDir(path.dirname(repositoryBaseDir));
 		} catch (error: unknown) {
@@ -222,50 +248,54 @@ export default class AggregatorCreate extends Command {
 				],
 			});
 		}
-		this.log(`│  │ 🔍  Scanning: ${chalk.yellow(repositoryBaseDir)} for all pom.xml files...`);
-		const pomRelativePaths: string[] = [];
-		const dirsToExplore = [{currentDir: repositoryBaseDir, relativePath: ''}];
-		while (dirsToExplore.length > 0) {
-			const {currentDir, relativePath} = dirsToExplore.pop()!;
-			try {
-				const files = await fs.readdir(currentDir);
-				if (files.length > 0) {
-					if (parallel) {
-						const statPromises = files.map(async (file) => {
-							const filepath = path.join(currentDir, file);
-							const stat = await fs.stat(filepath);
-							const newRelativePath = relativePath ? path.join(relativePath, file) : file;
-							return {filepath, stat, file, newRelativePath};
+
+		this.log(`│  │ 🔍  Following module declarations from root POM...`);
+		const allPoms: string[] = [];
+		const pomsToProcess: Array<{pomPath: string; relativePath: string}> = [];
+
+		// Start with the root pom.xml
+		const rootPomPath = path.join(repositoryBaseDir, 'pom.xml');
+		if (await fs.pathExists(rootPomPath)) {
+			allPoms.push('pom.xml');
+			pomsToProcess.push({pomPath: rootPomPath, relativePath: ''});
+		} else {
+			return [];
+		}
+
+		// Process POMs following module declarations
+		while (pomsToProcess.length > 0) {
+			const {pomPath, relativePath} = pomsToProcess.shift()!;
+
+			// Get modules from this POM
+			const modules = await this.getModulesFromPom(pomPath);
+
+			if (modules.length > 0) {
+				this.log(
+					`│  │  │ Found ${chalk.yellow(modules.length)} modules in ${chalk.yellow(relativePath || 'root')} POM`,
+				);
+
+				// Process each module
+				for (const module of modules) {
+					const modulePomRelativePath = path.join(relativePath, module, 'pom.xml');
+					const modulePomFullPath = path.join(repositoryBaseDir, modulePomRelativePath);
+
+					if (await fs.pathExists(modulePomFullPath)) {
+						allPoms.push(modulePomRelativePath);
+						pomsToProcess.push({
+							pomPath: modulePomFullPath,
+							relativePath: path.join(relativePath, module),
 						});
-						const results = await Promise.all(statPromises);
-						for (const result of results) {
-							if (result) {
-								const {filepath, stat, file, newRelativePath} = result;
-								if (stat && stat.isDirectory()) {
-									dirsToExplore.push({currentDir: filepath, relativePath: newRelativePath});
-								} else if (stat && stat.isFile() && file === 'pom.xml') {
-									pomRelativePaths.push(newRelativePath);
-								}
-							}
-						}
 					} else {
-						for (const file of files) {
-							const filepath = path.join(currentDir, file);
-							const stat = await fs.stat(filepath);
-							const newRelativePath = relativePath ? path.join(relativePath, file) : file;
-							if (stat && stat.isDirectory()) {
-								dirsToExplore.push({currentDir: filepath, relativePath: newRelativePath});
-							} else if (stat && stat.isFile() && file === 'pom.xml') {
-								pomRelativePaths.push(newRelativePath);
-							}
-						}
+						this.log(
+							`│  │  │ ⚠️ Module ${chalk.yellow(module)} declared but POM not found at ${chalk.yellow(modulePomRelativePath)}`,
+						);
 					}
 				}
-			} catch {
-				// Directory or file not found, continue on
 			}
 		}
-		return pomRelativePaths;
+
+		this.log(`│  │  │ Total POMs found: ${chalk.yellow(allPoms.length)}`);
+		return allPoms;
 	}
 
 	private async fetchLatestLiftwizardVersion(): Promise<string> {
@@ -696,8 +726,8 @@ export default class AggregatorCreate extends Command {
 		for (const repo of mavenRepos) {
 			this.log(`│  │ ✅ Found valid Maven repository: ${chalk.yellow(repo.relativePath)}`);
 		}
-		const pomRelativePaths = await this.findPomFiles(directoryPath, flags.parallel);
-		const allGAVs = await this.processPoms(directoryPath, pomRelativePaths, execa, flags.parallel);
+		const pomRelativePaths = await this.findPomFiles(directoryPath);
+		const allGAVs = await this.processPomsForJarModules(directoryPath, pomRelativePaths, execa, flags.parallel);
 		this.log(`│  │`);
 		this.log(`│  ├──╮ 📊 Repository scan summary:`);
 		this.log(`│  │  │ Found ${chalk.yellow(mavenRepos.length)} valid Maven repositories`);
