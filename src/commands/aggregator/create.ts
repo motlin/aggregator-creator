@@ -817,9 +817,26 @@ export default class AggregatorCreate extends Command {
 		const pomPath = path.join(directoryPath, 'pom.xml');
 		try {
 			await fs.writeFile(pomPath, pomXml);
+
+			// Create .mvn directory with configuration files
+			const mvnDir = path.join(directoryPath, '.mvn');
+			await fs.ensureDir(mvnDir);
+
+			// Create jvm.config
+			const jvmConfigPath = path.join(mvnDir, 'jvm.config');
+			await fs.writeFile(jvmConfigPath, '-Xmx8g\n');
+
+			// Create maven.config
+			const mavenConfigPath = path.join(mvnDir, 'maven.config');
+			const mavenConfig =
+				['--errors', '--no-transfer-progress', '--fail-fast', '--color=always', '--threads=2C'].join('\n') +
+				'\n';
+			await fs.writeFile(mavenConfigPath, mavenConfig);
+
 			this.log(`│  │`);
 			this.log(`│  ├──╮ ✅ Created aggregator POM at ${chalk.yellow(pomPath)}`);
 			this.log(`│  │  │ 📋 Included ${chalk.yellow(validModules.length)} modules`);
+			this.log(`│  │  │ 📁 Created .mvn directory with Maven configuration`);
 
 			const elapsedTimeMs = Date.now() - startTime;
 			this.log(`│  ├──╯ ⏱️ Operation completed in ${chalk.dim(`${elapsedTimeMs}ms`)}`);
