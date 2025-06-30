@@ -230,10 +230,15 @@ create-aggregator-from-tagged CLEAN="true": build
 
     if [ "${REPO_COUNT}" -gt 0 ]; then
         # Step 2: Clone maven-tagged repositories
-        CLONE_CMD="./bin/run.js repo:clone-many"
-        CLONE_FULL_CMD="cat ${MAVEN_LIST_OUTPUT} | ${CLONE_CMD} ${MAVEN_REPOS}"
+        echo ""
+        echo "Step 2: Clone maven-tagged repositories"
+        echo "📋 Manual command: cat ${MAVEN_LIST_OUTPUT} | jq -r '.[] | .owner.login + \"/\" + .name' | while read repo; do ./bin/run.js repo:clone \"\${repo}\" ${MAVEN_REPOS}; done"
 
-        run_command "2" "Clone maven-tagged repositories" "${CLONE_FULL_CMD}"
+        # Clone each repository
+        cat "${MAVEN_LIST_OUTPUT}" | jq -r '.[] | .owner.login + "/" + .name' | while read repo; do
+            echo "📥 Cloning ${repo}..."
+            ./bin/run.js repo:clone "${repo}" "${MAVEN_REPOS}"
+        done
 
         # Step 3: Create aggregator POM
         AGGREGATOR_CMD="./bin/run.js aggregator:create"

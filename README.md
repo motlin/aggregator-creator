@@ -58,9 +58,6 @@ The main command groups include:
 
 **Multiple Repository Commands:**
 - `repo:list` - Find GitHub repositories matching specific criteria
-- `repo:clone-many` - Clone multiple repositories from a list provided via stdin
-- `repo:validate-many` - Check if repositories contain valid Maven projects
-- `repo:tag-many` - Add GitHub topics to validated repositories
 
 **Aggregator Commands:**
 - `aggregator:create` - Generate a Maven aggregator POM from a directory of repositories
@@ -71,9 +68,9 @@ For detailed usage information on each command, see the [Commands](#commands) se
 
 There are two approaches to process repositories:
 
-## Approach 1: Using Individual Processing (Recommended)
+## Processing Repositories
 
-This approach uses `repo:process` to handle each repository individually:
+Use `repo:process` to handle each repository individually:
 
 1. **Find repositories:** Use `repo:list` to find repositories with specific criteria
 2. **Process each repository:** Pipe each repository to `repo:process` which handles cloning, validation, and tagging
@@ -89,16 +86,6 @@ done
 # Then create the aggregator
 ./bin/run.js aggregator:create ./repos --groupId org.example
 ```
-
-## Approach 2: Using Batch Processing (Legacy)
-
-This approach uses the `-many` commands to process repositories in batches:
-
-1. **Find repositories:** Use `repo:list` to find repositories with specific criteria
-2. **Clone repositories:** Pipe the results to `repo:clone-many` to download them
-3. **Validate repositories:** Use `repo:validate-many` to check which ones are valid Maven projects
-4. **Tag repositories:** Use `repo:tag-many` to add relevant topics to valid repositories
-5. **Create aggregator:** Use `aggregator:create` to generate an aggregator POM
 
 You can run this complete workflow with:
 
@@ -200,13 +187,10 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 * [`aggregator aggregator create [DIRECTORY]`](#aggregator-aggregator-create-directory)
 * [`aggregator help [COMMAND]`](#aggregator-help-command)
 * [`aggregator repo clone`](#aggregator-repo-clone)
-* [`aggregator repo clone-many TARGETDIRECTORY`](#aggregator-repo-clone-many-targetdirectory)
 * [`aggregator repo list`](#aggregator-repo-list)
 * [`aggregator repo process OUTPUT-DIRECTORY`](#aggregator-repo-process-output-directory)
 * [`aggregator repo tag`](#aggregator-repo-tag)
-* [`aggregator repo tag-many`](#aggregator-repo-tag-many)
 * [`aggregator repo validate REPOPATH`](#aggregator-repo-validate-repopath)
-* [`aggregator repo validate-many [REPOPATH]`](#aggregator-repo-validate-many-repopath)
 
 ## `aggregator aggregator create [DIRECTORY]`
 
@@ -243,7 +227,7 @@ EXAMPLES
 
   $ aggregator aggregator create ./maven-repos --json
 
-  $ aggregator repo:list --user someuser --json | aggregator repo:validate-many --json | aggregator aggregator create ./output-dir
+  $ aggregator repo:list --user someuser --json | aggregator aggregator create ./output-dir
 ```
 
 _See code: [src/commands/aggregator/create.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/aggregator/create.ts)_
@@ -296,30 +280,6 @@ EXAMPLES
 ```
 
 _See code: [src/commands/repo/clone.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/clone.ts)_
-
-## `aggregator repo clone-many TARGETDIRECTORY`
-
-Clone multiple GitHub repositories listed from stdin
-
-```
-USAGE
-  $ aggregator repo clone-many TARGETDIRECTORY
-
-ARGUMENTS
-  TARGETDIRECTORY  Directory to clone repositories into
-
-DESCRIPTION
-  Clone multiple GitHub repositories listed from stdin
-
-EXAMPLES
-  echo "owner/repo" | aggregator repo clone-many ./target-dir
-
-  cat repos.txt | aggregator repo clone-many ./target-dir
-
-  $ aggregator repo:list --user someuser --limit 100 --json | aggregator repo clone-many ./target-dir
-```
-
-_See code: [src/commands/repo/clone-many.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/clone-many.ts)_
 
 ## `aggregator repo list`
 
@@ -436,36 +396,6 @@ EXAMPLES
 
 _See code: [src/commands/repo/tag.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/tag.ts)_
 
-## `aggregator repo tag-many`
-
-Tag multiple valid Maven repositories with GitHub topics
-
-```
-USAGE
-  $ aggregator repo tag-many -t <value> [--json] [--directory <value>] [-d] [-y]
-
-FLAGS
-  -d, --dryRun             Show changes without applying them
-  -t, --topic=<value>      (required) Topic to synchronize
-  -y, --yes                Automatically answer "yes" to all prompts
-      --directory=<value>  Directory containing cloned repos
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Tag multiple valid Maven repositories with GitHub topics
-
-EXAMPLES
-  $ aggregator repo tag-many --directory ./repos-dir --topic maven
-
-  $ aggregator repo tag-many --directory ./repos-dir --topic maven --dryRun
-
-  $ aggregator repo:validate-many ./repos --json | aggregator repo tag-many --topic maven
-```
-
-_See code: [src/commands/repo/tag-many.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/tag-many.ts)_
-
 ## `aggregator repo validate REPOPATH`
 
 Validate a single Maven repository
@@ -492,39 +422,4 @@ EXAMPLES
 ```
 
 _See code: [src/commands/repo/validate.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/validate.ts)_
-
-## `aggregator repo validate-many [REPOPATH]`
-
-Validates multiple Maven repositories from a directory or stdin
-
-```
-USAGE
-  $ aggregator repo validate-many [REPOPATH] [--json] [-v] [-o <value>]
-
-ARGUMENTS
-  REPOPATH  Path to the repository or directory of repositories to validate (or omit to read from stdin)
-
-FLAGS
-  -o, --output=<value>  Output file to write validated repository list
-  -v, --verbose         Show verbose output during validation
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Validates multiple Maven repositories from a directory or stdin
-
-EXAMPLES
-  $ aggregator repo validate-many ./path/to/repo
-
-  $ aggregator repo validate-many /path/to/repos-dir
-
-  $ aggregator repo validate-many ./repos-dir --output ./validated-repos.txt
-
-  $ aggregator repo validate-many ./repos-dir --json
-
-  $ aggregator repo:list --user someuser --json | aggregator repo validate-many --json
-```
-
-_See code: [src/commands/repo/validate-many.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/validate-many.ts)_
 <!-- commandsstop -->
