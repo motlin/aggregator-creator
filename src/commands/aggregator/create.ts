@@ -26,7 +26,7 @@ export default class AggregatorCreate extends Command {
 		'<%= config.bin %> <%= command.id %> ./maven-repos --artifactId custom-aggregator --pomVersion 2.0.0',
 		'<%= config.bin %> <%= command.id %> ./maven-repos --force',
 		'<%= config.bin %> <%= command.id %> ./maven-repos --json',
-		'<%= config.bin %> repo:list --user someuser --json | <%= config.bin %> <%= command.id %> ./output-dir',
+		'<%= config.bin %> repo:list --owner someuser --json | <%= config.bin %> <%= command.id %> ./output-dir',
 	];
 
 	static override enableJsonFlag = true;
@@ -494,7 +494,7 @@ export default class AggregatorCreate extends Command {
 					suggestions: [
 						'Provide a directory path as an argument',
 						'Pipe JSON data from repo:list or repo:process command',
-						'Example: aggregator repo:list --user someuser --json | aggregator aggregator:create ./output',
+						'Example: aggregator repo:list --owner someuser --json | aggregator aggregator:create ./output',
 					],
 				});
 			}
@@ -557,7 +557,7 @@ export default class AggregatorCreate extends Command {
 				suggestions: [
 					'Provide a directory path as an argument',
 					'Pipe JSON data from repo:list or repo:process command',
-					'Example: aggregator repo:list --user someuser --json | aggregator aggregator:create ./output',
+					'Example: aggregator repo:list --owner someuser --json | aggregator aggregator:create ./output',
 				],
 			});
 		}

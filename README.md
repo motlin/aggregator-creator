@@ -79,7 +79,7 @@ Use `repo:process` to handle each repository individually:
 Example:
 ```bash
 # Process repositories individually
-./bin/run.js repo:list --user motlin --language Java --json | jq -c '.[]' | while read repo; do
+./bin/run.js repo:list --owner motlin --language Java --json | jq -c '.[]' | while read repo; do
   echo "$repo" | ./bin/run.js repo:process ./repos --tag maven --json
 done
 
@@ -104,7 +104,7 @@ The single-repository commands can be composed in various ways for different use
 ### Process only valid Maven repositories
 ```bash
 # Use exit codes to filter - only process repositories that validate successfully
-./bin/run.js repo:list --user motlin --json | jq -c '.[]' | while read repo; do
+./bin/run.js repo:list --owner motlin --json | jq -c '.[]' | while read repo; do
   if echo "$repo" | ./bin/run.js repo:process ./repos --tag maven --json 2>/dev/null; then
     echo "Processed valid repository"
   fi
@@ -114,7 +114,7 @@ done
 ### Selective processing with custom logic
 ```bash
 # Clone all repositories but only tag Java repositories
-./bin/run.js repo:list --user motlin --json | jq -c '.[]' | while read repo; do
+./bin/run.js repo:list --owner motlin --json | jq -c '.[]' | while read repo; do
   REPO_NAME=$(echo "$repo" | jq -r '.name')
   REPO_OWNER=$(echo "$repo" | jq -r '.owner.login')
   LANGUAGE=$(echo "$repo" | jq -r '.language // empty')
@@ -135,7 +135,7 @@ done
 ### Dry run to preview changes
 ```bash
 # See what would be tagged without making changes
-./bin/run.js repo:list --user motlin --topic java --json | jq -c '.[]' | while read repo; do
+./bin/run.js repo:list --owner motlin --topic java --json | jq -c '.[]' | while read repo; do
   echo "$repo" | ./bin/run.js repo:process ./repos --tag maven --dryRun --json
 done | jq -s 'map(select(.valid == true))'
 ```
@@ -227,7 +227,7 @@ EXAMPLES
 
   $ aggregator aggregator create ./maven-repos --json
 
-  $ aggregator repo:list --user someuser --json | aggregator aggregator create ./output-dir
+  $ aggregator repo:list --owner someuser --json | aggregator aggregator create ./output-dir
 ```
 
 _See code: [src/commands/aggregator/create.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/aggregator/create.ts)_
@@ -276,7 +276,7 @@ EXAMPLES
 
   echo '{"name": "JUnit-Java-8-Runner", "owner": {"login": "motlin"}}' | aggregator repo clone --output-directory ./repos
 
-  $ aggregator repo:list --user motlin --limit 1 --json | jq -c '.[0]' | aggregator repo clone --output-directory ./repos
+  $ aggregator repo:list --owner motlin --limit 1 --json | jq -c '.[0]' | aggregator repo clone --output-directory ./repos
 ```
 
 _See code: [src/commands/repo/clone.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/clone.ts)_
@@ -287,14 +287,14 @@ List GitHub repositories based on filters
 
 ```
 USAGE
-  $ aggregator repo list [--json] [-u <value>...] [-t <value>...] [-g <value>...] [--include-forks]
+  $ aggregator repo list [--json] [-o <value>...] [-t <value>...] [-g <value>...] [--include-forks]
     [--include-archived] [--visibility public|private|all] [-l <value>]
 
 FLAGS
   -g, --language=<value>...  Language filter
   -l, --limit=<value>        Max repositories
+  -o, --owner=<value>...     GitHub username/org to filter by
   -t, --topic=<value>...     Topic filter
-  -u, --user=<value>...      GitHub username/org to filter by
       --include-archived     Include archived repositories
       --include-forks        Include forked repositories
       --visibility=<option>  [default: public] Repository visibility filter
@@ -309,15 +309,15 @@ DESCRIPTION
 EXAMPLES
   $ aggregator repo list --limit 100
 
-  $ aggregator repo list --user motlin --limit 100
+  $ aggregator repo list --owner motlin --limit 100
 
-  $ aggregator repo list --user motlin --user liftwizard --limit 100
+  $ aggregator repo list --owner motlin --owner liftwizard --limit 100
 
-  $ aggregator repo list --user motlin --language Java --limit 100
+  $ aggregator repo list --owner motlin --language Java --limit 100
 
-  $ aggregator repo list --user motlin --topic maven --language Java --json
+  $ aggregator repo list --owner motlin --topic maven --language Java --json
 
-  $ aggregator repo list --user motlin --limit 100 --json
+  $ aggregator repo list --owner motlin --limit 100 --json
 
   $ aggregator repo list --include-forks --include-archived
 
@@ -357,7 +357,7 @@ EXAMPLES
 
   echo '{"name": "repo", "owner": {"login": "user"}}' | aggregator repo process ./repos --tag maven --json
 
-  $ aggregator repo:list --user motlin --json | jq -c '.[]' | while read repo; do
+  $ aggregator repo:list --owner motlin --json | jq -c '.[]' | while read repo; do
     echo "$repo" | aggregator repo process ./repos --tag maven --json
   done
 ```
@@ -391,7 +391,7 @@ EXAMPLES
 
   echo '{"name": "JUnit-Java-8-Runner", "owner": {"login": "motlin"}}' | aggregator repo tag --topic maven
 
-  $ aggregator repo:list --user motlin --limit 1 --json | jq -c '.[0]' | aggregator repo tag --topic maven
+  $ aggregator repo:list --owner motlin --limit 1 --json | jq -c '.[0]' | aggregator repo tag --topic maven
 ```
 
 _See code: [src/commands/repo/tag.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/tag.ts)_

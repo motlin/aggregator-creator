@@ -15,7 +15,7 @@ export default class RepoTag extends Command {
 		'<%= config.bin %> <%= command.id %> --owner motlin --name JUnit-Java-8-Runner --topic maven',
 		'<%= config.bin %> <%= command.id %> --owner motlin --name JUnit-Java-8-Runner --topic maven --dryRun',
 		'echo \'{"name": "JUnit-Java-8-Runner", "owner": {"login": "motlin"}}\' | <%= config.bin %> <%= command.id %> --topic maven',
-		"<%= config.bin %> repo:list --user motlin --limit 1 --json | jq -c '.[0]' | <%= config.bin %> <%= command.id %> --topic maven",
+		"<%= config.bin %> repo:list --owner motlin --limit 1 --json | jq -c '.[0]' | <%= config.bin %> <%= command.id %> --topic maven",
 	];
 
 	static override flags = {

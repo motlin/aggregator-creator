@@ -65,7 +65,7 @@ describe('repo:list', function () {
 			this.skip();
 		}
 		const {stdout} = await runCommand(
-			['repo:list', '--user', 'torvalds', '--language', 'C', '--json', '--limit', '2'],
+			['repo:list', '--owner', 'torvalds', '--language', 'C', '--json', '--limit', '2'],
 			root,
 		);
 
@@ -116,7 +116,7 @@ describe('repo:list', function () {
 			},
 		];
 
-		const {stdout} = await runCommand(['repo:list', '--user', 'motlin', '--json', '--limit', '1'], root);
+		const {stdout} = await runCommand(['repo:list', '--owner', 'motlin', '--json', '--limit', '1'], root);
 		expect(JSON.parse(stdout)).to.deep.equal(expected);
 	});
 
@@ -124,7 +124,7 @@ describe('repo:list', function () {
 		if (isCI) {
 			this.skip();
 		}
-		const {stdout} = await runCommand(['repo:list', '--user', 'freeCodeCamp', '--json', '--limit', '1'], root);
+		const {stdout} = await runCommand(['repo:list', '--owner', 'freeCodeCamp', '--json', '--limit', '1'], root);
 
 		expect(JSON.parse(stdout)).to.deep.equal([
 			{
@@ -164,7 +164,7 @@ describe('repo:list', function () {
 			this.skip();
 		}
 		const {stdout} = await runCommand(
-			['repo:list', '--user', 'motlin', '--language', 'Java', '--language', 'TypeScript', '--json'],
+			['repo:list', '--owner', 'motlin', '--language', 'Java', '--language', 'TypeScript', '--json'],
 			root,
 		);
 		expect(JSON.parse(stdout)).to.deep.equal([
@@ -272,7 +272,7 @@ describe('repo:list', function () {
 			this.skip();
 		}
 		const {stdout} = await runCommand(
-			['repo:list', '--user', 'octocat', '--language', 'HTML', '--include-forks', '--json', '--limit', '1'],
+			['repo:list', '--owner', 'octocat', '--language', 'HTML', '--include-forks', '--json', '--limit', '1'],
 			root,
 		);
 		expect(JSON.parse(stdout)).to.deep.equal([
@@ -296,7 +296,7 @@ describe('repo:list', function () {
 			this.skip();
 		}
 		const {stdout} = await runCommand(
-			['repo:list', '--user', 'octocat', '--language', 'HTML', '--include-archived', '--json', '--limit', '1'],
+			['repo:list', '--owner', 'octocat', '--language', 'HTML', '--include-archived', '--json', '--limit', '1'],
 			root,
 		);
 		expect(JSON.parse(stdout)).to.deep.equal([
@@ -322,7 +322,7 @@ describe('repo:list', function () {
 		const result = await runCommand(
 			[
 				'repo:list',
-				'--user',
+				'--owner',
 				'octocat',
 				'--language',
 				'HTML',

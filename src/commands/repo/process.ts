@@ -22,7 +22,7 @@ export default class RepoProcess extends Command {
 		'<%= config.bin %> <%= command.id %> ./repos --owner motlin --name JUnit-Java-8-Runner --tag maven',
 		'<%= config.bin %> <%= command.id %> ./repos --owner motlin --name example-repo --tag maven --dryRun --json',
 		'echo \'{"name": "repo", "owner": {"login": "user"}}\' | <%= config.bin %> <%= command.id %> ./repos --tag maven --json',
-		`<%= config.bin %> repo:list --user motlin --json | jq -c '.[]' | while read repo; do
+		`<%= config.bin %> repo:list --owner motlin --json | jq -c '.[]' | while read repo; do
   echo "$repo" | <%= config.bin %> <%= command.id %> ./repos --tag maven --json
 done`,
 	];

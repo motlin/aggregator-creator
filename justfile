@@ -44,10 +44,10 @@ test: build
 #   -l = --limit
 #   -g = --language
 #   -t = --topic
-#   -u = --user
+#   -o = --owner
 repo-list USERNAME *FLAGS="": build
     @echo "🔍 Listing GitHub repositories for {{USERNAME}}..."
-    ./bin/run.js repo:list --user {{USERNAME}} {{FLAGS}}
+    ./bin/run.js repo:list --owner {{USERNAME}} {{FLAGS}}
 
 # Find and validate Maven repositories, then tag them
 find-validate-repos CLEAN="true": build
@@ -96,7 +96,7 @@ find-validate-repos CLEAN="true": build
 
     # Step 1: List repositories
     # Define base command first
-    LIST_CMD="./bin/run.js repo:list --user motlin --user liftwizard --language Java --visibility all --limit 100"
+    LIST_CMD="./bin/run.js repo:list --owner motlin --owner liftwizard --language Java --visibility all --limit 100"
 
     # First, run without --json to show console output
     LIST_CMD_CONSOLE="${LIST_CMD}"
@@ -220,7 +220,7 @@ create-aggregator-from-tagged CLEAN="true": build
     }
 
     # Step 1: List repositories with maven topic
-    MAVEN_LIST_CMD="./bin/run.js repo:list --user motlin --user liftwizard --topic maven --language Java --visibility public --limit 100 --json"
+    MAVEN_LIST_CMD="./bin/run.js repo:list --owner motlin --owner liftwizard --topic maven --language Java --visibility public --limit 100 --json"
     MAVEN_LIST_OUTPUT="${TEST_DIR}/maven-repos.json"
 
     run_command "1" "List repositories with 'maven' topic" "${MAVEN_LIST_CMD}" "> ${MAVEN_LIST_OUTPUT}"

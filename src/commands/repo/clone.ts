@@ -15,7 +15,7 @@ export default class RepoClone extends Command {
 	static override examples = [
 		'<%= config.bin %> <%= command.id %> --output-directory ./repos --owner motlin --name JUnit-Java-8-Runner',
 		'echo \'{"name": "JUnit-Java-8-Runner", "owner": {"login": "motlin"}}\' | <%= config.bin %> <%= command.id %> --output-directory ./repos',
-		"<%= config.bin %> repo:list --user motlin --limit 1 --json | jq -c '.[0]' | <%= config.bin %> <%= command.id %> --output-directory ./repos",
+		"<%= config.bin %> repo:list --owner motlin --limit 1 --json | jq -c '.[0]' | <%= config.bin %> <%= command.id %> --output-directory ./repos",
 	];
 
 	static override flags = {

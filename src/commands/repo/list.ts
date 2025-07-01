@@ -10,11 +10,11 @@ export default class RepoList extends Command {
 
 	static override examples = [
 		'<%= config.bin %> <%= command.id %> --limit 100',
-		'<%= config.bin %> <%= command.id %> --user motlin --limit 100',
-		'<%= config.bin %> <%= command.id %> --user motlin --user liftwizard --limit 100',
-		'<%= config.bin %> <%= command.id %> --user motlin --language Java --limit 100',
-		'<%= config.bin %> <%= command.id %> --user motlin --topic maven --language Java --json',
-		'<%= config.bin %> <%= command.id %> --user motlin --limit 100 --json',
+		'<%= config.bin %> <%= command.id %> --owner motlin --limit 100',
+		'<%= config.bin %> <%= command.id %> --owner motlin --owner liftwizard --limit 100',
+		'<%= config.bin %> <%= command.id %> --owner motlin --language Java --limit 100',
+		'<%= config.bin %> <%= command.id %> --owner motlin --topic maven --language Java --json',
+		'<%= config.bin %> <%= command.id %> --owner motlin --limit 100 --json',
 		'<%= config.bin %> <%= command.id %> --include-forks --include-archived',
 		'<%= config.bin %> <%= command.id %> --visibility public',
 	];
@@ -22,7 +22,7 @@ export default class RepoList extends Command {
 	static override enableJsonFlag = true;
 
 	static override flags = {
-		user: Flags.string({char: 'u', description: 'GitHub username/org to filter by', multiple: true}),
+		owner: Flags.string({char: 'o', description: 'GitHub username/org to filter by', multiple: true}),
 		topic: Flags.string({char: 't', description: 'Topic filter', multiple: true}),
 		language: Flags.string({char: 'g', description: 'Language filter', multiple: true}),
 		'include-forks': Flags.boolean({description: 'Include forked repositories', default: false}),
@@ -157,7 +157,7 @@ export default class RepoList extends Command {
 
 		try {
 			const repositories = await this.fetchRepositories(
-				flags.user ? (Array.isArray(flags.user) ? flags.user : [flags.user]) : [],
+				flags.owner ? (Array.isArray(flags.owner) ? flags.owner : [flags.owner]) : [],
 				flags.topic ? (Array.isArray(flags.topic) ? flags.topic : [flags.topic]) : [],
 				flags.language ? (Array.isArray(flags.language) ? flags.language : [flags.language]) : [],
 				flags.limit,
