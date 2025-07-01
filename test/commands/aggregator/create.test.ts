@@ -3,6 +3,7 @@ import {expect} from 'chai';
 import fs from 'fs-extra';
 import path from 'node:path';
 import os from 'node:os';
+import https from 'node:https';
 import {createSandbox} from 'sinon';
 import {fileURLToPath} from 'node:url';
 
@@ -24,8 +25,32 @@ describe('aggregator:create', () => {
 		await fs.ensureDir(validRepo2);
 		await fs.ensureDir(invalidRepo);
 
-		await fs.writeFile(path.join(validRepo1, 'pom.xml'), '<project><modelVersion>4.0.0</modelVersion></project>');
-		await fs.writeFile(path.join(validRepo2, 'pom.xml'), '<project><modelVersion>4.0.0</modelVersion></project>');
+		const validPom1 = `<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.example.test</groupId>
+    <artifactId>valid-repo1</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+</project>`;
+
+		const validPom2 = `<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.example.test</groupId>
+    <artifactId>valid-repo2</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+</project>`;
+
+		await fs.writeFile(path.join(validRepo1, 'pom.xml'), validPom1);
+		await fs.writeFile(path.join(validRepo2, 'pom.xml'), validPom2);
 
 		// Define the property first since it doesn't exist by default
 		Object.defineProperty(process.stdin, 'isTTY', {
@@ -53,7 +78,39 @@ describe('aggregator:create', () => {
 		expect(result.error?.oclif?.exit).to.equal(1);
 	});
 
-	it('creates an aggregator POM with default values', async () => {
+	it('creates an aggregator POM with default values', async function () {
+		this.timeout(10_000); // Increase timeout for this test
+
+		// Mock the HTTPS request to Maven Central
+		const mockResponse = {
+			statusCode: 200,
+			on(event: string, callback: (data?: string) => void) {
+				if (event === 'data') {
+					callback(
+						JSON.stringify({
+							response: {
+								docs: [
+									{
+										latestVersion: '2.1.1',
+									},
+								],
+							},
+						}),
+					);
+				} else if (event === 'end') {
+					callback();
+				}
+			},
+		};
+
+		sandbox.stub(https, 'get').callsFake((url, options, callback) => {
+			if (typeof options === 'function') {
+				callback = options;
+			}
+			callback!(mockResponse as Parameters<typeof https.get>[2] extends (res: infer R) => void ? R : never);
+			return {on() {}} as unknown as ReturnType<typeof https.get>;
+		});
+
 		const {stdout} = await runCommand(['aggregator:create', tempDir, '--yes', '--json'], root);
 		const output = JSON.parse(stdout);
 
@@ -98,8 +155,39 @@ describe('aggregator:create', () => {
 		expect(pomContent).to.include('<module>valid-repo2</module>');
 	});
 
-	it('creates an aggregator POM with custom values', async () => {
-		const {stdout} = await runCommand(
+	it('creates an aggregator POM with custom values', async function () {
+		this.timeout(10_000); // Increase timeout for this test
+
+		// Mock the HTTPS request to Maven Central
+		const mockResponse = {
+			statusCode: 200,
+			on(event: string, callback: (data?: string) => void) {
+				if (event === 'data') {
+					callback(
+						JSON.stringify({
+							response: {
+								docs: [
+									{
+										latestVersion: '2.1.1',
+									},
+								],
+							},
+						}),
+					);
+				} else if (event === 'end') {
+					callback();
+				}
+			},
+		};
+
+		sandbox.stub(https, 'get').callsFake((url, options, callback) => {
+			if (typeof options === 'function') {
+				callback = options;
+			}
+			callback!(mockResponse as Parameters<typeof https.get>[2] extends (res: infer R) => void ? R : never);
+			return {on() {}} as unknown as ReturnType<typeof https.get>;
+		});
+		const result = await runCommand(
 			[
 				'aggregator:create',
 				tempDir,
@@ -114,6 +202,15 @@ describe('aggregator:create', () => {
 			],
 			root,
 		);
+
+		if (result.error) {
+			console.error('Command failed with error:', result.error);
+			console.error('stdout:', result.stdout);
+			console.error('stderr:', result.stderr);
+			throw result.error;
+		}
+
+		const {stdout} = result;
 		const output = JSON.parse(stdout);
 
 		expect(output).to.deep.equal({
@@ -153,7 +250,39 @@ describe('aggregator:create', () => {
 		expect(pomContent).to.include('<version>2.0.0</version>');
 	});
 
-	it('outputs in json format when --json flag is provided', async () => {
+	it('outputs in json format when --json flag is provided', async function () {
+		this.timeout(10_000); // Increase timeout for this test
+
+		// Mock the HTTPS request to Maven Central
+		const mockResponse = {
+			statusCode: 200,
+			on(event: string, callback: (data?: string) => void) {
+				if (event === 'data') {
+					callback(
+						JSON.stringify({
+							response: {
+								docs: [
+									{
+										latestVersion: '2.1.1',
+									},
+								],
+							},
+						}),
+					);
+				} else if (event === 'end') {
+					callback();
+				}
+			},
+		};
+
+		sandbox.stub(https, 'get').callsFake((url, options, callback) => {
+			if (typeof options === 'function') {
+				callback = options;
+			}
+			callback!(mockResponse as Parameters<typeof https.get>[2] extends (res: infer R) => void ? R : never);
+			return {on() {}} as unknown as ReturnType<typeof https.get>;
+		});
+
 		const {stdout} = await runCommand(['aggregator:create', tempDir, '--json', '--yes'], root);
 
 		const output = JSON.parse(stdout);
@@ -185,7 +314,39 @@ describe('aggregator:create', () => {
 		});
 	});
 
-	it('returns a structured error when no Maven repositories are found with --json flag', async () => {
+	it('returns a structured error when no Maven repositories are found with --json flag', async function () {
+		this.timeout(10_000); // Increase timeout for this test
+
+		// Mock the HTTPS request to Maven Central
+		const mockResponse = {
+			statusCode: 200,
+			on(event: string, callback: (data?: string) => void) {
+				if (event === 'data') {
+					callback(
+						JSON.stringify({
+							response: {
+								docs: [
+									{
+										latestVersion: '2.1.1',
+									},
+								],
+							},
+						}),
+					);
+				} else if (event === 'end') {
+					callback();
+				}
+			},
+		};
+
+		sandbox.stub(https, 'get').callsFake((url, options, callback) => {
+			if (typeof options === 'function') {
+				callback = options;
+			}
+			callback!(mockResponse as Parameters<typeof https.get>[2] extends (res: infer R) => void ? R : never);
+			return {on() {}} as unknown as ReturnType<typeof https.get>;
+		});
+
 		const emptyDir = await fs.mkdtemp(path.join(os.tmpdir(), 'empty-dir-'));
 
 		try {

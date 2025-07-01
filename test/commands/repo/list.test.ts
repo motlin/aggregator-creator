@@ -295,10 +295,16 @@ describe('repo:list', function () {
 		if (isCI) {
 			this.skip();
 		}
-		const {stdout} = await runCommand(
+		const result = await runCommand(
 			['repo:list', '--owner', 'octocat', '--language', 'HTML', '--include-archived', '--json', '--limit', '1'],
 			root,
 		);
+
+		if ('error' in result) {
+			throw new Error(`Command failed: ${result.error?.message || 'Unknown error'}`);
+		}
+
+		const {stdout} = result;
 		expect(JSON.parse(stdout)).to.deep.equal([
 			{
 				name: 'Spoon-Knife',
@@ -336,10 +342,7 @@ describe('repo:list', function () {
 		);
 
 		if ('error' in result) {
-			console.error('Command failed with error:', result.error);
-			if (result.stderr) {
-				console.error('stderr:', result.stderr);
-			}
+			throw new Error(`Command failed: ${result.error?.message || 'Unknown error'}`);
 		}
 
 		const {stdout} = result;

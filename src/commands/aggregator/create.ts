@@ -9,6 +9,7 @@ import inquirer from 'inquirer';
 import MavenGAVCoords from '../../maven-gav.js';
 import {validatedRepositoriesSchema, type ValidatedRepository} from '../../types/repository.js';
 import {parsePomForGAV} from '../../utils/pom-parser.js';
+import {DependencyRewriter} from '../../utils/dependency-rewriter.js';
 
 export default class AggregatorCreate extends Command {
 	static override args = {
@@ -26,6 +27,7 @@ export default class AggregatorCreate extends Command {
 		'<%= config.bin %> <%= command.id %> ./maven-repos --artifactId custom-aggregator --pomVersion 2.0.0',
 		'<%= config.bin %> <%= command.id %> ./maven-repos --force',
 		'<%= config.bin %> <%= command.id %> ./maven-repos --json',
+		'<%= config.bin %> <%= command.id %> ./maven-repos --no-rewrite-dependencies',
 		'<%= config.bin %> repo:list --owner someuser --json | <%= config.bin %> <%= command.id %> ./output-dir',
 	];
 
@@ -54,6 +56,11 @@ export default class AggregatorCreate extends Command {
 		}),
 		parallel: Flags.boolean({
 			description: 'Enable parallel processing',
+			default: true,
+			allowNo: true,
+		}),
+		rewriteDependencies: Flags.boolean({
+			description: 'Rewrite child pom dependencies to use versions from dependencyManagement',
 			default: true,
 			allowNo: true,
 		}),
@@ -841,10 +848,40 @@ export default class AggregatorCreate extends Command {
 			this.log(`│  ├──╮ ✅ Created aggregator POM at ${chalk.yellow(pomPath)}`);
 			this.log(`│  │  │ 📋 Included ${chalk.yellow(validModules.length)} modules`);
 			this.log(`│  │  │ 📁 Created .mvn directory with Maven configuration`);
+			this.log(`│  ├──╯`);
+
+			// Rewrite dependencies in child poms if enabled
+			if (flags.rewriteDependencies && allGAVs.length > 0) {
+				const rewriter = new DependencyRewriter(
+					{
+						aggregatorPath: directoryPath,
+						gavs: allGAVs,
+						modules: validModules,
+						verbose: false,
+						log: (message: string) => this.log(message),
+					},
+					execa,
+				);
+
+				const rewriteResult = await rewriter.rewriteDependencies();
+
+				if (rewriteResult.rewrittenPoms.length > 0) {
+					this.log(`│  │`);
+					this.log(`│  ├──╮ 📝 Dependency rewriting summary:`);
+					this.log(`│  │  │ ✅ Updated ${chalk.yellow(rewriteResult.rewrittenPoms.length)} pom files`);
+					if (rewriteResult.errors.length > 0) {
+						this.log(`│  │  │ ⚠️ Failed to update ${chalk.yellow(rewriteResult.errors.length)} pom files`);
+						for (const error of rewriteResult.errors) {
+							this.log(`│  │  │   → ${chalk.yellow(error.pom)}: ${error.error}`);
+						}
+					}
+					this.log(`│  ├──╯`);
+				}
+			}
 
 			const elapsedTimeMs = Date.now() - startTime;
-			this.log(`│  ├──╯ ⏱️ Operation completed in ${chalk.dim(`${elapsedTimeMs}ms`)}`);
-			this.log(`├──╯`);
+			this.log(`│`);
+			this.log(`├─── ⏱️ Operation completed in ${chalk.dim(`${elapsedTimeMs}ms`)}`);
 			this.log(`│`);
 			this.log(`╰─── ✅ Successfully created aggregator POM at: ${chalk.yellow(pomPath)}`);
 

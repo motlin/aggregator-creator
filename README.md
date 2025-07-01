@@ -199,16 +199,18 @@ Create Maven aggregator POM from a directory of repositories
 ```
 USAGE
   $ aggregator aggregator create [DIRECTORY] [--json] [-g <value>] [-a <value>] [-v <value>] [-y] [--parallel]
+    [--rewriteDependencies]
 
 ARGUMENTS
   DIRECTORY  Directory containing final Maven repos (or omit to read from stdin)
 
 FLAGS
-  -a, --artifactId=<value>  [default: aggregator] ArtifactId for aggregator POM
-  -g, --groupId=<value>     [default: com.example] GroupId for aggregator POM
-  -v, --pomVersion=<value>  [default: 1.0.0-SNAPSHOT] Version for aggregator POM
-  -y, --yes                 Automatically answer "yes" to all prompts
-      --[no-]parallel       Enable parallel processing
+  -a, --artifactId=<value>        [default: aggregator] ArtifactId for aggregator POM
+  -g, --groupId=<value>           [default: com.example] GroupId for aggregator POM
+  -v, --pomVersion=<value>        [default: 1.0.0-SNAPSHOT] Version for aggregator POM
+  -y, --yes                       Automatically answer "yes" to all prompts
+      --[no-]parallel             Enable parallel processing
+      --[no-]rewriteDependencies  Rewrite child pom dependencies to use versions from dependencyManagement
 
 GLOBAL FLAGS
   --json  Format output as json.
@@ -226,6 +228,8 @@ EXAMPLES
   $ aggregator aggregator create ./maven-repos --force
 
   $ aggregator aggregator create ./maven-repos --json
+
+  $ aggregator aggregator create ./maven-repos --no-rewrite-dependencies
 
   $ aggregator repo:list --owner someuser --json | aggregator aggregator create ./output-dir
 ```
