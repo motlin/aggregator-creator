@@ -232,12 +232,14 @@ create-aggregator-from-tagged CLEAN="true": build
         # Step 2: Clone maven-tagged repositories
         echo ""
         echo "Step 2: Clone maven-tagged repositories"
-        echo "📋 Manual command: cat ${MAVEN_LIST_OUTPUT} | jq -r '.[] | .owner.login + \"/\" + .name' | while read repo; do ./bin/run.js repo:clone \"\${repo}\" ${MAVEN_REPOS}; done"
+        echo "📋 Manual command: cat ${MAVEN_LIST_OUTPUT} | jq -c '.[]' | while read repo_json; do echo \"\$repo_json\" | ./bin/run.js repo:clone --output-directory ${MAVEN_REPOS}; done"
 
         # Clone each repository
-        cat "${MAVEN_LIST_OUTPUT}" | jq -r '.[] | .owner.login + "/" + .name' | while read repo; do
-            echo "📥 Cloning ${repo}..."
-            ./bin/run.js repo:clone "${repo}" "${MAVEN_REPOS}"
+        cat "${MAVEN_LIST_OUTPUT}" | jq -c '.[]' | while read repo_json; do
+            REPO_NAME=$(echo "$repo_json" | jq -r '.name')
+            REPO_OWNER=$(echo "$repo_json" | jq -r '.owner.login')
+            echo "📥 Cloning ${REPO_OWNER}/${REPO_NAME}..."
+            echo "$repo_json" | ./bin/run.js repo:clone --output-directory "${MAVEN_REPOS}"
         done
 
         # Step 3: Create aggregator POM
