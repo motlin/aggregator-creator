@@ -1,7 +1,7 @@
 import {Args, Command, Flags} from '@oclif/core';
 import fs from 'fs-extra';
 import path from 'node:path';
-import https from 'node:https';
+import os from 'node:os';
 import {execa as _execa} from 'execa';
 import {create} from 'xmlbuilder2';
 import chalk from 'chalk';
@@ -309,62 +309,86 @@ export default class AggregatorCreate extends Command {
 		return allPoms;
 	}
 
-	private async fetchLatestLiftwizardVersion(): Promise<string> {
-		const url =
-			'https://search.maven.org/solrsearch/select?q=g:io.liftwizard+AND+a:liftwizard-profile-parent&rows=1&wt=json';
+	private async fetchLatestLiftwizardVersion(execaFn = _execa): Promise<string> {
+		this.log(`│  │ 🔍 Fetching latest liftwizard-profile-parent version using Maven...`);
 
-		this.log(`│  │ 🔍 Fetching latest liftwizard-profile-parent version from Maven Central...`);
+		try {
+			// Create a temporary directory for Maven to work in
+			const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'liftwizard-version-'));
 
-		return new Promise((resolve, reject) => {
-			const options = {
-				headers: {
-					'User-Agent': 'aggregator-creator-cli/1.0',
-				},
-			};
+			try {
+				// Use Maven to fetch the artifact metadata
+				const result = await this.execute(
+					'mvn',
+					[
+						'org.apache.maven.plugins:maven-dependency:3.6.0:get',
+						'-Dartifact=io.liftwizard:liftwizard-profile-parent:LATEST',
+						'-DremoteRepositories=https://repo.maven.apache.org/maven2',
+						'-Dtransitive=false',
+						'--quiet',
+					],
+					execaFn,
+				);
 
-			https
-				.get(url, options, (res) => {
-					let data = '';
+				// Parse the output to find the resolved version
+				// Maven will download and resolve LATEST to the actual version
+				// We need to look for the resolved version in the output
+				const stdout = typeof result.stdout === 'string' ? result.stdout : '';
+				const versionMatch = stdout.match(/Downloaded.*liftwizard-profile-parent-(\d+\.\d+\.\d+(?:-\w+)?)/);
 
-					res.on('data', (chunk) => {
-						data += chunk;
-					});
+				if (!versionMatch) {
+					// Fallback: try to find version from local repository
+					const localRepoPath = path.join(
+						os.homedir(),
+						'.m2',
+						'repository',
+						'io',
+						'liftwizard',
+						'liftwizard-profile-parent',
+					);
 
-					res.on('end', () => {
-						if (res.statusCode !== 200) {
-							reject(new Error(`HTTP error! status: ${res.statusCode}`));
-							return;
-						}
+					if (await fs.pathExists(localRepoPath)) {
+						const versions = await fs.readdir(localRepoPath);
+						// Filter out metadata directories and sort versions
+						const validVersions = versions
+							.filter((v) => /^\d+\.\d+\.\d+(?:-\w+)?$/.test(v))
+							.sort((a, b) => {
+								// Simple version comparison (works for most cases)
+								const aParts = a.split(/[.-]/);
+								const bParts = b.split(/[.-]/);
 
-						try {
-							const jsonData: {
-								response: {
-									docs: Array<{
-										latestVersion?: string;
-										v?: string;
-									}>;
-								};
-							} = JSON.parse(data);
+								for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+									const aPart = Number.parseInt(aParts[i], 10) || 0;
+									const bPart = Number.parseInt(bParts[i], 10) || 0;
+									if (aPart !== bPart) return bPart - aPart;
+								}
+								return 0;
+							});
 
-							const latestVersion =
-								jsonData.response.docs[0]?.latestVersion || jsonData.response.docs[0]?.v;
-
-							if (!latestVersion) {
-								reject(new Error('Could not find latest version in Maven Central response'));
-								return;
-							}
-
+						if (validVersions.length > 0) {
+							const latestVersion = validVersions[0];
 							this.log(`│  │ ✅ Found latest liftwizard version: ${chalk.yellow(latestVersion)}`);
-							resolve(latestVersion);
-						} catch (error) {
-							reject(new Error(`Failed to parse JSON response: ${error}`));
+							return latestVersion;
 						}
-					});
-				})
-				.on('error', (err) => {
-					reject(new Error(`Request failed: ${err.message}`));
-				});
-		});
+					}
+
+					throw new Error('Could not determine version from Maven output');
+				}
+
+				const latestVersion = versionMatch[1];
+				this.log(`│  │ ✅ Found latest liftwizard version: ${chalk.yellow(latestVersion)}`);
+				return latestVersion;
+			} finally {
+				// Clean up temp directory
+				await fs.remove(tempDir);
+			}
+		} catch (error) {
+			// Fallback to a known stable version if Maven fails
+			const fallbackVersion = '2.1.13';
+			this.log(`│  │ ⚠️ Could not fetch latest version, using fallback: ${chalk.yellow(fallbackVersion)}`);
+			this.debug(`Maven error: ${error instanceof Error ? error.message : String(error)}`);
+			return fallbackVersion;
+		}
 	}
 
 	private async getGAVFromPom(
