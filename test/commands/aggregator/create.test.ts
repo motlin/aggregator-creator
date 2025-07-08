@@ -67,15 +67,10 @@ describe('aggregator:create', () => {
 		sandbox.restore();
 	});
 
-	it.skip('errors when no directory is provided', async () => {
-		// FIXME: This test hangs because runCommand doesn't respect the process.stdin.isTTY stub
-		// and waits for stdin input. Need to find a way to test this scenario.
-		const result = await runCommand(['aggregator:create'], root);
-		expect(result.error).to.exist;
-		expect(result.error?.message).to.include(
-			'No input provided. Provide a directory path or pipe JSON data from stdin.',
-		);
-		expect(result.error?.oclif?.exit).to.equal(1);
+	it('errors when no directory is provided', async () => {
+		const {error} = await runCommand(['aggregator:create'], root);
+		expect(error).to.exist;
+		expect(error!.message).to.include('No input provided');
 	});
 
 	it('creates an aggregator POM with default values', async function () {
