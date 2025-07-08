@@ -80,28 +80,21 @@ done`,
 		const repoInfo = await this.getRepoInfo(flags);
 
 		try {
-			if (!flags.json) {
-				this.log(
-					`╭─── 🔄 Processing repository ${chalk.yellow(repoInfo.owner.login)}/${chalk.yellow(repoInfo.name)}...`,
-				);
-				this.log(`│`);
-			}
+			this.log(
+				`╭─── 🔄 Processing repository ${chalk.yellow(repoInfo.owner.login)}/${chalk.yellow(repoInfo.name)}...`,
+			);
+			this.log(`│`);
 
 			// 1. Clone repository using cloneSingleRepo utility
-			if (!flags.json) {
-				this.log(`├──╮ 📥 Cloning repository...`);
-			}
+			this.log(`├──╮ 📥 Cloning repository...`);
 
-			const logger = flags.json ? undefined : this;
-			const cloneResult = await cloneSingleRepo(repoInfo.owner.login, repoInfo.name, outputDir, execa_, logger);
+			const cloneResult = await cloneSingleRepo(repoInfo.owner.login, repoInfo.name, outputDir, execa_, this);
 
 			if (!cloneResult.cloned && !cloneResult.skipped) {
-				if (!flags.json) {
-					this.log(`├──╯ ❌ Failed to clone repository`);
-					this.log(`├──╯`);
-					this.log(`│`);
-					this.log(`╰─── ❌ Processing failed`);
-				}
+				this.log(`├──╯ ❌ Failed to clone repository`);
+				this.log(`├──╯`);
+				this.log(`│`);
+				this.log(`╰─── ❌ Processing failed`);
 
 				const result = {
 					...repoInfo,
@@ -112,41 +105,27 @@ done`,
 					error: cloneResult.error,
 				};
 
-				if (flags.json) {
-					this.logJson(result);
-				}
-
 				this.exit(1);
 				return result;
 			}
 
-			if (!flags.json) {
-				if (cloneResult.cloned) {
-					this.log(`├──╯ ✅ Repository cloned to ${chalk.cyan(cloneResult.path)}`);
-				} else if (cloneResult.skipped) {
-					this.log(`├──╯ ⏩ Repository already exists at ${chalk.cyan(cloneResult.path)}`);
-				}
+			if (cloneResult.cloned) {
+				this.log(`├──╯ ✅ Repository cloned to ${chalk.cyan(cloneResult.path)}`);
+			} else if (cloneResult.skipped) {
+				this.log(`├──╯ ⏩ Repository already exists at ${chalk.cyan(cloneResult.path)}`);
 			}
 
 			// 2. Validate repository using validateMavenRepo utility
-			if (!flags.json) {
-				this.log(`│`);
-				this.log(`├──╮ 🔍 Validating repository...`);
-			}
+			this.log(`│`);
+			this.log(`├──╮ 🔍 Validating repository...`);
 
-			const validateResult: MavenValidationResult = await validateMavenRepo(
-				cloneResult.path,
-				execa_,
-				flags.json ? undefined : this,
-			);
+			const validateResult: MavenValidationResult = await validateMavenRepo(cloneResult.path, execa_, this);
 
 			if (!validateResult.valid) {
-				if (!flags.json) {
-					this.log(`├──╯ ❌ Repository is not a valid Maven project`);
-					this.log(`├──╯`);
-					this.log(`│`);
-					this.log(`╰─── ❌ Processing complete (repository not valid)`);
-				}
+				this.log(`├──╯ ❌ Repository is not a valid Maven project`);
+				this.log(`├──╯`);
+				this.log(`│`);
+				this.log(`╰─── ❌ Processing complete (repository not valid)`);
 
 				const result = {
 					...repoInfo,
@@ -157,23 +136,15 @@ done`,
 					error: 'Not a valid Maven repository',
 				};
 
-				if (flags.json) {
-					this.logJson(result);
-				}
-
 				this.exit(1);
 				return result;
 			}
 
-			if (!flags.json) {
-				this.log(`├──╯ ✅ Repository is a valid Maven project`);
-			}
+			this.log(`├──╯ ✅ Repository is a valid Maven project`);
 
 			// 3. Tag repository using tagSingleRepository utility
-			if (!flags.json) {
-				this.log(`│`);
-				this.log(`├──╮ 🏷️ Tagging repository with topic: ${chalk.cyan(tag)}...`);
-			}
+			this.log(`│`);
+			this.log(`├──╮ 🏷️ Tagging repository with topic: ${chalk.cyan(tag)}...`);
 
 			const tagSingleResult: TagSingleRepoResult = await tagSingleRepository({
 				owner: repoInfo.owner.login,
@@ -181,28 +152,24 @@ done`,
 				topic: tag,
 				dryRun,
 				execa: execa_,
-				logger: flags.json
-					? undefined
-					: {
-							log: this.log.bind(this),
-							warn: this.warn.bind(this),
-							error: (message: string, options?: {exit?: boolean}) => {
-								if (options?.exit) {
-									this.error(message);
-								} else {
-									this.error(message, {exit: false});
-								}
-							},
-						},
+				logger: {
+					log: this.log.bind(this),
+					warn: this.warn.bind(this),
+					error: (message: string, options?: {exit?: boolean}) => {
+						if (options?.exit) {
+							this.error(message);
+						} else {
+							this.error(message, {exit: false});
+						}
+					},
+				},
 			});
 
 			if (!tagSingleResult.success) {
-				if (!flags.json) {
-					this.log(`├──╯ ❌ Failed to tag repository: ${tagSingleResult.error || 'Unknown error'}`);
-					this.log(`├──╯`);
-					this.log(`│`);
-					this.log(`╰─── ❌ Processing failed`);
-				}
+				this.log(`├──╯ ❌ Failed to tag repository: ${tagSingleResult.error || 'Unknown error'}`);
+				this.log(`├──╯`);
+				this.log(`│`);
+				this.log(`╰─── ❌ Processing failed`);
 
 				const result = {
 					...repoInfo,
@@ -212,10 +179,6 @@ done`,
 					tagged: false,
 					error: `Failed to tag repository: ${tagSingleResult.error || 'Unknown error'}`,
 				};
-
-				if (flags.json) {
-					this.logJson(result);
-				}
 
 				this.exit(1);
 				return result;
@@ -229,19 +192,17 @@ done`,
 				tagged: tagSingleResult.success && !tagSingleResult.alreadyTagged,
 			};
 
-			if (!flags.json) {
-				if (tagResult.tagged) {
-					this.log(`├──╯ ✅ Repository tagged with topic: ${chalk.cyan(tag)}`);
-				} else if (dryRun) {
-					this.log(`├──╯ 🔵 [DRY RUN] Would tag repository with topic: ${chalk.cyan(tag)}`);
-				} else {
-					this.log(`├──╯ ℹ️ Repository already has topic: ${chalk.cyan(tag)}`);
-				}
-
-				this.log(`├──╯`);
-				this.log(`│`);
-				this.log(`╰─── ✅ Processing complete`);
+			if (tagResult.tagged) {
+				this.log(`├──╯ ✅ Repository tagged with topic: ${chalk.cyan(tag)}`);
+			} else if (dryRun) {
+				this.log(`├──╯ 🔵 [DRY RUN] Would tag repository with topic: ${chalk.cyan(tag)}`);
+			} else {
+				this.log(`├──╯ ℹ️ Repository already has topic: ${chalk.cyan(tag)}`);
 			}
+
+			this.log(`├──╯`);
+			this.log(`│`);
+			this.log(`╰─── ✅ Processing complete`);
 
 			// 4. Output combined result
 			const result = {
@@ -254,42 +215,10 @@ done`,
 				error: null,
 			};
 
-			if (flags.json) {
-				this.logJson(result);
-			}
-
 			return result;
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-			if (!flags.json) {
-				this.error(`Failed to process repository: ${errorMessage}`, {exit: 1});
-			}
-
-			// Return error result in JSON mode
-			const result = {
-				name: flags.name || 'unknown',
-				owner: {login: flags.owner || 'unknown'},
-				language: null,
-				topics: [],
-				fork: false,
-				archived: false,
-				disabled: false,
-				is_template: false,
-				private: false,
-				visibility: 'unknown',
-				path: '',
-				cloned: false,
-				valid: false,
-				tagged: false,
-				error: errorMessage,
-			};
-
-			if (flags.json) {
-				this.logJson(result);
-			}
-
-			this.exit(1);
+			this.error(`Failed to process repository: ${errorMessage}`, {exit: 1});
 		}
 	}
 

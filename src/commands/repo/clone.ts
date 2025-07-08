@@ -52,9 +52,7 @@ export default class RepoClone extends Command {
 		const useStdin = !process.stdin.isTTY && (!flags.owner || !flags.name);
 
 		if (useStdin) {
-			if (!flags.json) {
-				this.log(`🔍 Reading repository information from stdin...`);
-			}
+			this.log(`🔍 Reading repository information from stdin...`);
 
 			let fullInput = '';
 			for await (const chunk of process.stdin) {
@@ -136,11 +134,6 @@ export default class RepoClone extends Command {
 				...(result.error && {error: result.error}),
 			};
 
-			if (flags.json) {
-				// JSON output is handled by oclif
-				return response;
-			}
-
 			if (result.cloned) {
 				this.log(
 					`✅ Successfully cloned ${chalk.yellow(repository.owner.login)}/${chalk.yellow(repository.name)} to ${chalk.cyan(result.path)}`,
@@ -156,18 +149,6 @@ export default class RepoClone extends Command {
 			return response;
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-			const errorResponse = {
-				owner: repository.owner.login,
-				name: repository.name,
-				path: '',
-				cloned: false,
-				error: errorMessage,
-			};
-
-			if (flags.json) {
-				return errorResponse;
-			}
-
 			this.error(`Failed to clone repository: ${errorMessage}`, {exit: 1});
 		}
 	}
