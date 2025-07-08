@@ -266,7 +266,7 @@ DESCRIPTION
   Display help for aggregator.
 ```
 
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.29/src/commands/help.ts)_
+_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.30/src/commands/help.ts)_
 
 ## `aggregator repo clone`
 
