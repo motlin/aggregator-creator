@@ -5,6 +5,16 @@ import fs from 'fs-extra';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
+interface ExtendedError extends Error {
+	code?: string;
+	oclif?: { exit: number };
+	skipOclifErrorHandling?: boolean;
+	suggestions?: string[];
+	showHelp?: boolean;
+	parse?: unknown;
+	args?: unknown;
+}
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '../../..');
 
@@ -31,73 +41,121 @@ describe('repo:process', () => {
 		await fs.remove(outputDir);
 	});
 
-	it.skip('should error when no input is provided', async () => {
-		// FIXME: This test hangs because runCommand doesn't respect the process.stdin.isTTY stub
-		const {error} = await runCommand(['repo:process', outputDir, '--tag', 'maven'], root);
-
-		expect(error?.oclif?.exit).to.equal(1);
-		expect(error?.message).to.include('No input provided');
+	it('should error when no input is provided', async () => {
+		const result = await runCommand(['repo:process', outputDir, '--tag', 'maven', '--json'], root);
+		expect(result).to.deep.equal({
+			result: undefined,
+			stdout:
+				JSON.stringify(
+					{
+						error: {
+							code: 'NO_INPUT',
+							oclif: {
+								exit: 1,
+							},
+							suggestions: [
+								'Provide --owner and --name flags',
+								'Or pipe repository JSON from stdin',
+								'Example: aggregator repo:process ./output --owner motlin --name JUnit-Java-8-Runner --tag maven',
+							],
+						},
+					},
+					null,
+					2,
+				) + '\n',
+			stderr: '',
+		});
 	});
 
-	it.skip('should error when missing required tag flag', async () => {
-		// FIXME: @oclif/test v4 doesn't capture validation errors properly
+	it('should error when missing required tag flag', async () => {
 		const result = await runCommand(['repo:process', outputDir, '--owner', 'test', '--name', 'repo'], root);
+		// Missing required flags causes oclif to exit without JSON output
+		// Create expected error matching actual error structure
+		const expectedError = new Error('The following error occurred:\n  Missing required flag tag\nSee more help with --help') as ExtendedError;
+		expectedError.code = undefined;
+		expectedError.oclif = { exit: 2 };
+		expectedError.skipOclifErrorHandling = undefined;
+		expectedError.suggestions = undefined;
+		expectedError.showHelp = false;
+		expectedError.parse = (result.error as ExtendedError)?.parse; // Copy the circular reference
 
-		// @oclif/test v4 only returns exit code for validation errors
-		expect(result.error).to.exist;
-		expect(result.error?.oclif?.exit).to.equal(2);
+		expect(result).to.deep.equal({
+			stdout: '',
+			stderr: '',
+			error: expectedError
+		});
 	});
 
-	it.skip('should error when missing output directory', async () => {
-		// FIXME: @oclif/test v4 doesn't capture validation errors properly
+	it('should error when missing output directory', async () => {
 		const result = await runCommand(['repo:process', '--tag', 'maven', '--owner', 'test', '--name', 'repo'], root);
+		// Missing required arguments causes oclif to exit without JSON output
+		// Create expected error matching actual error structure
+		const expectedError = new Error('Missing 1 required arg:\noutput-directory  Directory where the repository will be cloned\nSee more help with --help') as ExtendedError;
+		expectedError.code = undefined;
+		expectedError.oclif = { exit: 2 };
+		expectedError.skipOclifErrorHandling = undefined;
+		expectedError.suggestions = undefined;
+		expectedError.showHelp = true;
+		expectedError.parse = (result.error as ExtendedError)?.parse; // Copy the circular reference
+		expectedError.args = (result.error as ExtendedError)?.args; // Copy the args property
 
-		// @oclif/test v4 only returns exit code for validation errors
-		expect(result.error).to.exist;
-		expect(result.error?.oclif?.exit).to.equal(2);
+		expect(result).to.deep.equal({
+			stdout: '',
+			stderr: '',
+			error: expectedError
+		});
 	});
 
-	it.skip('should accept flags for repository info', async () => {
-		// FIXME: @oclif/test v4 doesn't capture command output properly when commands fail
+	it('should accept flags for repository info', async () => {
 		// Note: This will fail at the clone step since we're not mocking git
 		const result = await runCommand(
 			['repo:process', outputDir, '--owner', 'test-user', '--name', 'test-repo', '--tag', 'maven', '--json'],
 			root,
 		);
 
-		if (result.stdout) {
-			// Extract all complete JSON objects from stdout
-			const jsonMatches = result.stdout.match(/\{[\s\S]*?\}\n(?=\{|$)/g);
-			// The first JSON object should be the main result
-			const mainResultJson = jsonMatches?.[0]?.trim();
-			expect(mainResultJson).to.not.be.undefined;
-			const parsedResult = JSON.parse(mainResultJson!);
+		const expectedPath = path.join(outputDir, 'test-user', 'test-repo');
+		const expectedResult = {
+			name: 'test-repo',
+			owner: { login: 'test-user' },
+			path: expectedPath,
+			cloned: false,
+			valid: false,
+			tagged: false,
+			error: `Command failed with exit code 1: gh repo clone test-user/test-repo ${expectedPath}\n\nGraphQL: Could not resolve to a Repository with the name 'test-user/test-repo'. (repository)`
+		};
 
-			expect(parsedResult.name).to.equal('test-repo');
-			expect(parsedResult.owner.login).to.equal('test-user');
-			expect(parsedResult.cloned).to.equal(false);
-			expect(parsedResult.error).to.include('Command failed');
-		} else {
-			// Command failed - this is expected since we're not mocking git
-			expect(result.error).to.exist;
-			expect(result.error?.oclif?.exit).to.equal(1);
-		}
+		expect(result).to.deep.equal({
+			result: expectedResult,
+			stderr: '',
+			stdout: JSON.stringify(expectedResult, null, 2) + '\n'
+		});
 	});
 
-	it.skip('should show non-JSON output when --json flag is not provided', async () => {
-		// FIXME: @oclif/test v4 doesn't capture command errors properly
+	it('should show non-JSON output when --json flag is not provided', async () => {
 		const result = await runCommand(
 			['repo:process', outputDir, '--owner', 'test-user', '--name', 'test-repo', '--tag', 'maven'],
 			root,
 		);
 
-		// @oclif/test v4 doesn't capture error messages properly
-		expect(result.error).to.exist;
-		expect(result.error?.oclif?.exit).to.equal(1);
+		const expectedPath = path.join(outputDir, 'test-user', 'test-repo');
+		const expectedResult = {
+			name: 'test-repo',
+			owner: { login: 'test-user' },
+			path: expectedPath,
+			cloned: false,
+			valid: false,
+			tagged: false,
+			error: `Command failed with exit code 1: gh repo clone test-user/test-repo ${expectedPath}\n\nGraphQL: Could not resolve to a Repository with the name 'test-user/test-repo'. (repository)`
+		};
+
+		expect(result).to.deep.equal({
+			result: expectedResult,
+			stderr: '',
+			stdout: '╭─── 🔄 Processing repository test-user/test-repo...\n│\n├──╮ 📥 Cloning repository...\n├──╯ ❌ Failed to clone repository\n├──╯\n│\n╰─── ❌ Processing failed\n'
+		});
 	});
 
-	it.skip('should handle dry run flag', async () => {
-		// FIXME: @oclif/test v4 doesn't capture command output properly when commands fail
+	it('should handle dry run flag', async () => {
 		// The dry run flag would be passed to the tag command
 		// This test validates that the flag is accepted
 		const result = await runCommand(
@@ -116,26 +174,25 @@ describe('repo:process', () => {
 			root,
 		);
 
-		if (result.stdout) {
-			// Extract all complete JSON objects from stdout
-			const jsonMatches = result.stdout.match(/\{[\s\S]*?\}\n(?=\{|$)/g);
-			// The first JSON object should be the main result
-			const mainResultJson = jsonMatches?.[0]?.trim();
-			expect(mainResultJson).to.not.be.undefined;
-			const parsedResult = JSON.parse(mainResultJson!);
+		const expectedPath = path.join(outputDir, 'test-user', 'test-repo');
+		const expectedResult = {
+			name: 'test-repo',
+			owner: { login: 'test-user' },
+			path: expectedPath,
+			cloned: false,
+			valid: false,
+			tagged: false,
+			error: `Command failed with exit code 1: gh repo clone test-user/test-repo ${expectedPath}\n\nGraphQL: Could not resolve to a Repository with the name 'test-user/test-repo'. (repository)`
+		};
 
-			// Will still fail at clone, but validates flag parsing
-			expect(parsedResult.cloned).to.equal(false);
-			expect(parsedResult.error).to.include('Command failed');
-		} else {
-			// Command failed - this is expected since we're not mocking git
-			expect(result.error).to.exist;
-			expect(result.error?.oclif?.exit).to.equal(1);
-		}
+		expect(result).to.deep.equal({
+			result: expectedResult,
+			stderr: '',
+			stdout: JSON.stringify(expectedResult, null, 2) + '\n'
+		});
 	});
 
-	it.skip('should handle verbose flag', async () => {
-		// FIXME: @oclif/test v4 doesn't capture command output properly when commands fail
+	it('should handle verbose flag', async () => {
 		// The verbose flag would affect output verbosity
 		// This test validates that the flag is accepted
 		const result = await runCommand(
@@ -154,21 +211,21 @@ describe('repo:process', () => {
 			root,
 		);
 
-		if (result.stdout) {
-			// Extract all complete JSON objects from stdout
-			const jsonMatches = result.stdout.match(/\{[\s\S]*?\}\n(?=\{|$)/g);
-			// The first JSON object should be the main result
-			const mainResultJson = jsonMatches?.[0]?.trim();
-			expect(mainResultJson).to.not.be.undefined;
-			const parsedResult = JSON.parse(mainResultJson!);
+		const expectedPath = path.join(outputDir, 'test-user', 'test-repo');
+		const expectedResult = {
+			name: 'test-repo',
+			owner: { login: 'test-user' },
+			path: expectedPath,
+			cloned: false,
+			valid: false,
+			tagged: false,
+			error: `Command failed with exit code 1: gh repo clone test-user/test-repo ${expectedPath}\n\nGraphQL: Could not resolve to a Repository with the name 'test-user/test-repo'. (repository)`
+		};
 
-			// Will still fail at clone, but validates flag parsing
-			expect(parsedResult.cloned).to.equal(false);
-			expect(parsedResult.error).to.include('Command failed');
-		} else {
-			// Command failed - this is expected since we're not mocking git
-			expect(result.error).to.exist;
-			expect(result.error?.oclif?.exit).to.equal(1);
-		}
+		expect(result).to.deep.equal({
+			result: expectedResult,
+			stderr: '',
+			stdout: JSON.stringify(expectedResult, null, 2) + '\n'
+		});
 	});
 });

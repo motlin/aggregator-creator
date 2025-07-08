@@ -64,11 +64,16 @@ describe('repo:list', function () {
 		if (isCI) {
 			this.skip();
 		}
-		const {stdout} = await runCommand(
+		const result = await runCommand(
 			['repo:list', '--owner', 'torvalds', '--language', 'C', '--json', '--limit', '2'],
 			root,
 		);
 
+		if ('error' in result) {
+			throw new Error(`Command failed: ${result.error?.message || 'Unknown error'}`);
+		}
+
+		const {stdout} = result;
 		expect(JSON.parse(stdout)).to.deep.equal([
 			{
 				name: 'linux',
@@ -116,7 +121,13 @@ describe('repo:list', function () {
 			},
 		];
 
-		const {stdout} = await runCommand(['repo:list', '--owner', 'motlin', '--json', '--limit', '1'], root);
+		const result = await runCommand(['repo:list', '--owner', 'motlin', '--json', '--limit', '1'], root);
+
+		if ('error' in result) {
+			throw new Error(`Command failed: ${result.error?.message || 'Unknown error'}`);
+		}
+
+		const {stdout} = result;
 		expect(JSON.parse(stdout)).to.deep.equal(expected);
 	});
 
@@ -124,8 +135,13 @@ describe('repo:list', function () {
 		if (isCI) {
 			this.skip();
 		}
-		const {stdout} = await runCommand(['repo:list', '--owner', 'freeCodeCamp', '--json', '--limit', '1'], root);
+		const result = await runCommand(['repo:list', '--owner', 'freeCodeCamp', '--json', '--limit', '1'], root);
 
+		if ('error' in result) {
+			throw new Error(`Command failed: ${result.error?.message || 'Unknown error'}`);
+		}
+
+		const {stdout} = result;
 		expect(JSON.parse(stdout)).to.deep.equal([
 			{
 				name: 'freeCodeCamp',
@@ -163,10 +179,16 @@ describe('repo:list', function () {
 		if (isCI) {
 			this.skip();
 		}
-		const {stdout} = await runCommand(
+		const result = await runCommand(
 			['repo:list', '--owner', 'motlin', '--language', 'Java', '--language', 'TypeScript', '--json'],
 			root,
 		);
+
+		if ('error' in result) {
+			throw new Error(`Command failed: ${result.error?.message || 'Unknown error'}`);
+		}
+
+		const {stdout} = result;
 		expect(JSON.parse(stdout)).to.deep.equal([
 			{
 				name: 'hex-zero',
@@ -271,10 +293,16 @@ describe('repo:list', function () {
 		if (isCI) {
 			this.skip();
 		}
-		const {stdout} = await runCommand(
+		const result = await runCommand(
 			['repo:list', '--owner', 'octocat', '--language', 'HTML', '--include-forks', '--json', '--limit', '1'],
 			root,
 		);
+
+		if ('error' in result) {
+			throw new Error(`Command failed: ${result.error?.message || 'Unknown error'}`);
+		}
+
+		const {stdout} = result;
 		expect(JSON.parse(stdout)).to.deep.equal([
 			{
 				name: 'Spoon-Knife',

@@ -28,7 +28,7 @@ manifest: install
 
 # `npm test`
 test: build
-    npm test
+    CHAI_TRUNCATE_THRESHOLD=0 npm test
 
 # Run repo:list command to list GitHub repositories
 # Examples:

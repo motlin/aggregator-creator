@@ -497,7 +497,6 @@ export default class AggregatorCreate extends Command {
 			totalScanned: number;
 			validRepositories: number;
 			skippedRepositories: number;
-			elapsedTimeMs: number;
 		};
 		mavenCoordinates: {
 			groupId: string;
@@ -507,7 +506,6 @@ export default class AggregatorCreate extends Command {
 	}> {
 		const execa = _execa;
 
-		const startTime = Date.now();
 		const {args, flags} = await this.parse(AggregatorCreate);
 		let directoryPath: string;
 		let validRepos: ValidatedRepository[] = [];
@@ -631,8 +629,6 @@ export default class AggregatorCreate extends Command {
 			this.log(`│  │ Found ${chalk.yellow(firstLevelEntries.length)} potential repository containers to scan`);
 
 			if (firstLevelEntries.length === 0) {
-				const elapsedTimeMs = Date.now() - startTime;
-
 				const result = {
 					success: false,
 					pomPath: '',
@@ -641,7 +637,6 @@ export default class AggregatorCreate extends Command {
 						totalScanned: 0,
 						validRepositories: 0,
 						skippedRepositories: 0,
-						elapsedTimeMs,
 					},
 					mavenCoordinates: {
 						groupId: flags.groupId,
@@ -721,8 +716,6 @@ export default class AggregatorCreate extends Command {
 		}
 
 		if (mavenRepos.length === 0) {
-			const elapsedTimeMs = Date.now() - startTime;
-
 			const result = {
 				success: false,
 				pomPath: '',
@@ -731,7 +724,6 @@ export default class AggregatorCreate extends Command {
 					totalScanned,
 					validRepositories: 0,
 					skippedRepositories: skippedRepos.length,
-					elapsedTimeMs,
 				},
 				mavenCoordinates: {
 					groupId: flags.groupId,
@@ -810,8 +802,6 @@ export default class AggregatorCreate extends Command {
 
 		if (!proceed) {
 			this.warn(`│  ├──╯ Operation canceled by user.`);
-			const elapsedTimeMs = Date.now() - startTime;
-
 			return {
 				success: false,
 				pomPath: '',
@@ -830,7 +820,6 @@ export default class AggregatorCreate extends Command {
 					totalScanned,
 					validRepositories: mavenRepos.length,
 					skippedRepositories: skippedRepos.length,
-					elapsedTimeMs,
 				},
 				mavenCoordinates: {
 					groupId: flags.groupId,
@@ -903,9 +892,6 @@ export default class AggregatorCreate extends Command {
 				}
 			}
 
-			const elapsedTimeMs = Date.now() - startTime;
-			this.log(`│`);
-			this.log(`├─── ⏱️ Operation completed in ${chalk.dim(`${elapsedTimeMs}ms`)}`);
 			this.log(`│`);
 			this.log(`╰─── ✅ Successfully created aggregator POM at: ${chalk.yellow(pomPath)}`);
 
@@ -927,7 +913,6 @@ export default class AggregatorCreate extends Command {
 					totalScanned,
 					validRepositories: mavenRepos.length,
 					skippedRepositories: skippedRepos.length,
-					elapsedTimeMs,
 				},
 				mavenCoordinates: {
 					groupId: flags.groupId,

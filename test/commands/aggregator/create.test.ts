@@ -68,9 +68,38 @@ describe('aggregator:create', () => {
 	});
 
 	it('errors when no directory is provided', async () => {
-		const {error} = await runCommand(['aggregator:create'], root);
-		expect(error).to.exist;
-		expect(error!.message).to.include('No input provided');
+		// Define the property first since it doesn't exist by default
+		Object.defineProperty(process.stdin, 'isTTY', {
+			value: undefined,
+			writable: true,
+			configurable: true,
+		});
+		// Now stub it
+		sandbox.stub(process.stdin, 'isTTY').value(true);
+
+		const result = await runCommand(['aggregator:create', '--json'], root);
+		expect(result).to.deep.equal({
+			result: undefined,
+			stdout:
+				JSON.stringify(
+					{
+						error: {
+							code: 'NO_INPUT',
+							oclif: {
+								exit: 1,
+							},
+							suggestions: [
+								'Provide a directory path as an argument',
+								'Pipe JSON data from repo:list or repo:process command',
+								'Example: aggregator repo:list --owner someuser --json | aggregator aggregator:create ./output',
+							],
+						},
+					},
+					null,
+					2,
+				) + '\n',
+			stderr: '',
+		});
 	});
 
 	it('creates an aggregator POM with default values', async function () {
@@ -106,10 +135,9 @@ describe('aggregator:create', () => {
 			return {on() {}} as unknown as ReturnType<typeof https.get>;
 		});
 
-		const {stdout} = await runCommand(['aggregator:create', tempDir, '--yes', '--json'], root);
-		const output = JSON.parse(stdout);
+		const result = await runCommand(['aggregator:create', tempDir, '--yes', '--json'], root);
 
-		expect(output).to.deep.equal({
+		const expectedResult = {
 			success: true,
 			pomPath: path.join(tempDir, 'pom.xml'),
 			modules: [
@@ -126,13 +154,18 @@ describe('aggregator:create', () => {
 				totalScanned: 3,
 				validRepositories: 2,
 				skippedRepositories: 0,
-				elapsedTimeMs: output.stats.elapsedTimeMs,
 			},
 			mavenCoordinates: {
 				groupId: 'com.example',
 				artifactId: 'aggregator',
 				version: '1.0.0-SNAPSHOT',
 			},
+		};
+
+		expect(result).to.deep.equal({
+			stdout: JSON.stringify(expectedResult, null, 2) + '\n',
+			stderr: '',
+			result: expectedResult,
 		});
 
 		const pomPath = path.join(tempDir, 'pom.xml');
@@ -225,7 +258,6 @@ describe('aggregator:create', () => {
 				totalScanned: 3,
 				validRepositories: 2,
 				skippedRepositories: 0,
-				elapsedTimeMs: output.stats.elapsedTimeMs,
 			},
 			mavenCoordinates: {
 				groupId: 'org.test',
@@ -299,7 +331,6 @@ describe('aggregator:create', () => {
 				totalScanned: 3,
 				validRepositories: 2,
 				skippedRepositories: 0,
-				elapsedTimeMs: output.stats.elapsedTimeMs,
 			},
 			mavenCoordinates: {
 				groupId: 'com.example',
@@ -357,7 +388,6 @@ describe('aggregator:create', () => {
 					totalScanned: 0,
 					validRepositories: 0,
 					skippedRepositories: 0,
-					elapsedTimeMs: output.stats.elapsedTimeMs,
 				},
 				mavenCoordinates: {
 					groupId: 'com.example',

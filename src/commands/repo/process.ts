@@ -105,7 +105,6 @@ done`,
 					error: cloneResult.error,
 				};
 
-				this.exit(1);
 				return result;
 			}
 
@@ -136,7 +135,6 @@ done`,
 					error: 'Not a valid Maven repository',
 				};
 
-				this.exit(1);
 				return result;
 			}
 
@@ -180,7 +178,6 @@ done`,
 					error: `Failed to tag repository: ${tagSingleResult.error || 'Unknown error'}`,
 				};
 
-				this.exit(1);
 				return result;
 			}
 

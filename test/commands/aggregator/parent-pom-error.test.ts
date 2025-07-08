@@ -112,7 +112,6 @@ describe('aggregator:create with parent POM resolution errors', () => {
 				totalScanned: 2,
 				validRepositories: 2,
 				skippedRepositories: 0,
-				elapsedTimeMs: output.stats.elapsedTimeMs,
 			},
 			mavenCoordinates: {
 				groupId: 'com.example',

@@ -24,17 +24,22 @@ describe('repo:validate', () => {
 		const nonExistentPath = path.join(tempDir, 'non-existent');
 
 		const result = await runCommand(['repo:validate', nonExistentPath, '--json'], root);
-		expect(result.stderr).to.equal('');
-		expect(result.result).to.be.undefined;
-
-		const jsonOutput = JSON.parse(result.stdout);
-		expect(jsonOutput).to.deep.equal({
-			error: {
-				code: 'EEXIT',
-				oclif: {
-					exit: 1,
-				},
-			},
+		expect(result).to.deep.equal({
+			stderr: '',
+			result: undefined,
+			stdout:
+				JSON.stringify(
+					{
+						error: {
+							code: 'EEXIT',
+							oclif: {
+								exit: 1,
+							},
+						},
+					},
+					null,
+					2,
+				) + '\n',
 		});
 	});
 
@@ -42,21 +47,26 @@ describe('repo:validate', () => {
 		await fs.ensureDir(tempDir);
 
 		const result = await runCommand(['repo:validate', tempDir, '--json'], root);
-		expect(result.stderr).to.equal('');
-		expect(result.result).to.be.undefined;
-
-		const jsonOutput = JSON.parse(result.stdout);
-		expect(jsonOutput).to.deep.equal({
-			error: {
-				code: 'EEXIT',
-				oclif: {
-					exit: 1,
-				},
-			},
+		expect(result).to.deep.equal({
+			stderr: '',
+			result: undefined,
+			stdout:
+				JSON.stringify(
+					{
+						error: {
+							code: 'EEXIT',
+							oclif: {
+								exit: 1,
+							},
+						},
+					},
+					null,
+					2,
+				) + '\n',
 		});
 	});
 
-	it.skip('should succeed for valid Maven repository', async () => {
+	it('should succeed for valid Maven repository', async () => {
 		await fs.ensureDir(tempDir);
 
 		// Create a valid minimal Maven POM
@@ -73,15 +83,25 @@ describe('repo:validate', () => {
 		await fs.writeFile(path.join(tempDir, 'pom.xml'), validPom);
 
 		const result = await runCommand(['repo:validate', tempDir, '--json'], root);
-		expect(result.stderr).to.equal('');
-		expect(result.error).to.be.undefined;
-
-		const jsonOutput = JSON.parse(result.stdout);
-		expect(jsonOutput).to.deep.equal({
-			path: tempDir,
-			hasPom: true,
-			valid: true,
-			error: null,
+		expect(result).to.deep.equal({
+			stderr: '',
+			stdout:
+				JSON.stringify(
+					{
+						path: tempDir,
+						hasPom: true,
+						valid: true,
+						error: null,
+					},
+					null,
+					2,
+				) + '\n',
+			result: {
+				path: tempDir,
+				hasPom: true,
+				valid: true,
+				error: null,
+			},
 		});
 	});
 });

@@ -6,5 +6,6 @@
 	"reporter": "spec",
 	"timeout": 60000,
 	"diff": true,
-	"inline-diffs": true
+	"inline-diffs": true,
+	"require": ["./test/setup.ts"]
 }
