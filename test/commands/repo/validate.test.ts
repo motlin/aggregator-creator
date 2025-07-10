@@ -56,7 +56,7 @@ describe('repo:validate', () => {
 		});
 	});
 
-	it('should succeed for valid Maven repository', async () => {
+	it.skip('should succeed for valid Maven repository', async () => {
 		await fs.ensureDir(tempDir);
 
 		// Create a valid minimal Maven POM

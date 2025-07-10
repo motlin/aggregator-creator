@@ -1,6 +1,6 @@
-import type {ExecaReturnValue} from 'execa';
+import type {Result} from 'execa';
 
-export function createMockResult(override: Partial<ExecaReturnValue> = {}): ExecaReturnValue {
+export function createMockResult(override: Partial<Result> = {}): Result {
 	const mockResult = {
 		command: 'mock-command',
 		escapedCommand: 'mock-command',
@@ -22,7 +22,7 @@ export function createMockResult(override: Partial<ExecaReturnValue> = {}): Exec
 		isForcefullyTerminated: false,
 		killed: false,
 		...override,
-	} as unknown as ExecaReturnValue;
+	} as unknown as Result;
 
 	return mockResult;
 }

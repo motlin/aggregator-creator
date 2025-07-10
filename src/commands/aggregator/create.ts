@@ -2,7 +2,7 @@ import {Args, Command, Flags} from '@oclif/core';
 import fs from 'fs-extra';
 import path from 'node:path';
 import https from 'node:https';
-import {execa as _execa, type ExecaReturnValue} from 'execa';
+import {execa as _execa, type Result} from 'execa';
 import {create} from 'xmlbuilder2';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
@@ -59,7 +59,7 @@ export default class AggregatorCreate extends Command {
 		}),
 	};
 
-	private async execute(command: string, args: string[] = [], execaFn = _execa): Promise<ExecaReturnValue> {
+	private async execute(command: string, args: string[] = [], execaFn = _execa): Promise<Result> {
 		try {
 			return await execaFn(command, args);
 		} catch (error: unknown) {
