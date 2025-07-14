@@ -120,9 +120,9 @@ export default class AggregatorCreate extends Command {
 			const errorMessage = error instanceof Error ? error.message : String(error);
 
 			if (
-				errorMessage.includes('Non-resolvable parent POM') ||
-				errorMessage.includes('parent.relativePath') ||
-				errorMessage.includes('Could not find artifact')
+				errorMessage.includes('Non-resolvable parent POM')
+				|| errorMessage.includes('parent.relativePath')
+				|| errorMessage.includes('Could not find artifact')
 			) {
 				this.log(
 					`│  │  │ ⚠️ ${chalk.yellow(pomFileRelativePath)} has parent POM resolution issues, treating as non-parent POM`,
@@ -388,9 +388,9 @@ export default class AggregatorCreate extends Command {
 			const errorMessage = error instanceof Error ? error.message : String(error);
 
 			if (
-				errorMessage.includes('Non-resolvable parent POM') ||
-				errorMessage.includes('parent.relativePath') ||
-				errorMessage.includes('Could not find artifact')
+				errorMessage.includes('Non-resolvable parent POM')
+				|| errorMessage.includes('parent.relativePath')
+				|| errorMessage.includes('Could not find artifact')
 			) {
 				this.log(
 					`│  │  │ ⚠️ Could not process ${chalk.yellow(pomFileRelativePath)} due to parent POM resolution issues: ${errorMessage}`,
@@ -829,8 +829,8 @@ export default class AggregatorCreate extends Command {
 			// Create maven.config
 			const mavenConfigPath = path.join(mvnDir, 'maven.config');
 			const mavenConfig =
-				['--errors', '--no-transfer-progress', '--fail-fast', '--color=always', '--threads=2C'].join('\n') +
-				'\n';
+				['--errors', '--no-transfer-progress', '--fail-fast', '--color=always', '--threads=2C'].join('\n')
+				+ '\n';
 			await fs.writeFile(mavenConfigPath, mavenConfig);
 
 			this.log(`│  │`);
