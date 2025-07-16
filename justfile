@@ -45,9 +45,9 @@ test: build
 #   -g = --language
 #   -t = --topic
 #   -o = --owner
-repo-list USERNAME *FLAGS="": build
-    @echo "🔍 Listing GitHub repositories for {{USERNAME}}..."
-    ./bin/run.js repo:list --owner {{USERNAME}} {{FLAGS}}
+repo-list OWNER *FLAGS="": build
+    @echo "🔍 Listing GitHub repositories for {{OWNER}}..."
+    ./bin/run.js repo:list --owner {{OWNER}} {{FLAGS}}
 
 # Find and validate Maven repositories, then tag them
 find-validate-repos CLEAN="true": build
