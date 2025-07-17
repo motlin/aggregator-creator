@@ -1,13 +1,13 @@
 import {Command, Flags} from '@oclif/core';
 import {execa as execa_} from 'execa';
-import {tagSingleRepository} from '../../utils/tag-single-repo.js';
+import {topicSingleRepository} from '../../utils/topic-single-repo.js';
 import {repositorySchema} from '../../types/repository.js';
 import type {Repository} from '../../types/repository.js';
 
-export default class RepoTag extends Command {
+export default class RepoTopic extends Command {
 	static override args = {};
 
-	static override description = 'Tag a single GitHub repository with a topic';
+	static override description = 'Add a github topic to a single GitHub repository';
 
 	static override enableJsonFlag = true;
 
@@ -31,7 +31,7 @@ export default class RepoTag extends Command {
 		}),
 		topic: Flags.string({
 			char: 't',
-			description: 'Topic to add to the repository',
+			description: 'Github topic to add to the repository',
 			required: true,
 		}),
 		dryRun: Flags.boolean({
@@ -45,9 +45,9 @@ export default class RepoTag extends Command {
 		owner: string;
 		name: string;
 		topics: string[];
-		tagged: boolean;
+		topicAdded: boolean;
 	}> {
-		const {flags} = await this.parse(RepoTag);
+		const {flags} = await this.parse(RepoTopic);
 
 		let repository: Repository;
 
@@ -106,7 +106,7 @@ export default class RepoTag extends Command {
 				name: flags.name,
 				owner: {
 					login: flags.owner,
-					type: 'User', // Default type, not critical for tagging
+					type: 'User', // Default type, not critical for topic operations
 				},
 				language: null,
 				topics: [],
@@ -119,7 +119,7 @@ export default class RepoTag extends Command {
 			};
 		}
 
-		this.log(`╭─── 🏷️  Tagging repository: ${repository.owner.login}/${repository.name}`);
+		this.log(`╭─── 🏷️  Adding github topic to repository: ${repository.owner.login}/${repository.name}`);
 		this.log(`│`);
 
 		const logger = {
@@ -134,7 +134,7 @@ export default class RepoTag extends Command {
 			},
 		};
 
-		const result = await tagSingleRepository({
+		const result = await topicSingleRepository({
 			owner: repository.owner.login,
 			name: repository.name,
 			topic: flags.topic,
@@ -144,25 +144,25 @@ export default class RepoTag extends Command {
 		});
 
 		if (result.success) {
-			if (result.alreadyTagged) {
-				this.log(`├──╯ ✅ Topic '${flags.topic}' already exists`);
+			if (result.alreadyAdded) {
+				this.log(`├──╯ ✅ Github topic '${flags.topic}' already exists`);
 			} else if (flags.dryRun) {
-				this.log(`├──╯ 🔍 [DRY RUN] Would add topic '${flags.topic}'`);
+				this.log(`├──╯ 🔍 [DRY RUN] Would add github topic '${flags.topic}'`);
 			} else {
-				this.log(`├──╯ ✅ Successfully added topic '${flags.topic}'`);
+				this.log(`├──╯ ✅ Successfully added github topic '${flags.topic}'`);
 			}
 		} else {
-			this.log(`├──╯ ❌ Failed to tag repository: ${result.error || 'Unknown error'}`);
+			this.log(`├──╯ ❌ Failed to add github topic to repository: ${result.error || 'Unknown error'}`);
 		}
 
 		this.log(`│`);
-		this.log(`╰─── 🏷️  Tagging complete`);
+		this.log(`╰─── 🏷️  Github topic operation complete`);
 
 		const response = {
 			owner: repository.owner.login,
 			name: repository.name,
 			topics: result.topics || [],
-			tagged: result.success && !result.alreadyTagged,
+			topicAdded: result.success && !result.alreadyAdded && !flags.dryRun,
 		};
 
 		if (!result.success) {

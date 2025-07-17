@@ -4,7 +4,7 @@ import {execa as execa_} from 'execa';
 import {repositorySchema} from '../../types/repository.js';
 import {cloneSingleRepo} from '../../utils/clone-single-repo.js';
 import {type MavenValidationResult, validateMavenRepo} from '../../utils/maven-validation.js';
-import {type TagSingleRepoResult, tagSingleRepository} from '../../utils/tag-single-repo.js';
+import {type TopicSingleRepoResult, topicSingleRepository} from '../../utils/topic-single-repo.js';
 
 export default class RepoProcess extends Command {
 	static override args = {
@@ -14,16 +14,16 @@ export default class RepoProcess extends Command {
 		}),
 	};
 
-	static override description = 'Process a single repository: clone, validate, and tag if valid';
+	static override description = 'Process a single repository: clone, validate, and add github topic if valid';
 
 	static override enableJsonFlag = true;
 
 	static override examples = [
-		'<%= config.bin %> <%= command.id %> ./repos --owner motlin --name JUnit-Java-8-Runner --tag maven',
-		'<%= config.bin %> <%= command.id %> ./repos --owner motlin --name example-repo --tag maven --dryRun --json',
-		'echo \'{"name": "repo", "owner": {"login": "user"}}\' | <%= config.bin %> <%= command.id %> ./repos --tag maven --json',
+		'<%= config.bin %> <%= command.id %> ./repos --owner motlin --name JUnit-Java-8-Runner --topic maven',
+		'<%= config.bin %> <%= command.id %> ./repos --owner motlin --name example-repo --topic maven --dryRun --json',
+		'echo \'{"name": "repo", "owner": {"login": "user"}}\' | <%= config.bin %> <%= command.id %> ./repos --topic maven --json',
 		`<%= config.bin %> repo:list --owner motlin --json | jq -c '.[]' | while read repo; do
-  echo "$repo" | <%= config.bin %> <%= command.id %> ./repos --tag maven --json
+  echo "$repo" | <%= config.bin %> <%= command.id %> ./repos --topic maven --json
 done`,
 	];
 
@@ -38,7 +38,7 @@ done`,
 			description: 'Repository name',
 			required: false,
 		}),
-		tag: Flags.string({
+		topic: Flags.string({
 			char: 't',
 			description: 'GitHub topic to add to validated Maven repositories',
 			required: true,
@@ -69,12 +69,12 @@ done`,
 		path: string;
 		cloned: boolean;
 		valid: boolean;
-		tagged: boolean;
+		topicAdded: boolean;
 		error: string | null;
 	}> {
 		const {args, flags} = await this.parse(RepoProcess);
 		const outputDir = args['output-directory'];
-		const {tag, dryRun} = flags;
+		const {topic, dryRun} = flags;
 
 		// Get repository info from flags or stdin
 		const repoInfo = await this.getRepoInfo(flags);
@@ -101,7 +101,7 @@ done`,
 					path: cloneResult.path,
 					cloned: false,
 					valid: false,
-					tagged: false,
+					topicAdded: false,
 					error: cloneResult.error,
 				};
 
@@ -131,7 +131,7 @@ done`,
 					path: cloneResult.path,
 					cloned: true,
 					valid: false,
-					tagged: false,
+					topicAdded: false,
 					error: 'Not a valid Maven repository',
 				};
 
@@ -140,14 +140,14 @@ done`,
 
 			this.log(`├──╯ ✅ Repository is a valid Maven project`);
 
-			// 3. Tag repository using tagSingleRepository utility
+			// 3. Add topic to repository using topicSingleRepository utility
 			this.log(`│`);
-			this.log(`├──╮ 🏷️ Tagging repository with topic: ${chalk.cyan(tag)}...`);
+			this.log(`├──╮ 🏷️ Adding github topic to repository: ${chalk.cyan(topic)}...`);
 
-			const tagSingleResult: TagSingleRepoResult = await tagSingleRepository({
+			const topicSingleResult: TopicSingleRepoResult = await topicSingleRepository({
 				owner: repoInfo.owner.login,
 				name: repoInfo.name,
-				topic: tag,
+				topic,
 				dryRun,
 				execa: execa_,
 				logger: {
@@ -163,8 +163,10 @@ done`,
 				},
 			});
 
-			if (!tagSingleResult.success) {
-				this.log(`├──╯ ❌ Failed to tag repository: ${tagSingleResult.error || 'Unknown error'}`);
+			if (!topicSingleResult.success) {
+				this.log(
+					`├──╯ ❌ Failed to add github topic to repository: ${topicSingleResult.error || 'Unknown error'}`,
+				);
 				this.log(`├──╯`);
 				this.log(`│`);
 				this.log(`╰─── ❌ Processing failed`);
@@ -174,27 +176,27 @@ done`,
 					path: cloneResult.path,
 					cloned: true,
 					valid: true,
-					tagged: false,
-					error: `Failed to tag repository: ${tagSingleResult.error || 'Unknown error'}`,
+					topicAdded: false,
+					error: `Failed to add github topic to repository: ${topicSingleResult.error || 'Unknown error'}`,
 				};
 
 				return result;
 			}
 
-			// Map TagSingleRepoResult to expected format
-			const tagResult = {
-				owner: tagSingleResult.owner,
-				name: tagSingleResult.name,
-				topics: tagSingleResult.topics || [],
-				tagged: tagSingleResult.success && !tagSingleResult.alreadyTagged,
+			// Map TopicSingleRepoResult to expected format
+			const topicResult = {
+				owner: topicSingleResult.owner,
+				name: topicSingleResult.name,
+				topics: topicSingleResult.topics || [],
+				topicAdded: topicSingleResult.success && !topicSingleResult.alreadyAdded,
 			};
 
-			if (tagResult.tagged) {
-				this.log(`├──╯ ✅ Repository tagged with topic: ${chalk.cyan(tag)}`);
+			if (topicResult.topicAdded) {
+				this.log(`├──╯ ✅ Repository github topic added: ${chalk.cyan(topic)}`);
 			} else if (dryRun) {
-				this.log(`├──╯ 🔵 [DRY RUN] Would tag repository with topic: ${chalk.cyan(tag)}`);
+				this.log(`├──╯ 🔵 [DRY RUN] Would add github topic to repository: ${chalk.cyan(topic)}`);
 			} else {
-				this.log(`├──╯ ℹ️ Repository already has topic: ${chalk.cyan(tag)}`);
+				this.log(`├──╯ ℹ️ Repository already has github topic: ${chalk.cyan(topic)}`);
 			}
 
 			this.log(`├──╯`);
@@ -207,8 +209,8 @@ done`,
 				path: cloneResult.path,
 				cloned: cloneResult.cloned || cloneResult.skipped,
 				valid: true,
-				tagged: tagResult.tagged,
-				topics: tagResult.topics,
+				topicAdded: topicResult.topicAdded,
+				topics: topicResult.topics,
 				error: null,
 			};
 
@@ -258,7 +260,7 @@ done`,
 						suggestions: [
 							'Ensure the input is valid JSON',
 							'The input should contain "name" and "owner.login" fields',
-							'Example: echo \'{"name": "repo", "owner": {"login": "user"}}\' | aggregator repo:process ./output --tag maven',
+							'Example: echo \'{"name": "repo", "owner": {"login": "user"}}\' | aggregator repo:process ./output --topic maven',
 						],
 					});
 				}
@@ -272,7 +274,7 @@ done`,
 			suggestions: [
 				'Provide --owner and --name flags',
 				'Or pipe repository JSON from stdin',
-				'Example: aggregator repo:process ./output --owner motlin --name JUnit-Java-8-Runner --tag maven',
+				'Example: aggregator repo:process ./output --owner motlin --name JUnit-Java-8-Runner --topic maven',
 			],
 		});
 	}

@@ -1,10 +1,10 @@
 import {expect} from 'chai';
 import {restore, spy, stub} from 'sinon';
-import {tagSingleRepository} from '../../src/utils/tag-single-repo.js';
+import {topicSingleRepository} from '../../src/utils/topic-single-repo.js';
 
 type MockExeca = ReturnType<typeof stub>;
 
-describe('tagSingleRepository', () => {
+describe('topicSingleRepository', () => {
 	let execaStub: MockExeca;
 	let logger: {
 		log: ReturnType<typeof spy>;
@@ -25,7 +25,7 @@ describe('tagSingleRepository', () => {
 		restore();
 	});
 
-	it('tags a repository successfully', async () => {
+	it('adds topic to a repository successfully', async () => {
 		// Mock getting current topics
 		execaStub.withArgs('gh', ['api', 'repos/owner/repo/topics', '--method', 'GET']).resolves({
 			exitCode: 0,
@@ -51,11 +51,11 @@ describe('tagSingleRepository', () => {
 				stderr: '',
 			});
 
-		const result = await tagSingleRepository({
+		const result = await topicSingleRepository({
 			owner: 'owner',
 			name: 'repo',
 			topic: 'new-topic',
-			execa: execaStub as Parameters<typeof tagSingleRepository>[0]['execa'],
+			execa: execaStub as Parameters<typeof topicSingleRepository>[0]['execa'],
 			logger,
 		});
 
@@ -65,7 +65,7 @@ describe('tagSingleRepository', () => {
 			name: 'repo',
 			topic: 'new-topic',
 			topics: ['existing-topic', 'new-topic'],
-			alreadyTagged: false,
+			alreadyAdded: false,
 		});
 
 		expect(execaStub.callCount).to.equal(2);
@@ -78,11 +78,11 @@ describe('tagSingleRepository', () => {
 			stderr: '',
 		});
 
-		const result = await tagSingleRepository({
+		const result = await topicSingleRepository({
 			owner: 'owner',
 			name: 'repo',
 			topic: 'target-topic',
-			execa: execaStub as Parameters<typeof tagSingleRepository>[0]['execa'],
+			execa: execaStub as Parameters<typeof topicSingleRepository>[0]['execa'],
 			logger,
 		});
 
@@ -92,7 +92,7 @@ describe('tagSingleRepository', () => {
 			name: 'repo',
 			topic: 'target-topic',
 			topics: ['existing-topic', 'target-topic'],
-			alreadyTagged: true,
+			alreadyAdded: true,
 		});
 
 		expect(execaStub.callCount).to.equal(1);
@@ -106,12 +106,12 @@ describe('tagSingleRepository', () => {
 			stderr: '',
 		});
 
-		const result = await tagSingleRepository({
+		const result = await topicSingleRepository({
 			owner: 'owner',
 			name: 'repo',
 			topic: 'new-topic',
 			dryRun: true,
-			execa: execaStub as Parameters<typeof tagSingleRepository>[0]['execa'],
+			execa: execaStub as Parameters<typeof topicSingleRepository>[0]['execa'],
 			logger,
 		});
 
@@ -121,7 +121,7 @@ describe('tagSingleRepository', () => {
 			name: 'repo',
 			topic: 'new-topic',
 			topics: ['existing-topic', 'new-topic'],
-			alreadyTagged: false,
+			alreadyAdded: false,
 		});
 
 		expect(execaStub.callCount).to.equal(1);
@@ -135,11 +135,11 @@ describe('tagSingleRepository', () => {
 			stderr: 'Not found',
 		});
 
-		const result = await tagSingleRepository({
+		const result = await topicSingleRepository({
 			owner: 'owner',
 			name: 'repo',
 			topic: 'new-topic',
-			execa: execaStub as Parameters<typeof tagSingleRepository>[0]['execa'],
+			execa: execaStub as Parameters<typeof topicSingleRepository>[0]['execa'],
 			logger,
 		});
 
@@ -161,11 +161,11 @@ describe('tagSingleRepository', () => {
 			stderr: '',
 		});
 
-		const result = await tagSingleRepository({
+		const result = await topicSingleRepository({
 			owner: 'owner',
 			name: 'repo',
 			topic: 'new-topic',
-			execa: execaStub as Parameters<typeof tagSingleRepository>[0]['execa'],
+			execa: execaStub as Parameters<typeof topicSingleRepository>[0]['execa'],
 			logger,
 		});
 
@@ -198,11 +198,11 @@ describe('tagSingleRepository', () => {
 				stderr: 'Permission denied',
 			});
 
-		const result = await tagSingleRepository({
+		const result = await topicSingleRepository({
 			owner: 'owner',
 			name: 'repo',
 			topic: 'new-topic',
-			execa: execaStub as Parameters<typeof tagSingleRepository>[0]['execa'],
+			execa: execaStub as Parameters<typeof topicSingleRepository>[0]['execa'],
 			logger,
 		});
 
@@ -220,11 +220,11 @@ describe('tagSingleRepository', () => {
 	it('handles exceptions during execution', async () => {
 		execaStub.rejects(new Error('Network error'));
 
-		const result = await tagSingleRepository({
+		const result = await topicSingleRepository({
 			owner: 'owner',
 			name: 'repo',
 			topic: 'new-topic',
-			execa: execaStub as Parameters<typeof tagSingleRepository>[0]['execa'],
+			execa: execaStub as Parameters<typeof topicSingleRepository>[0]['execa'],
 			logger,
 		});
 
@@ -236,7 +236,8 @@ describe('tagSingleRepository', () => {
 			error: 'Network error',
 		});
 
-		expect(logger.error.calledWith('Failed to tag repository owner/repo: Network error', {exit: false})).to.be.true;
+		expect(logger.error.calledWith('Failed to add topic to repository owner/repo: Network error', {exit: false})).to
+			.be.true;
 	});
 
 	it('works without a logger', async () => {
@@ -263,11 +264,11 @@ describe('tagSingleRepository', () => {
 				stderr: '',
 			});
 
-		const result = await tagSingleRepository({
+		const result = await topicSingleRepository({
 			owner: 'owner',
 			name: 'repo',
 			topic: 'new-topic',
-			execa: execaStub as Parameters<typeof tagSingleRepository>[0]['execa'],
+			execa: execaStub as Parameters<typeof topicSingleRepository>[0]['execa'],
 		});
 
 		expect(result).to.deep.equal({
@@ -276,7 +277,7 @@ describe('tagSingleRepository', () => {
 			name: 'repo',
 			topic: 'new-topic',
 			topics: ['existing-topic', 'new-topic'],
-			alreadyTagged: false,
+			alreadyAdded: false,
 		});
 	});
 
@@ -295,11 +296,11 @@ describe('tagSingleRepository', () => {
 				stderr: '',
 			});
 
-		const result = await tagSingleRepository({
+		const result = await topicSingleRepository({
 			owner: 'owner',
 			name: 'repo',
 			topic: 'new-topic',
-			execa: execaStub as Parameters<typeof tagSingleRepository>[0]['execa'],
+			execa: execaStub as Parameters<typeof topicSingleRepository>[0]['execa'],
 			logger,
 		});
 
@@ -309,7 +310,7 @@ describe('tagSingleRepository', () => {
 			name: 'repo',
 			topic: 'new-topic',
 			topics: ['new-topic'],
-			alreadyTagged: false,
+			alreadyAdded: false,
 		});
 	});
 });

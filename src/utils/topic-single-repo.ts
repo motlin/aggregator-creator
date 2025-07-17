@@ -1,7 +1,7 @@
 import {execa as execa_} from 'execa';
 import {githubTopicsResponseSchema} from '../types/repository.js';
 
-export interface TagSingleRepoOptions {
+export interface TopicSingleRepoOptions {
 	owner: string;
 	name: string;
 	topic: string;
@@ -14,17 +14,17 @@ export interface TagSingleRepoOptions {
 	};
 }
 
-export interface TagSingleRepoResult {
+export interface TopicSingleRepoResult {
 	success: boolean;
 	owner: string;
 	name: string;
 	topic: string;
 	topics?: string[];
-	alreadyTagged?: boolean;
+	alreadyAdded?: boolean;
 	error?: string;
 }
 
-export async function tagSingleRepository(options: TagSingleRepoOptions): Promise<TagSingleRepoResult> {
+export async function topicSingleRepository(options: TopicSingleRepoOptions): Promise<TopicSingleRepoResult> {
 	const {owner, name, topic, dryRun = false, execa = execa_, logger} = options;
 
 	try {
@@ -77,7 +77,7 @@ export async function tagSingleRepository(options: TagSingleRepoOptions): Promis
 				name,
 				topic,
 				topics,
-				alreadyTagged: true,
+				alreadyAdded: true,
 			};
 		}
 
@@ -93,7 +93,7 @@ export async function tagSingleRepository(options: TagSingleRepoOptions): Promis
 				name,
 				topic,
 				topics,
-				alreadyTagged: false,
+				alreadyAdded: false,
 			};
 		}
 
@@ -126,12 +126,12 @@ export async function tagSingleRepository(options: TagSingleRepoOptions): Promis
 			name,
 			topic,
 			topics,
-			alreadyTagged: false,
+			alreadyAdded: false,
 		};
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : String(error);
 		if (logger) {
-			logger.error(`Failed to tag repository ${owner}/${name}: ${errorMessage}`, {exit: false});
+			logger.error(`Failed to add topic to repository ${owner}/${name}: ${errorMessage}`, {exit: false});
 		}
 		return {
 			success: false,

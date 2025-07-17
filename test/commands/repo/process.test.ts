@@ -42,7 +42,7 @@ describe('repo:process', () => {
 	});
 
 	it('should error when no input is provided', async () => {
-		const result = await runCommand(['repo:process', outputDir, '--tag', 'maven', '--json'], root);
+		const result = await runCommand(['repo:process', outputDir, '--topic', 'maven', '--json'], root);
 		expect(result).to.deep.equal({
 			result: undefined,
 			stdout:
@@ -56,7 +56,7 @@ describe('repo:process', () => {
 							suggestions: [
 								'Provide --owner and --name flags',
 								'Or pipe repository JSON from stdin',
-								'Example: aggregator repo:process ./output --owner motlin --name JUnit-Java-8-Runner --tag maven',
+								'Example: aggregator repo:process ./output --owner motlin --name JUnit-Java-8-Runner --topic maven',
 							],
 						},
 					},
@@ -67,12 +67,12 @@ describe('repo:process', () => {
 		});
 	});
 
-	it('should error when missing required tag flag', async () => {
+	it('should error when missing required topic flag', async () => {
 		const result = await runCommand(['repo:process', outputDir, '--owner', 'test', '--name', 'repo'], root);
 		// Missing required flags causes oclif to exit without JSON output
 		// Create expected error matching actual error structure
 		const expectedError = new Error(
-			'The following error occurred:\n  Missing required flag tag\nSee more help with --help',
+			'The following error occurred:\n  Missing required flag topic\nSee more help with --help',
 		) as ExtendedError;
 		expectedError.code = undefined;
 		expectedError.oclif = {exit: 2};
@@ -89,7 +89,10 @@ describe('repo:process', () => {
 	});
 
 	it('should error when missing output directory', async () => {
-		const result = await runCommand(['repo:process', '--tag', 'maven', '--owner', 'test', '--name', 'repo'], root);
+		const result = await runCommand(
+			['repo:process', '--topic', 'maven', '--owner', 'test', '--name', 'repo'],
+			root,
+		);
 		// Missing required arguments causes oclif to exit without JSON output
 		// Create expected error matching actual error structure
 		const expectedError = new Error(
@@ -113,7 +116,7 @@ describe('repo:process', () => {
 	it('should accept flags for repository info', async () => {
 		// Note: This will fail at the clone step since we're not mocking git
 		const result = await runCommand(
-			['repo:process', outputDir, '--owner', 'test-user', '--name', 'test-repo', '--tag', 'maven', '--json'],
+			['repo:process', outputDir, '--owner', 'test-user', '--name', 'test-repo', '--topic', 'maven', '--json'],
 			root,
 		);
 
@@ -124,7 +127,7 @@ describe('repo:process', () => {
 			path: expectedPath,
 			cloned: false,
 			valid: false,
-			tagged: false,
+			topicAdded: false,
 			error: `Command failed with exit code 1: gh repo clone test-user/test-repo ${expectedPath}\n\nGraphQL: Could not resolve to a Repository with the name 'test-user/test-repo'. (repository)`,
 		};
 
@@ -137,7 +140,7 @@ describe('repo:process', () => {
 
 	it('should show non-JSON output when --json flag is not provided', async () => {
 		const result = await runCommand(
-			['repo:process', outputDir, '--owner', 'test-user', '--name', 'test-repo', '--tag', 'maven'],
+			['repo:process', outputDir, '--owner', 'test-user', '--name', 'test-repo', '--topic', 'maven'],
 			root,
 		);
 
@@ -148,7 +151,7 @@ describe('repo:process', () => {
 			path: expectedPath,
 			cloned: false,
 			valid: false,
-			tagged: false,
+			topicAdded: false,
 			error: `Command failed with exit code 1: gh repo clone test-user/test-repo ${expectedPath}\n\nGraphQL: Could not resolve to a Repository with the name 'test-user/test-repo'. (repository)`,
 		};
 
@@ -170,7 +173,7 @@ describe('repo:process', () => {
 				'test-user',
 				'--name',
 				'test-repo',
-				'--tag',
+				'--topic',
 				'maven',
 				'--dryRun',
 				'--json',
@@ -185,7 +188,7 @@ describe('repo:process', () => {
 			path: expectedPath,
 			cloned: false,
 			valid: false,
-			tagged: false,
+			topicAdded: false,
 			error: `Command failed with exit code 1: gh repo clone test-user/test-repo ${expectedPath}\n\nGraphQL: Could not resolve to a Repository with the name 'test-user/test-repo'. (repository)`,
 		};
 
@@ -207,7 +210,7 @@ describe('repo:process', () => {
 				'test-user',
 				'--name',
 				'test-repo',
-				'--tag',
+				'--topic',
 				'maven',
 				'--verbose',
 				'--json',
@@ -222,7 +225,7 @@ describe('repo:process', () => {
 			path: expectedPath,
 			cloned: false,
 			valid: false,
-			tagged: false,
+			topicAdded: false,
 			error: `Command failed with exit code 1: gh repo clone test-user/test-repo ${expectedPath}\n\nGraphQL: Could not resolve to a Repository with the name 'test-user/test-repo'. (repository)`,
 		};
 

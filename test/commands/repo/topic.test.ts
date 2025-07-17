@@ -16,7 +16,7 @@ interface ExtendedError extends Error {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '../../..');
 
-describe('repo:tag', () => {
+describe('repo:topic', () => {
 	const sandbox = createSandbox();
 
 	beforeEach(() => {
@@ -36,7 +36,7 @@ describe('repo:tag', () => {
 
 	describe('with flags', () => {
 		it('should error when missing required flags', async () => {
-			const result = await runCommand(['repo:tag', '--topic', 'maven', '--json'], root);
+			const result = await runCommand(['repo:topic', '--topic', 'maven', '--json'], root);
 			expect(result).to.deep.equal({
 				result: undefined,
 				stdout:
@@ -50,7 +50,7 @@ describe('repo:tag', () => {
 								suggestions: [
 									'Provide both --owner and --name flags',
 									'Or pipe repository JSON to stdin',
-									'Example: aggregator repo:tag --owner motlin --name JUnit-Java-8-Runner --topic maven',
+									'Example: aggregator repo:topic --owner motlin --name JUnit-Java-8-Runner --topic maven',
 								],
 							},
 						},
@@ -62,7 +62,7 @@ describe('repo:tag', () => {
 		});
 
 		it('should error when missing topic flag', async () => {
-			const result = await runCommand(['repo:tag', '--owner', 'motlin', '--name', 'test-repo'], root);
+			const result = await runCommand(['repo:topic', '--owner', 'motlin', '--name', 'test-repo'], root);
 			// Missing required flags causes oclif to exit without JSON output
 			// Create expected error matching actual error structure
 			const expectedError = new Error(
@@ -86,7 +86,7 @@ describe('repo:tag', () => {
 			// Use a non-existent repository to trigger an API error
 			const {stdout} = await runCommand(
 				[
-					'repo:tag',
+					'repo:topic',
 					'--owner',
 					'non-existent-user-12345',
 					'--name',
@@ -113,26 +113,26 @@ describe('repo:tag', () => {
 		it('should handle dry run mode', async () => {
 			// Note: This will still try to fetch topics but won't update them
 			const result = await runCommand(
-				['repo:tag', '--owner', 'octocat', '--name', 'Hello-World', '--topic', 'maven', '--dryRun'],
+				['repo:topic', '--owner', 'octocat', '--name', 'Hello-World', '--topic', 'maven', '--dryRun'],
 				root,
 			);
 
 			// In dry run mode, it should fetch existing topics and show what would be done
 			expect(result).to.deep.equal({
-				stdout: "╭─── 🏷️  Tagging repository: octocat/Hello-World\n│\n[DRY RUN] Would add topic maven to octocat/Hello-World\n├──╯ 🔍 [DRY RUN] Would add topic 'maven'\n│\n╰─── 🏷️  Tagging complete\n",
+				stdout: "╭─── 🏷️  Adding github topic to repository: octocat/Hello-World\n│\n[DRY RUN] Would add topic maven to octocat/Hello-World\n├──╯ 🔍 [DRY RUN] Would add github topic 'maven'\n│\n╰─── 🏷️  Github topic operation complete\n",
 				stderr: '',
 				result: {
 					owner: 'octocat',
 					name: 'Hello-World',
 					topics: ['maven'],
-					tagged: true,
+					topicAdded: false,
 				},
 			});
 		});
 
 		it('should return JSON output with --json flag on error', async () => {
 			const {stdout} = await runCommand(
-				['repo:tag', '--owner', 'octocat', '--name', 'Hello-World', '--topic', 'maven', '--json'],
+				['repo:topic', '--owner', 'octocat', '--name', 'Hello-World', '--topic', 'maven', '--json'],
 				root,
 			);
 
