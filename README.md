@@ -189,7 +189,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 * [`aggregator repo clone`](#aggregator-repo-clone)
 * [`aggregator repo list`](#aggregator-repo-list)
 * [`aggregator repo process OUTPUT-DIRECTORY`](#aggregator-repo-process-output-directory)
-* [`aggregator repo tag`](#aggregator-repo-tag)
+* [`aggregator repo topic`](#aggregator-repo-topic)
 * [`aggregator repo validate REPOPATH`](#aggregator-repo-validate-repopath)
 
 ## `aggregator aggregator create [DIRECTORY]`
@@ -335,7 +335,7 @@ _See code: [src/commands/repo/list.ts](https://github.com/motlin/aggregator-crea
 
 ## `aggregator repo process OUTPUT-DIRECTORY`
 
-Process a single repository: clone, validate, and tag if valid
+Process a single repository: clone, validate, and add github topic if valid
 
 ```
 USAGE
@@ -348,60 +348,60 @@ FLAGS
   -d, --dryRun         Show what would be done without making actual changes
   -n, --name=<value>   Repository name
   -o, --owner=<value>  GitHub username or organization
-  -t, --tag=<value>    (required) GitHub topic to add to validated Maven repositories
+  -t, --topic=<value>  (required) GitHub topic to add to validated Maven repositories
   -v, --verbose        Show verbose output during operation
 
 GLOBAL FLAGS
   --json  Format output as json.
 
 DESCRIPTION
-  Process a single repository: clone, validate, and tag if valid
+  Process a single repository: clone, validate, and add github topic if valid
 
 EXAMPLES
-  $ aggregator repo process ./repos --owner motlin --name JUnit-Java-8-Runner --tag maven
+  $ aggregator repo process ./repos --owner motlin --name JUnit-Java-8-Runner --topic maven
 
-  $ aggregator repo process ./repos --owner motlin --name example-repo --tag maven --dryRun --json
+  $ aggregator repo process ./repos --owner motlin --name example-repo --topic maven --dryRun --json
 
-  echo '{"name": "repo", "owner": {"login": "user"}}' | aggregator repo process ./repos --tag maven --json
+  echo '{"name": "repo", "owner": {"login": "user"}}' | aggregator repo process ./repos --topic maven --json
 
   $ aggregator repo:list --owner motlin --json | jq -c '.[]' | while read repo; do
-    echo "$repo" | aggregator repo process ./repos --tag maven --json
+    echo "$repo" | aggregator repo process ./repos --topic maven --json
   done
 ```
 
 _See code: [src/commands/repo/process.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/process.ts)_
 
-## `aggregator repo tag`
+## `aggregator repo topic`
 
-Tag a single GitHub repository with a topic
+Add a github topic to a single GitHub repository
 
 ```
 USAGE
-  $ aggregator repo tag -t <value> [--json] [-o <value>] [-n <value>] [-d]
+  $ aggregator repo topic -t <value> [--json] [-o <value>] [-n <value>] [-d]
 
 FLAGS
   -d, --dryRun         Show what would be done without making changes
   -n, --name=<value>   Repository name (required when not using stdin)
   -o, --owner=<value>  GitHub username or organization (required when not using stdin)
-  -t, --topic=<value>  (required) Topic to add to the repository
+  -t, --topic=<value>  (required) Github topic to add to the repository
 
 GLOBAL FLAGS
   --json  Format output as json.
 
 DESCRIPTION
-  Tag a single GitHub repository with a topic
+  Add a github topic to a single GitHub repository
 
 EXAMPLES
-  $ aggregator repo tag --owner motlin --name JUnit-Java-8-Runner --topic maven
+  $ aggregator repo topic --owner motlin --name JUnit-Java-8-Runner --topic maven
 
-  $ aggregator repo tag --owner motlin --name JUnit-Java-8-Runner --topic maven --dryRun
+  $ aggregator repo topic --owner motlin --name JUnit-Java-8-Runner --topic maven --dryRun
 
-  echo '{"name": "JUnit-Java-8-Runner", "owner": {"login": "motlin"}}' | aggregator repo tag --topic maven
+  echo '{"name": "JUnit-Java-8-Runner", "owner": {"login": "motlin"}}' | aggregator repo topic --topic maven
 
-  $ aggregator repo:list --owner motlin --limit 1 --json | jq -c '.[0]' | aggregator repo tag --topic maven
+  $ aggregator repo:list --owner motlin --limit 1 --json | jq -c '.[0]' | aggregator repo topic --topic maven
 ```
 
-_See code: [src/commands/repo/tag.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/tag.ts)_
+_See code: [src/commands/repo/topic.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/topic.ts)_
 
 ## `aggregator repo validate REPOPATH`
 
