@@ -6,7 +6,7 @@ import {createSandbox} from 'sinon';
 
 interface ExtendedError extends Error {
 	code?: string;
-	oclif?: { exit: number };
+	oclif?: {exit: number};
 	skipOclifErrorHandling?: boolean;
 	suggestions?: string[];
 	showHelp?: boolean;
@@ -65,9 +65,11 @@ describe('repo:tag', () => {
 			const result = await runCommand(['repo:tag', '--owner', 'motlin', '--name', 'test-repo'], root);
 			// Missing required flags causes oclif to exit without JSON output
 			// Create expected error matching actual error structure
-			const expectedError = new Error('The following error occurred:\n  Missing required flag topic\nSee more help with --help') as ExtendedError;
+			const expectedError = new Error(
+				'The following error occurred:\n  Missing required flag topic\nSee more help with --help',
+			) as ExtendedError;
 			expectedError.code = undefined;
-			expectedError.oclif = { exit: 2 };
+			expectedError.oclif = {exit: 2};
 			expectedError.skipOclifErrorHandling = undefined;
 			expectedError.suggestions = undefined;
 			expectedError.showHelp = false;
@@ -76,7 +78,7 @@ describe('repo:tag', () => {
 			expect(result).to.deep.equal({
 				stdout: '',
 				stderr: '',
-				error: expectedError
+				error: expectedError,
 			});
 		});
 
@@ -117,14 +119,14 @@ describe('repo:tag', () => {
 
 			// In dry run mode, it should fetch existing topics and show what would be done
 			expect(result).to.deep.equal({
-				stdout: '╭─── 🏷️  Tagging repository: octocat/Hello-World\n│\n[DRY RUN] Would add topic maven to octocat/Hello-World\n├──╯ 🔍 [DRY RUN] Would add topic \'maven\'\n│\n╰─── 🏷️  Tagging complete\n',
+				stdout: "╭─── 🏷️  Tagging repository: octocat/Hello-World\n│\n[DRY RUN] Would add topic maven to octocat/Hello-World\n├──╯ 🔍 [DRY RUN] Would add topic 'maven'\n│\n╰─── 🏷️  Tagging complete\n",
 				stderr: '',
 				result: {
 					owner: 'octocat',
 					name: 'Hello-World',
 					topics: ['maven'],
-					tagged: true
-				}
+					tagged: true,
+				},
 			});
 		});
 
