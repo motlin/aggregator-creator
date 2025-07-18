@@ -17,8 +17,8 @@ CLI tool that creates Maven aggregator POMs from a set of repositories. Maven ag
 * [Run the workflow test](#run-the-workflow-test)
 * [Run workflow test and keep temporary files](#run-workflow-test-and-keep-temporary-files)
 * [Use exit codes to filter - only process repositories that validate successfully](#use-exit-codes-to-filter---only-process-repositories-that-validate-successfully)
-* [Clone all repositories but only tag Java repositories](#clone-all-repositories-but-only-tag-java-repositories)
-* [See what would be tagged without making changes](#see-what-would-be-tagged-without-making-changes)
+* [Clone all repositories but only topic Java repositories](#clone-all-repositories-but-only-topic-java-repositories)
+* [See what would be topiced without making changes](#see-what-would-be-topiced-without-making-changes)
 * [Directory Structure](#directory-structure)
 * [License](#license)
 * [Commands](#commands)
@@ -31,7 +31,7 @@ The aggregator-creator CLI tool helps you manage Maven repositories and create M
 1. Find Maven repositories on GitHub using various filters
 2. Clone repositories to your local machine
 3. Validate which repositories contain valid Maven projects
-4. Tag repositories on GitHub to categorize them
+4. Topic repositories on GitHub to categorize them
 5. Create a Maven aggregator POM that combines multiple repositories
 
 This tool is especially useful for organizations with modular projects that need to be built together.
@@ -53,8 +53,8 @@ The main command groups include:
 **Single Repository Commands:**
 - `repo:clone` - Clone a single GitHub repository
 - `repo:validate` - Validate a single Maven repository
-- `repo:tag` - Tag a single GitHub repository with a topic
-- `repo:process` - Process a single repository (clone, validate, and tag)
+- `repo:topic` - Topic a single GitHub repository with a topic
+- `repo:process` - Process a single repository (clone, validate, and topic)
 
 **Multiple Repository Commands:**
 - `repo:list` - Find GitHub repositories matching specific criteria
@@ -73,14 +73,14 @@ There are two approaches to process repositories:
 Use `repo:process` to handle each repository individually:
 
 1. **Find repositories:** Use `repo:list` to find repositories with specific criteria
-2. **Process each repository:** Pipe each repository to `repo:process` which handles cloning, validation, and tagging
+2. **Process each repository:** Pipe each repository to `repo:process` which handles cloning, validation, and topicing
 3. **Create aggregator:** Use `aggregator:create` to generate an aggregator POM from the processed repositories
 
 Example:
 ```bash
 # Process repositories individually
 ./bin/run.js repo:list --owner motlin --language Java --json | jq -c '.[]' | while read repo; do
-  echo "$repo" | ./bin/run.js repo:process ./repos --tag maven --json
+  echo "$repo" | ./bin/run.js repo:process ./repos --topic maven --json
 done
 
 # Then create the aggregator
@@ -105,7 +105,7 @@ The single-repository commands can be composed in various ways for different use
 ```bash
 # Use exit codes to filter - only process repositories that validate successfully
 ./bin/run.js repo:list --owner motlin --json | jq -c '.[]' | while read repo; do
-  if echo "$repo" | ./bin/run.js repo:process ./repos --tag maven --json 2>/dev/null; then
+  if echo "$repo" | ./bin/run.js repo:process ./repos --topic maven --json 2>/dev/null; then
     echo "Processed valid repository"
   fi
 done
@@ -113,7 +113,7 @@ done
 
 ### Selective processing with custom logic
 ```bash
-# Clone all repositories but only tag Java repositories
+# Clone all repositories but only topic Java repositories
 ./bin/run.js repo:list --owner motlin --json | jq -c '.[]' | while read repo; do
   REPO_NAME=$(echo "$repo" | jq -r '.name')
   REPO_OWNER=$(echo "$repo" | jq -r '.owner.login')
@@ -124,9 +124,9 @@ done
 
   # Validate
   if ./bin/run.js repo:validate "./repos/$REPO_OWNER/$REPO_NAME"; then
-    # Only tag if it's a Java repository
+    # Only topic if it's a Java repository
     if [ "$LANGUAGE" = "Java" ]; then
-      ./bin/run.js repo:tag --owner "$REPO_OWNER" --name "$REPO_NAME" --topic maven
+      ./bin/run.js repo:topic --owner "$REPO_OWNER" --name "$REPO_NAME" --topic maven
     fi
   fi
 done
@@ -134,9 +134,9 @@ done
 
 ### Dry run to preview changes
 ```bash
-# See what would be tagged without making changes
+# See what would be topiced without making changes
 ./bin/run.js repo:list --owner motlin --topic java --json | jq -c '.[]' | while read repo; do
-  echo "$repo" | ./bin/run.js repo:process ./repos --tag maven --dryRun --json
+  echo "$repo" | ./bin/run.js repo:process ./repos --topic maven --dryRun --json
 done | jq -s 'map(select(.valid == true))'
 ```
 

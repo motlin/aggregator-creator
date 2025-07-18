@@ -49,7 +49,7 @@ repo-list OWNER *FLAGS="": build
     @echo "🔍 Listing GitHub repositories for {{OWNER}}..."
     ./bin/run.js repo:list --owner {{OWNER}} {{FLAGS}}
 
-# Find and validate Maven repositories, then tag them
+# Find and validate Maven repositories, then topic them
 find-validate-repos CLEAN="true": build
     #!/usr/bin/env bash
     set -e
@@ -112,8 +112,8 @@ find-validate-repos CLEAN="true": build
 
     # Step 2: Process each repository individually using repo:process
     echo ""
-    echo "Step 2: Process repositories (clone, validate, tag)"
-    echo "📋 Manual command: cat ${LIST_OUTPUT} | jq -c '.[]' | while read repo; do echo \"\$repo\" | ./bin/run.js repo:process ${REPOS_DIR} --tag maven --json; done"
+    echo "Step 2: Process repositories (clone, validate, topic)"
+    echo "📋 Manual command: cat ${LIST_OUTPUT} | jq -c '.[]' | while read repo; do echo \"\$repo\" | ./bin/run.js repo:process ${REPOS_DIR} --topic maven --json; done"
 
     # Store results for summary
     RESULTS_FILE="${TEST_DIR}/process-results.jsonl"
@@ -128,16 +128,16 @@ find-validate-repos CLEAN="true": build
         echo "🔄 Processing ${REPO_OWNER}/${REPO_NAME}..."
 
         # Run repo:process and capture the result
-        if RESULT=$(echo "$repo" | ./bin/run.js repo:process "${REPOS_DIR}" --tag maven --json 2>&1); then
+        if RESULT=$(echo "$repo" | ./bin/run.js repo:process "${REPOS_DIR}" --topic maven --json 2>&1); then
             # Save result to file
             echo "$RESULT" >> "${RESULTS_FILE}"
 
             # Parse the JSON result
             if echo "$RESULT" | jq -e '.valid == true' > /dev/null 2>&1; then
-                if echo "$RESULT" | jq -e '.tagged == true' > /dev/null 2>&1; then
-                    echo "  ✅ Valid Maven repository - tagged with 'maven'"
+                if echo "$RESULT" | jq -e '.topicAdded == true' > /dev/null 2>&1; then
+                    echo "  ✅ Valid Maven repository - topiced with 'maven'"
                 else
-                    echo "  ✅ Valid Maven repository - already tagged"
+                    echo "  ✅ Valid Maven repository - already topiced"
                 fi
             else
                 echo "  ❌ Not a valid Maven repository"
@@ -152,13 +152,13 @@ find-validate-repos CLEAN="true": build
     # Calculate summary from results file
     TOTAL_COUNT=$(wc -l < "${RESULTS_FILE}")
     VALID_COUNT=$(cat "${RESULTS_FILE}" | jq -r 'select(.valid == true)' | wc -l)
-    TAGGED_COUNT=$(cat "${RESULTS_FILE}" | jq -r 'select(.valid == true and .tagged == true)' | wc -l)
+    TOPICED_COUNT=$(cat "${RESULTS_FILE}" | jq -r 'select(.valid == true and .topicAdded == true)' | wc -l)
 
     echo ""
     echo "📊 Summary:"
     echo "  - Total repositories processed: ${TOTAL_COUNT}"
     echo "  - Valid Maven repositories: ${VALID_COUNT}"
-    echo "  - Repositories tagged: ${TAGGED_COUNT}"
+    echo "  - Repositories topiced: ${TOPICED_COUNT}"
 
     echo ""
     echo "✅ Find and validate workflow completed!"
@@ -174,8 +174,8 @@ find-validate-repos CLEAN="true": build
         echo "rm -rf \"${TEST_DIR}\""
     fi
 
-# Create aggregator from repositories already tagged with 'maven' topic
-create-aggregator-from-tagged CLEAN="true": build
+# Create aggregator from repositories already topiced with 'maven' topic
+create-aggregator-from-topiced CLEAN="true": build
     #!/usr/bin/env bash
     set -e
 
@@ -183,7 +183,7 @@ create-aggregator-from-tagged CLEAN="true": build
     TEST_DIR="$(mktemp -d -t oclif-create-aggregator-XXXXXXXX)"
     MAVEN_REPOS="${TEST_DIR}/maven-repos"
 
-    echo "🏗️  Creating aggregator from maven-tagged repositories"
+    echo "🏗️  Creating aggregator from maven-topiced repositories"
     echo "📂 Test Directory: ${TEST_DIR}"
     mkdir -p "${MAVEN_REPOS}"
 
@@ -226,12 +226,12 @@ create-aggregator-from-tagged CLEAN="true": build
     run_command "1" "List repositories with 'maven' topic" "${MAVEN_LIST_CMD}" "> ${MAVEN_LIST_OUTPUT}"
 
     REPO_COUNT=$(cat "${MAVEN_LIST_OUTPUT}" | jq 'length')
-    echo "📋 Found ${REPO_COUNT} repositories tagged with 'maven'"
+    echo "📋 Found ${REPO_COUNT} repositories topiced with 'maven'"
 
     if [ "${REPO_COUNT}" -gt 0 ]; then
-        # Step 2: Clone maven-tagged repositories
+        # Step 2: Clone maven-topiced repositories
         echo ""
-        echo "Step 2: Clone maven-tagged repositories"
+        echo "Step 2: Clone maven-topiced repositories"
         echo "📋 Manual command: cat ${MAVEN_LIST_OUTPUT} | jq -c '.[]' | while read repo_json; do echo \"\$repo_json\" | ./bin/run.js repo:clone --output-directory ${MAVEN_REPOS}; done"
 
         # Clone each repository
@@ -288,7 +288,7 @@ workflow-test CLEAN="true": build
     echo ""
     echo "This will run both workflows in sequence:"
     echo "1. Find and validate Maven repositories"
-    echo "2. Create aggregator from tagged repositories"
+    echo "2. Create aggregator from topiced repositories"
     echo ""
 
     # Run find-validate-repos workflow
@@ -299,9 +299,9 @@ workflow-test CLEAN="true": build
 
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "Running: just create-aggregator-from-tagged"
+    echo "Running: just create-aggregator-from-topiced"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    just create-aggregator-from-tagged "{{CLEAN}}"
+    just create-aggregator-from-topiced "{{CLEAN}}"
 
     echo ""
     echo "🎉 Complete workflow test finished!"

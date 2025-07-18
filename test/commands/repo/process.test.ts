@@ -163,7 +163,7 @@ describe('repo:process', () => {
 	});
 
 	it('should handle dry run flag', async () => {
-		// The dry run flag would be passed to the tag command
+		// The dry run flag would be passed to the topic command
 		// This test validates that the flag is accepted
 		const result = await runCommand(
 			[
