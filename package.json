@@ -52,8 +52,15 @@
 	],
 	"homepage": "https://github.com/motlin/aggregator-creator",
 	"keywords": [
-		"oclif"
+		"oclif",
+		"cli",
+		"maven",
+		"aggregator",
+		"pom"
 	],
+	"publishConfig": {
+		"access": "public"
+	},
 	"license": "Apache 2.0",
 	"main": "dist/index.js",
 	"type": "module",
@@ -87,7 +94,11 @@
 		"posttest": "npm run lint",
 		"prepack": "oclif manifest && oclif readme",
 		"test": "CHAI_TRUNCATE_THRESHOLD=0 mocha --forbid-only \"test/**/*.test.ts\"",
-		"version": "oclif readme && git add README.md"
+		"version": "oclif readme && git add README.md",
+		"prepublishOnly": "npm run build && npm test && npm run lint",
+		"release:patch": "npm version patch && npm publish",
+		"release:minor": "npm version minor && npm publish",
+		"release:major": "npm version major && npm publish"
 	},
 	"types": "dist/index.d.ts"
 }
