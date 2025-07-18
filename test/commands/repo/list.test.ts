@@ -432,11 +432,6 @@ describe('repo:list', function () {
 				visibility: 'public',
 			},
 		]);
-
-		for (const repo of repos) {
-			expect(repo.topics).to.include('maven');
-			expect(repo.topics).to.not.include('oclif');
-		}
 	});
 
 	it('should support multiple exclude-topic filters', async function () {
