@@ -7,7 +7,7 @@ import {createSandbox} from 'sinon';
 
 interface ExtendedError extends Error {
 	code?: string;
-	oclif?: { exit: number };
+	oclif?: {exit: number};
 	skipOclifErrorHandling?: boolean;
 	suggestions?: string[];
 	showHelp?: boolean;
@@ -74,9 +74,11 @@ describe('repo:clone', () => {
 			const result = await runCommand(['repo:clone', '--owner', 'motlin', '--name', 'test-repo'], root);
 			// Missing required flags causes oclif to exit without JSON output
 			// Create expected error matching actual error structure
-			const expectedError = new Error('The following error occurred:\n  Missing required flag output-directory\nSee more help with --help') as ExtendedError;
+			const expectedError = new Error(
+				'The following error occurred:\n  Missing required flag output-directory\nSee more help with --help',
+			) as ExtendedError;
 			expectedError.code = undefined;
-			expectedError.oclif = { exit: 2 };
+			expectedError.oclif = {exit: 2};
 			expectedError.skipOclifErrorHandling = undefined;
 			expectedError.suggestions = undefined;
 			expectedError.showHelp = false;
@@ -85,7 +87,7 @@ describe('repo:clone', () => {
 			expect(result).to.deep.equal({
 				stdout: '',
 				stderr: '',
-				error: expectedError
+				error: expectedError,
 			});
 		});
 
@@ -114,8 +116,8 @@ describe('repo:clone', () => {
 					name: 'test-repo',
 					path: repoPath,
 					cloned: false,
-					alreadyExists: true
-				}
+					alreadyExists: true,
+				},
 			});
 		});
 

@@ -291,18 +291,19 @@ List GitHub repositories based on filters
 
 ```
 USAGE
-  $ aggregator repo list [--json] [-o <value>...] [-t <value>...] [-g <value>...] [--include-forks]
-    [--include-archived] [--visibility public|private|all] [-l <value>]
+  $ aggregator repo list [--json] [-o <value>...] [-t <value>...] [-x <value>...] [-g <value>...]
+    [--include-forks] [--include-archived] [--visibility public|private|all] [-l <value>]
 
 FLAGS
-  -g, --language=<value>...  Language filter
-  -l, --limit=<value>        Max repositories
-  -o, --owner=<value>...     GitHub username/org to filter by
-  -t, --topic=<value>...     Topic filter
-      --include-archived     Include archived repositories
-      --include-forks        Include forked repositories
-      --visibility=<option>  [default: public] Repository visibility filter
-                             <options: public|private|all>
+  -g, --language=<value>...       Language filter
+  -l, --limit=<value>             Max repositories
+  -o, --owner=<value>...          GitHub username/org to filter by
+  -t, --topic=<value>...          Topic filter
+  -x, --exclude-topic=<value>...  Exclude repositories with this topic
+      --include-archived          Include archived repositories
+      --include-forks             Include forked repositories
+      --visibility=<option>       [default: public] Repository visibility filter
+                                  <options: public|private|all>
 
 GLOBAL FLAGS
   --json  Format output as json.
@@ -320,6 +321,8 @@ EXAMPLES
   $ aggregator repo list --owner motlin --language Java --limit 100
 
   $ aggregator repo list --owner motlin --topic maven --language Java --json
+
+  $ aggregator repo list --owner motlin --topic maven --exclude-topic patched --json
 
   $ aggregator repo list --owner motlin --limit 100 --json
 

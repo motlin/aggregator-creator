@@ -14,6 +14,7 @@ export default class RepoList extends Command {
 		'<%= config.bin %> <%= command.id %> --owner motlin --owner liftwizard --limit 100',
 		'<%= config.bin %> <%= command.id %> --owner motlin --language Java --limit 100',
 		'<%= config.bin %> <%= command.id %> --owner motlin --topic maven --language Java --json',
+		'<%= config.bin %> <%= command.id %> --owner motlin --topic maven --exclude-topic patched --json',
 		'<%= config.bin %> <%= command.id %> --owner motlin --limit 100 --json',
 		'<%= config.bin %> <%= command.id %> --include-forks --include-archived',
 		'<%= config.bin %> <%= command.id %> --visibility public',
@@ -24,6 +25,7 @@ export default class RepoList extends Command {
 	static override flags = {
 		owner: Flags.string({char: 'o', description: 'GitHub username/org to filter by', multiple: true}),
 		topic: Flags.string({char: 't', description: 'Topic filter', multiple: true}),
+		'exclude-topic': Flags.string({char: 'x', description: 'Exclude repositories with this topic', multiple: true}),
 		language: Flags.string({char: 'g', description: 'Language filter', multiple: true}),
 		'include-forks': Flags.boolean({description: 'Include forked repositories', default: false}),
 		'include-archived': Flags.boolean({description: 'Include archived repositories', default: false}),
@@ -38,6 +40,7 @@ export default class RepoList extends Command {
 	private async fetchRepositories(
 		usernames: string[] = [],
 		topics: string[] = [],
+		excludeTopics: string[] = [],
 		languages: string[] = [],
 		limit: number | undefined,
 		includeForks: boolean,
@@ -52,6 +55,7 @@ export default class RepoList extends Command {
 		try {
 			this.log(`│  ├──╮ Building search query`);
 			const topicQueries = topics.map((topic) => `topic:${topic}`).join(' ');
+			const excludeTopicQueries = excludeTopics.map((topic) => `-topic:${topic}`).join(' ');
 			const languageQueries = languages.map((language) => `language:${language}`).join(' ');
 			let query = '';
 
@@ -64,7 +68,7 @@ export default class RepoList extends Command {
 				query += `is:${visibility} `;
 			}
 
-			query += `${topicQueries} ${languageQueries}`;
+			query += `${topicQueries} ${excludeTopicQueries} ${languageQueries}`;
 
 			if (!includeForks) {
 				query += ' fork:false';
@@ -159,6 +163,11 @@ export default class RepoList extends Command {
 			const repositories = await this.fetchRepositories(
 				flags.owner ? (Array.isArray(flags.owner) ? flags.owner : [flags.owner]) : [],
 				flags.topic ? (Array.isArray(flags.topic) ? flags.topic : [flags.topic]) : [],
+				flags['exclude-topic']
+					? Array.isArray(flags['exclude-topic'])
+						? flags['exclude-topic']
+						: [flags['exclude-topic']]
+					: [],
 				flags.language ? (Array.isArray(flags.language) ? flags.language : [flags.language]) : [],
 				flags.limit,
 				flags['include-forks'],

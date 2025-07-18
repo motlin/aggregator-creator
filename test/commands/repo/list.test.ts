@@ -389,4 +389,63 @@ describe('repo:list', function () {
 			},
 		]);
 	});
+
+	it('should filter repositories with maven topic but exclude oclif topic', async function () {
+		if (isCI) {
+			this.skip();
+		}
+		const result = await runCommand(
+			['repo:list', '--owner', 'motlin', '--topic', 'maven', '--exclude-topic', 'oclif', '--json'],
+			root,
+		);
+
+		if ('error' in result) {
+			throw new Error(`Command failed: ${result.error?.message || 'Unknown error'}`);
+		}
+
+		const {stdout} = result;
+		const repos = JSON.parse(stdout);
+
+		expect(repos).to.deep.equal([
+			{
+				name: 'JUnit-Java-8-Runner',
+				owner: {login: 'motlin', type: 'User'},
+				language: 'Java',
+				topics: ['maven'],
+				fork: false,
+				archived: false,
+				disabled: false,
+				is_template: false,
+				private: false,
+				visibility: 'public',
+			},
+		]);
+
+		for (const repo of repos) {
+			expect(repo.topics).to.include('maven');
+			expect(repo.topics).to.not.include('oclif');
+		}
+	});
+
+	it('should support multiple exclude-topic filters', async function () {
+		if (isCI) {
+			this.skip();
+		}
+		const result = await runCommand(
+			['repo:list', '--owner', 'motlin', '--exclude-topic', 'oclif', '--exclude-topic', 'game', '--json'],
+			root,
+		);
+
+		if ('error' in result) {
+			throw new Error(`Command failed: ${result.error?.message || 'Unknown error'}`);
+		}
+
+		const {stdout} = result;
+		const repos = JSON.parse(stdout);
+
+		for (const repo of repos) {
+			expect(repo.topics).to.not.include('oclif');
+			expect(repo.topics).to.not.include('game');
+		}
+	});
 });

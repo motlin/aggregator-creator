@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 
 interface ExtendedError extends Error {
 	code?: string;
-	oclif?: { exit: number };
+	oclif?: {exit: number};
 	skipOclifErrorHandling?: boolean;
 	suggestions?: string[];
 	showHelp?: boolean;
@@ -71,9 +71,11 @@ describe('repo:process', () => {
 		const result = await runCommand(['repo:process', outputDir, '--owner', 'test', '--name', 'repo'], root);
 		// Missing required flags causes oclif to exit without JSON output
 		// Create expected error matching actual error structure
-		const expectedError = new Error('The following error occurred:\n  Missing required flag tag\nSee more help with --help') as ExtendedError;
+		const expectedError = new Error(
+			'The following error occurred:\n  Missing required flag tag\nSee more help with --help',
+		) as ExtendedError;
 		expectedError.code = undefined;
-		expectedError.oclif = { exit: 2 };
+		expectedError.oclif = {exit: 2};
 		expectedError.skipOclifErrorHandling = undefined;
 		expectedError.suggestions = undefined;
 		expectedError.showHelp = false;
@@ -82,7 +84,7 @@ describe('repo:process', () => {
 		expect(result).to.deep.equal({
 			stdout: '',
 			stderr: '',
-			error: expectedError
+			error: expectedError,
 		});
 	});
 
@@ -90,9 +92,11 @@ describe('repo:process', () => {
 		const result = await runCommand(['repo:process', '--tag', 'maven', '--owner', 'test', '--name', 'repo'], root);
 		// Missing required arguments causes oclif to exit without JSON output
 		// Create expected error matching actual error structure
-		const expectedError = new Error('Missing 1 required arg:\noutput-directory  Directory where the repository will be cloned\nSee more help with --help') as ExtendedError;
+		const expectedError = new Error(
+			'Missing 1 required arg:\noutput-directory  Directory where the repository will be cloned\nSee more help with --help',
+		) as ExtendedError;
 		expectedError.code = undefined;
-		expectedError.oclif = { exit: 2 };
+		expectedError.oclif = {exit: 2};
 		expectedError.skipOclifErrorHandling = undefined;
 		expectedError.suggestions = undefined;
 		expectedError.showHelp = true;
@@ -102,7 +106,7 @@ describe('repo:process', () => {
 		expect(result).to.deep.equal({
 			stdout: '',
 			stderr: '',
-			error: expectedError
+			error: expectedError,
 		});
 	});
 
@@ -116,18 +120,18 @@ describe('repo:process', () => {
 		const expectedPath = path.join(outputDir, 'test-user', 'test-repo');
 		const expectedResult = {
 			name: 'test-repo',
-			owner: { login: 'test-user' },
+			owner: {login: 'test-user'},
 			path: expectedPath,
 			cloned: false,
 			valid: false,
 			tagged: false,
-			error: `Command failed with exit code 1: gh repo clone test-user/test-repo ${expectedPath}\n\nGraphQL: Could not resolve to a Repository with the name 'test-user/test-repo'. (repository)`
+			error: `Command failed with exit code 1: gh repo clone test-user/test-repo ${expectedPath}\n\nGraphQL: Could not resolve to a Repository with the name 'test-user/test-repo'. (repository)`,
 		};
 
 		expect(result).to.deep.equal({
 			result: expectedResult,
 			stderr: '',
-			stdout: JSON.stringify(expectedResult, null, 2) + '\n'
+			stdout: JSON.stringify(expectedResult, null, 2) + '\n',
 		});
 	});
 
@@ -140,18 +144,18 @@ describe('repo:process', () => {
 		const expectedPath = path.join(outputDir, 'test-user', 'test-repo');
 		const expectedResult = {
 			name: 'test-repo',
-			owner: { login: 'test-user' },
+			owner: {login: 'test-user'},
 			path: expectedPath,
 			cloned: false,
 			valid: false,
 			tagged: false,
-			error: `Command failed with exit code 1: gh repo clone test-user/test-repo ${expectedPath}\n\nGraphQL: Could not resolve to a Repository with the name 'test-user/test-repo'. (repository)`
+			error: `Command failed with exit code 1: gh repo clone test-user/test-repo ${expectedPath}\n\nGraphQL: Could not resolve to a Repository with the name 'test-user/test-repo'. (repository)`,
 		};
 
 		expect(result).to.deep.equal({
 			result: expectedResult,
 			stderr: '',
-			stdout: '╭─── 🔄 Processing repository test-user/test-repo...\n│\n├──╮ 📥 Cloning repository...\n├──╯ ❌ Failed to clone repository\n├──╯\n│\n╰─── ❌ Processing failed\n'
+			stdout: '╭─── 🔄 Processing repository test-user/test-repo...\n│\n├──╮ 📥 Cloning repository...\n├──╯ ❌ Failed to clone repository\n├──╯\n│\n╰─── ❌ Processing failed\n',
 		});
 	});
 
@@ -177,18 +181,18 @@ describe('repo:process', () => {
 		const expectedPath = path.join(outputDir, 'test-user', 'test-repo');
 		const expectedResult = {
 			name: 'test-repo',
-			owner: { login: 'test-user' },
+			owner: {login: 'test-user'},
 			path: expectedPath,
 			cloned: false,
 			valid: false,
 			tagged: false,
-			error: `Command failed with exit code 1: gh repo clone test-user/test-repo ${expectedPath}\n\nGraphQL: Could not resolve to a Repository with the name 'test-user/test-repo'. (repository)`
+			error: `Command failed with exit code 1: gh repo clone test-user/test-repo ${expectedPath}\n\nGraphQL: Could not resolve to a Repository with the name 'test-user/test-repo'. (repository)`,
 		};
 
 		expect(result).to.deep.equal({
 			result: expectedResult,
 			stderr: '',
-			stdout: JSON.stringify(expectedResult, null, 2) + '\n'
+			stdout: JSON.stringify(expectedResult, null, 2) + '\n',
 		});
 	});
 
@@ -214,18 +218,18 @@ describe('repo:process', () => {
 		const expectedPath = path.join(outputDir, 'test-user', 'test-repo');
 		const expectedResult = {
 			name: 'test-repo',
-			owner: { login: 'test-user' },
+			owner: {login: 'test-user'},
 			path: expectedPath,
 			cloned: false,
 			valid: false,
 			tagged: false,
-			error: `Command failed with exit code 1: gh repo clone test-user/test-repo ${expectedPath}\n\nGraphQL: Could not resolve to a Repository with the name 'test-user/test-repo'. (repository)`
+			error: `Command failed with exit code 1: gh repo clone test-user/test-repo ${expectedPath}\n\nGraphQL: Could not resolve to a Repository with the name 'test-user/test-repo'. (repository)`,
 		};
 
 		expect(result).to.deep.equal({
 			result: expectedResult,
 			stderr: '',
-			stdout: JSON.stringify(expectedResult, null, 2) + '\n'
+			stdout: JSON.stringify(expectedResult, null, 2) + '\n',
 		});
 	});
 });
