@@ -203,6 +203,18 @@ describe('repo:list', function () {
 				visibility: 'public',
 			},
 			{
+				name: 'motlin.com',
+				owner: {login: 'motlin', type: 'User'},
+				language: 'TypeScript',
+				topics: [],
+				fork: false,
+				archived: false,
+				disabled: false,
+				is_template: false,
+				private: false,
+				visibility: 'public',
+			},
+			{
 				name: 'avalon-analytics',
 				owner: {login: 'motlin', type: 'User'},
 				language: 'TypeScript',
