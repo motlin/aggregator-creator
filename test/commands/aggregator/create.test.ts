@@ -52,13 +52,11 @@ describe('aggregator:create', () => {
 		await fs.writeFile(path.join(validRepo1, 'pom.xml'), validPom1);
 		await fs.writeFile(path.join(validRepo2, 'pom.xml'), validPom2);
 
-		// Define the property first since it doesn't exist by default
 		Object.defineProperty(process.stdin, 'isTTY', {
 			value: undefined,
 			writable: true,
 			configurable: true,
 		});
-		// Now stub it
 		sandbox.stub(process.stdin, 'isTTY').value(true);
 	});
 
@@ -68,13 +66,11 @@ describe('aggregator:create', () => {
 	});
 
 	it('errors when no directory is provided', async () => {
-		// Define the property first since it doesn't exist by default
 		Object.defineProperty(process.stdin, 'isTTY', {
 			value: undefined,
 			writable: true,
 			configurable: true,
 		});
-		// Now stub it
 		sandbox.stub(process.stdin, 'isTTY').value(true);
 
 		const result = await runCommand(['aggregator:create', '--json'], root);
@@ -103,9 +99,7 @@ describe('aggregator:create', () => {
 	});
 
 	it('creates an aggregator POM with default values', async function () {
-		this.timeout(10_000); // Increase timeout for this test
-
-		// Mock the HTTPS request to Maven Central
+		this.timeout(10_000);
 		const mockResponse = {
 			statusCode: 200,
 			on(event: string, callback: (data?: string) => void) {
@@ -175,7 +169,7 @@ describe('aggregator:create', () => {
 		expect(pomContent).to.include('<parent>');
 		expect(pomContent).to.include('<groupId>io.liftwizard</groupId>');
 		expect(pomContent).to.include('<artifactId>liftwizard-profile-parent</artifactId>');
-		expect(pomContent).to.match(/<version>\d+\.\d+\.\d+<\/version>/); // Matches semantic version
+		expect(pomContent).to.match(/<version>\d+\.\d+\.\d+<\/version>/);
 		expect(pomContent).to.include('<groupId>com.example</groupId>');
 		expect(pomContent).to.include('<artifactId>aggregator</artifactId>');
 		expect(pomContent).to.include('<version>1.0.0-SNAPSHOT</version>');
@@ -184,9 +178,7 @@ describe('aggregator:create', () => {
 	});
 
 	it('creates an aggregator POM with custom values', async function () {
-		this.timeout(10_000); // Increase timeout for this test
-
-		// Mock the HTTPS request to Maven Central
+		this.timeout(10_000);
 		const mockResponse = {
 			statusCode: 200,
 			on(event: string, callback: (data?: string) => void) {
@@ -231,17 +223,7 @@ describe('aggregator:create', () => {
 			root,
 		);
 
-		if (result.error) {
-			console.error('Command failed with error:', result.error);
-			console.error('stdout:', result.stdout);
-			console.error('stderr:', result.stderr);
-			throw result.error;
-		}
-
-		const {stdout} = result;
-		const output = JSON.parse(stdout);
-
-		expect(output).to.deep.equal({
+		const expectedResult = {
 			success: true,
 			pomPath: path.join(tempDir, 'pom.xml'),
 			modules: [
@@ -264,23 +246,29 @@ describe('aggregator:create', () => {
 				artifactId: 'custom-agg',
 				version: '2.0.0',
 			},
+		};
+
+		expect(result).to.deep.equal({
+			stdout: JSON.stringify(expectedResult, null, 2) + '\n',
+			stderr: '',
+			result: expectedResult,
 		});
 
 		const pomPath = path.join(tempDir, 'pom.xml');
+		expect(fs.existsSync(pomPath)).to.be.true;
+
 		const pomContent = await fs.readFile(pomPath, 'utf8');
 		expect(pomContent).to.include('<parent>');
 		expect(pomContent).to.include('<groupId>io.liftwizard</groupId>');
 		expect(pomContent).to.include('<artifactId>liftwizard-profile-parent</artifactId>');
-		expect(pomContent).to.match(/<version>\d+\.\d+\.\d+<\/version>/); // Matches semantic version
+		expect(pomContent).to.match(/<version>\d+\.\d+\.\d+<\/version>/);
 		expect(pomContent).to.include('<groupId>org.test</groupId>');
 		expect(pomContent).to.include('<artifactId>custom-agg</artifactId>');
 		expect(pomContent).to.include('<version>2.0.0</version>');
 	});
 
 	it('outputs in json format when --json flag is provided', async function () {
-		this.timeout(10_000); // Increase timeout for this test
-
-		// Mock the HTTPS request to Maven Central
+		this.timeout(10_000);
 		const mockResponse = {
 			statusCode: 200,
 			on(event: string, callback: (data?: string) => void) {
@@ -341,9 +329,7 @@ describe('aggregator:create', () => {
 	});
 
 	it('returns a structured error when no Maven repositories are found with --json flag', async function () {
-		this.timeout(10_000); // Increase timeout for this test
-
-		// Mock the HTTPS request to Maven Central
+		this.timeout(10_000);
 		const mockResponse = {
 			statusCode: 200,
 			on(event: string, callback: (data?: string) => void) {
