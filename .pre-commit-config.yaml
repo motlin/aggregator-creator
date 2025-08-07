@@ -12,15 +12,12 @@ repos:
           - id: prettier
             types_or: [json, yaml]
             exclude: "package(-lock)?\\.json"
-    - repo: https://github.com/pre-commit/mirrors-eslint
-      rev: v9.23.0
+    - repo: local
       hooks:
           - id: eslint
-            files: \.(js|ts|jsx|tsx)$
+            name: eslint
+            entry: npx eslint
+            language: system
+            files: \.(js|ts|jsx|tsx|mjs)$
             types: [file]
             args: [--fix]
-            additional_dependencies:
-                - eslint@9.23.0
-                - typescript@5.8.2
-                - '@typescript-eslint/eslint-plugin@8.28.0'
-                - '@typescript-eslint/parser@8.28.0'
