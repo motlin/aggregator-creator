@@ -85,9 +85,9 @@
 	"repository": "motlin/aggregator-creator",
 	"scripts": {
 		"build": "shx rm -rf dist && tsc -b",
-		"lint": "eslint",
-		"lint:fix": "eslint --fix",
+		"lint": "eslint --fix",
 		"format": "prettier --write \"**/*.{ts,json,yaml,yml}\"",
+		"typecheck": "tsc --noEmit",
 		"ci:eslint": "eslint",
 		"ci:prettier": "prettier --check \"**/*.{ts,json,yaml,yml}\"",
 		"ci:typecheck": "tsc --noEmit",
