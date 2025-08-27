@@ -2,33 +2,61 @@
 default:
     @just --list --unsorted
 
-# `npm run ci:typecheck`
-typecheck: build
-    npm run ci:typecheck
+# `npm install`
+install:
+    npm install
 
-# `npm run lint:fix`
-lint-fix: install
-    npm run lint:fix
+# `npm ci`
+install-ci:
+    npm ci
+
+# `npm run lint`
+lint: install
+    npm run lint
+
+# `npm run ci:eslint`
+eslint-ci: install-ci
+    npm run ci:eslint
 
 # `npm run format`
 format: install
     npm run format
 
-# `npm install`
-install:
-    npm install
+# `npm run ci:biome`
+biome-ci: install-ci
+    npm run ci:biome
+
+# `npm run ci:prettier`
+prettier-ci: install-ci
+    npm run ci:prettier
+
+# `npm run test:run`
+test: install
+    CHAI_TRUNCATE_THRESHOLD=0 npm test
+
+# `npm run test:run`
+test-ci: install-ci
+    CHAI_TRUNCATE_THRESHOLD=0 npm run test:run
+
+# `npm run typecheck`
+typecheck: install
+    npm run typecheck
+
+# `npm run typecheck`
+typecheck-ci: install-ci
+    npm run typecheck
 
 # `npm run build`
 build: install
     npm run build
 
+# `npm run build`
+build-ci: install-ci
+    npm run build
+
 # `npm run prepack`
 manifest: install
     npm run prepack
-
-# `npm test`
-test: build
-    CHAI_TRUNCATE_THRESHOLD=0 npm test
 
 # Run repo:list command to list GitHub repositories
 # Examples:
@@ -306,6 +334,6 @@ workflow-test CLEAN="true": build
     echo ""
     echo "🎉 Complete workflow test finished!"
 
-# Run everything
-precommit: build lint-fix format manifest test
-    @echo "✅ All checks and steps completed successfully."
+# Run all pre-commit checks
+precommit: format lint typecheck build test manifest
+    @echo "✅ All pre-commit checks passed!"
