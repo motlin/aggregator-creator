@@ -46,7 +46,7 @@ jobs:
                     git push -u origin ${{ github.ref_name }}
                   fi
             - name: Create Github Release
-              uses: ncipollo/release-action@b12185d71f4641bb1b1116dacae6b74e667f86e4
+              uses: ncipollo/release-action@1c89adf39833729d8f85a31ccbc451b078733c80
               if: ${{ steps.version-check.outputs.skipped == 'false' }}
               with:
                   name: ${{ steps.version-check.outputs.tag }}
