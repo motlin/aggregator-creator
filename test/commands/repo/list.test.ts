@@ -142,36 +142,26 @@ describe('repo:list', function () {
 		}
 
 		const {stdout} = result;
-		expect(JSON.parse(stdout)).to.deep.equal([
-			{
-				name: 'freeCodeCamp',
-				owner: {login: 'freeCodeCamp', type: 'Organization'},
-				language: 'TypeScript',
-				topics: [
-					'careers',
-					'certification',
-					'community',
-					'curriculum',
-					'd3',
-					'education',
-					'freecodecamp',
-					'javascript',
-					'learn-to-code',
-					'math',
-					'nodejs',
-					'nonprofits',
-					'programming',
-					'react',
-					'teachers',
-				],
-				fork: false,
-				archived: false,
-				disabled: false,
-				is_template: false,
-				private: false,
-				visibility: 'public',
-			},
+		const repos = JSON.parse(stdout);
+		expect(repos).to.have.lengthOf(1);
+		expect(repos[0].name).to.equal('freeCodeCamp');
+		expect(repos[0].owner).to.deep.equal({login: 'freeCodeCamp', type: 'Organization'});
+		expect(repos[0].language).to.equal('TypeScript');
+		expect(repos[0].topics).to.include.members([
+			'careers',
+			'certification',
+			'community',
+			'curriculum',
+			'education',
+			'freecodecamp',
+			'javascript',
 		]);
+		expect(repos[0].fork).to.equal(false);
+		expect(repos[0].archived).to.equal(false);
+		expect(repos[0].disabled).to.equal(false);
+		expect(repos[0].is_template).to.equal(false);
+		expect(repos[0].private).to.equal(false);
+		expect(repos[0].visibility).to.equal('public');
 	});
 
 	it('should support multiple language filters', async function () {

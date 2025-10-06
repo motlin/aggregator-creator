@@ -3,7 +3,6 @@ import {expect} from 'chai';
 import fs from 'fs-extra';
 import path from 'node:path';
 import os from 'node:os';
-import https from 'node:https';
 import {createSandbox} from 'sinon';
 import {fileURLToPath} from 'node:url';
 
@@ -60,37 +59,7 @@ describe('aggregator:create with parent POM resolution errors', () => {
 	});
 
 	it('should continue processing when Maven parent POM resolution errors occur', async function () {
-		this.timeout(10_000); // Increase timeout for this test
-
-		// Mock the HTTPS request to Maven Central
-		const mockResponse = {
-			statusCode: 200,
-			on(event: string, callback: (data?: string) => void) {
-				if (event === 'data') {
-					callback(
-						JSON.stringify({
-							response: {
-								docs: [
-									{
-										latestVersion: '2.1.1',
-									},
-								],
-							},
-						}),
-					);
-				} else if (event === 'end') {
-					callback();
-				}
-			},
-		};
-
-		sandbox.stub(https, 'get').callsFake((url, options, callback) => {
-			if (typeof options === 'function') {
-				callback = options;
-			}
-			callback!(mockResponse as Parameters<typeof https.get>[2] extends (res: infer R) => void ? R : never);
-			return {on() {}} as unknown as ReturnType<typeof https.get>;
-		});
+		this.timeout(10_000);
 
 		const {stdout} = await runCommand(['aggregator:create', tempDir, '--yes', '--json'], root);
 		const output = JSON.parse(stdout);

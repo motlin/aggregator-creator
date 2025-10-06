@@ -3,7 +3,6 @@ import {expect} from 'chai';
 import fs from 'fs-extra';
 import path from 'node:path';
 import os from 'node:os';
-import https from 'node:https';
 import {createSandbox} from 'sinon';
 import {fileURLToPath} from 'node:url';
 
@@ -100,34 +99,6 @@ describe('aggregator:create', () => {
 
 	it('creates an aggregator POM with default values', async function () {
 		this.timeout(10_000);
-		const mockResponse = {
-			statusCode: 200,
-			on(event: string, callback: (data?: string) => void) {
-				if (event === 'data') {
-					callback(
-						JSON.stringify({
-							response: {
-								docs: [
-									{
-										latestVersion: '2.1.1',
-									},
-								],
-							},
-						}),
-					);
-				} else if (event === 'end') {
-					callback();
-				}
-			},
-		};
-
-		sandbox.stub(https, 'get').callsFake((url, options, callback) => {
-			if (typeof options === 'function') {
-				callback = options;
-			}
-			callback!(mockResponse as Parameters<typeof https.get>[2] extends (res: infer R) => void ? R : never);
-			return {on() {}} as unknown as ReturnType<typeof https.get>;
-		});
 
 		const result = await runCommand(['aggregator:create', tempDir, '--yes', '--json'], root);
 
@@ -166,47 +137,38 @@ describe('aggregator:create', () => {
 		expect(fs.existsSync(pomPath)).to.be.true;
 
 		const pomContent = await fs.readFile(pomPath, 'utf8');
+
 		expect(pomContent).to.include('<parent>');
 		expect(pomContent).to.include('<groupId>io.liftwizard</groupId>');
 		expect(pomContent).to.include('<artifactId>liftwizard-profile-parent</artifactId>');
 		expect(pomContent).to.match(/<version>\d+\.\d+\.\d+<\/version>/);
+
 		expect(pomContent).to.include('<groupId>com.example</groupId>');
 		expect(pomContent).to.include('<artifactId>aggregator</artifactId>');
 		expect(pomContent).to.include('<version>1.0.0-SNAPSHOT</version>');
-		expect(pomContent).to.include('<module>valid-repo1</module>');
-		expect(pomContent).to.include('<module>valid-repo2</module>');
+
+		expect(pomContent).to.match(
+			/<modules>[\s\S]*<module>valid-repo1<\/module>[\s\S]*<module>valid-repo2<\/module>[\s\S]*<\/modules>/,
+		);
+
+		expect(pomContent).to.match(
+			/<dependencyManagement>[\s\S]*<dependencies>[\s\S]*<\/dependencies>[\s\S]*<\/dependencyManagement>/,
+		);
+
+		const depMgmtMatches = pomContent.match(
+			/<dependencyManagement>[\s\S]*?<dependency>[\s\S]*?<groupId>com\.example\.test<\/groupId>[\s\S]*?<artifactId>valid-repo1<\/artifactId>[\s\S]*?<version>1\.0\.0<\/version>[\s\S]*?<\/dependency>[\s\S]*?<\/dependencyManagement>/,
+		);
+		expect(depMgmtMatches).to.not.be.null;
+
+		const depMgmtMatches2 = pomContent.match(
+			/<dependencyManagement>[\s\S]*?<dependency>[\s\S]*?<groupId>com\.example\.test<\/groupId>[\s\S]*?<artifactId>valid-repo2<\/artifactId>[\s\S]*?<version>1\.0\.0<\/version>[\s\S]*?<\/dependency>[\s\S]*?<\/dependencyManagement>/,
+		);
+		expect(depMgmtMatches2).to.not.be.null;
 	});
 
 	it('creates an aggregator POM with custom values', async function () {
 		this.timeout(10_000);
-		const mockResponse = {
-			statusCode: 200,
-			on(event: string, callback: (data?: string) => void) {
-				if (event === 'data') {
-					callback(
-						JSON.stringify({
-							response: {
-								docs: [
-									{
-										latestVersion: '2.1.1',
-									},
-								],
-							},
-						}),
-					);
-				} else if (event === 'end') {
-					callback();
-				}
-			},
-		};
 
-		sandbox.stub(https, 'get').callsFake((url, options, callback) => {
-			if (typeof options === 'function') {
-				callback = options;
-			}
-			callback!(mockResponse as Parameters<typeof https.get>[2] extends (res: infer R) => void ? R : never);
-			return {on() {}} as unknown as ReturnType<typeof https.get>;
-		});
 		const result = await runCommand(
 			[
 				'aggregator:create',
@@ -269,34 +231,6 @@ describe('aggregator:create', () => {
 
 	it('outputs in json format when --json flag is provided', async function () {
 		this.timeout(10_000);
-		const mockResponse = {
-			statusCode: 200,
-			on(event: string, callback: (data?: string) => void) {
-				if (event === 'data') {
-					callback(
-						JSON.stringify({
-							response: {
-								docs: [
-									{
-										latestVersion: '2.1.1',
-									},
-								],
-							},
-						}),
-					);
-				} else if (event === 'end') {
-					callback();
-				}
-			},
-		};
-
-		sandbox.stub(https, 'get').callsFake((url, options, callback) => {
-			if (typeof options === 'function') {
-				callback = options;
-			}
-			callback!(mockResponse as Parameters<typeof https.get>[2] extends (res: infer R) => void ? R : never);
-			return {on() {}} as unknown as ReturnType<typeof https.get>;
-		});
 
 		const {stdout} = await runCommand(['aggregator:create', tempDir, '--json', '--yes'], root);
 
@@ -330,34 +264,6 @@ describe('aggregator:create', () => {
 
 	it('returns a structured error when no Maven repositories are found with --json flag', async function () {
 		this.timeout(10_000);
-		const mockResponse = {
-			statusCode: 200,
-			on(event: string, callback: (data?: string) => void) {
-				if (event === 'data') {
-					callback(
-						JSON.stringify({
-							response: {
-								docs: [
-									{
-										latestVersion: '2.1.1',
-									},
-								],
-							},
-						}),
-					);
-				} else if (event === 'end') {
-					callback();
-				}
-			},
-		};
-
-		sandbox.stub(https, 'get').callsFake((url, options, callback) => {
-			if (typeof options === 'function') {
-				callback = options;
-			}
-			callback!(mockResponse as Parameters<typeof https.get>[2] extends (res: infer R) => void ? R : never);
-			return {on() {}} as unknown as ReturnType<typeof https.get>;
-		});
 
 		const emptyDir = await fs.mkdtemp(path.join(os.tmpdir(), 'empty-dir-'));
 

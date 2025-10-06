@@ -14,6 +14,12 @@ export interface ParsePomResult {
 	reason?: string;
 }
 
+export interface ParseModulesResult {
+	modules: string[];
+	success: boolean;
+	reason?: string;
+}
+
 interface ParsedPomData {
 	project?: {
 		groupId?: string;
@@ -24,6 +30,10 @@ interface ParsedPomData {
 			artifactId?: string;
 			version?: string;
 		};
+		modules?: {
+			module?: string | string[];
+		};
+		packaging?: string;
 	};
 }
 
@@ -55,31 +65,23 @@ export async function parsePomForGAV(pomPath: string): Promise<ParsePomResult> {
 		const {project} = pomData;
 		const gav: PomGAV = {};
 
-		// Extract groupId
 		if (project.groupId) {
 			gav.groupId = project.groupId;
 		} else if (project.parent?.groupId) {
-			// Inherited from parent - might need Maven to resolve
 			gav.groupId = project.parent.groupId;
 		}
 
-		// Extract artifactId (should always be present)
 		if (project.artifactId) {
 			gav.artifactId = project.artifactId;
 		}
 
-		// Extract version
 		if (project.version) {
 			gav.version = project.version;
 		} else if (project.parent?.version) {
-			// Inherited from parent - might need Maven to resolve
 			gav.version = project.parent.version;
 		}
 
-		// Check if we have all three coordinates
-		if (gav.groupId && gav.artifactId && gav.version) {
-			// All coordinates found, continue to check for placeholders
-		} else {
+		if (!gav.groupId || !gav.artifactId || !gav.version) {
 			return {
 				gav,
 				needsMavenFallback: true,
@@ -87,7 +89,6 @@ export async function parsePomForGAV(pomPath: string): Promise<ParsePomResult> {
 			};
 		}
 
-		// Check for property placeholders (${...})
 		const hasPlaceholders = [gav.groupId, gav.artifactId, gav.version].some(
 			(coord) => coord && coord.includes('${'),
 		);
@@ -100,7 +101,6 @@ export async function parsePomForGAV(pomPath: string): Promise<ParsePomResult> {
 			};
 		}
 
-		// All coordinates found and no placeholders - we can use direct parsing
 		return {
 			gav,
 			needsMavenFallback: false,
@@ -111,5 +111,74 @@ export async function parsePomForGAV(pomPath: string): Promise<ParsePomResult> {
 			needsMavenFallback: true,
 			reason: `XML parsing failed: ${error instanceof Error ? error.message : String(error)}`,
 		};
+	}
+}
+
+/**
+ * Parses module declarations directly from POM XML without invoking Maven.
+ * This is much faster than using Maven to evaluate the modules.
+ */
+export async function parsePomForModules(pomPath: string): Promise<ParseModulesResult> {
+	try {
+		const pomContent = await fs.readFile(pomPath, 'utf8');
+
+		const pomData = await parseXML(pomContent, {
+			explicitArray: false,
+			ignoreAttrs: true,
+			trim: true,
+		});
+
+		if (!pomData?.project) {
+			return {
+				modules: [],
+				success: true,
+			};
+		}
+
+		const {project} = pomData;
+
+		if (!project.modules?.module) {
+			return {
+				modules: [],
+				success: true,
+			};
+		}
+
+		const moduleData = project.modules.module;
+		const modules = Array.isArray(moduleData) ? moduleData : [moduleData];
+
+		return {
+			modules: modules.filter((m): m is string => typeof m === 'string' && m.length > 0),
+			success: true,
+		};
+	} catch (error) {
+		return {
+			modules: [],
+			success: false,
+			reason: `XML parsing failed: ${error instanceof Error ? error.message : String(error)}`,
+		};
+	}
+}
+
+/**
+ * Parses packaging type directly from POM XML without invoking Maven.
+ */
+export async function parsePomForPackaging(pomPath: string): Promise<string> {
+	try {
+		const pomContent = await fs.readFile(pomPath, 'utf8');
+
+		const pomData = await parseXML(pomContent, {
+			explicitArray: false,
+			ignoreAttrs: true,
+			trim: true,
+		});
+
+		if (!pomData?.project) {
+			return 'jar';
+		}
+
+		return pomData.project.packaging || 'jar';
+	} catch {
+		return 'jar';
 	}
 }
