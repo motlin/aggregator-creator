@@ -446,25 +446,25 @@ export default class AggregatorCreate extends Command {
 		gavs: MavenGAVCoords[],
 		liftwizardVersion: string,
 	): string {
-		// prettier-ignore
+		// biome-ignore format: preserve method chaining
 		const pom = create({version: '1.0'})
-      .ele('project', {
-        'xmlns': 'http://maven.apache.org/POM/4.0.0',
-        'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
-        'xsi:schemaLocation': 'http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd',
-      })
-      .ele('modelVersion').txt('4.0.0').up()
-      .ele('parent')
-        .ele('groupId').txt('io.liftwizard').up()
-        .ele('artifactId').txt('liftwizard-profile-parent').up()
-        .ele('version').txt(liftwizardVersion).up()
-      .up()
-      .ele('groupId').txt(groupId).up()
-      .ele('artifactId').txt(artifactId).up()
-      .ele('version').txt(version).up()
-      .ele('packaging').txt('pom').up()
-      .ele('name').txt(`${artifactId} Aggregator POM`).up()
-      .ele('description').txt('Aggregator POM for multiple Maven repositories').up()
+			.ele('project', {
+				'xmlns': 'http://maven.apache.org/POM/4.0.0',
+				'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+				'xsi:schemaLocation': 'http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd',
+			})
+			.ele('modelVersion').txt('4.0.0').up()
+			.ele('parent')
+				.ele('groupId').txt('io.liftwizard').up()
+				.ele('artifactId').txt('liftwizard-profile-parent').up()
+				.ele('version').txt(liftwizardVersion).up()
+			.up()
+			.ele('groupId').txt(groupId).up()
+			.ele('artifactId').txt(artifactId).up()
+			.ele('version').txt(version).up()
+			.ele('packaging').txt('pom').up()
+			.ele('name').txt(`${artifactId} Aggregator POM`).up()
+			.ele('description').txt('Aggregator POM for multiple Maven repositories').up();
 
 		const modulesEle = pom.ele('modules');
 		for (const module of modules) {
