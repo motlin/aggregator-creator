@@ -266,7 +266,7 @@ create-aggregator-from-topiced CLEAN="true": build
     }
 
     # Step 1: List repositories with maven topic
-    MAVEN_LIST_CMD="./bin/run.js repo:list --owner motlin --owner liftwizard --topic maven --language Java --visibility public --limit 100 --json"
+    MAVEN_LIST_CMD="./bin/run.js repo:list --owner motlin --owner liftwizard --topic maven --language Java --visibility public --limit 100 --exclude-topic jni --json"
     MAVEN_LIST_OUTPUT="${TEST_DIR}/maven-repos.json"
 
     run_command "1" "List repositories with 'maven' topic" "${MAVEN_LIST_CMD}" "> ${MAVEN_LIST_OUTPUT}"
