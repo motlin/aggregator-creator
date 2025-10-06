@@ -14,9 +14,15 @@ CLI tool that creates Maven aggregator POMs from a set of repositories. Maven ag
 * [Then create the aggregator](#then-create-the-aggregator)
 * [Run the workflow test](#run-the-workflow-test)
 * [Run workflow test and keep temporary files](#run-workflow-test-and-keep-temporary-files)
-* [Use exit codes to filter - only process repositories that validate successfully](#use-exit-codes-to-filter---only-process-repositories-that-validate-successfully)
-* [Clone all repositories but only topic Java repositories](#clone-all-repositories-but-only-topic-java-repositories)
-* [See what would be topiced without making changes](#see-what-would-be-topiced-without-making-changes)
+* [JSON output structure](#json-output-structure)
+* [Clone a single repository](#clone-a-single-repository)
+* [Only process Java repositories](#only-process-java-repositories)
+* [Skip archived repositories](#skip-archived-repositories)
+* [Process repositories and collect results](#process-repositories-and-collect-results)
+* [Preview what would be done without making changes](#preview-what-would-be-done-without-making-changes)
+* [Clone only non-forked Java repos and create aggregator](#clone-only-non-forked-java-repos-and-create-aggregator)
+* [Create aggregator from cloned repos](#create-aggregator-from-cloned-repos)
+* [Process repos and handle errors gracefully](#process-repos-and-handle-errors-gracefully)
 * [Directory Structure](#directory-structure)
 * [License](#license)
 * [Commands](#commands)
@@ -99,50 +105,211 @@ just workflow-test
 just workflow-test false
 ```
 
-## Command Composition
+## Command Output Reference
 
-The single-repository commands can be composed in various ways for different use cases:
+Each command returns structured output that can be used for chaining and automation. All commands support a `--json` flag for machine-readable output.
 
-### Process only valid Maven repositories
+### repo:list Output
+
+Lists repositories with metadata that can be filtered and piped to other commands:
 
 ```bash
-# Use exit codes to filter - only process repositories that validate successfully
-./bin/run.js repo:list --owner motlin --json | jq -c '.[]' | while read repo; do
-  if echo "$repo" | ./bin/run.js repo:process ./repos --topic maven --json 2>/dev/null; then
-    echo "Processed valid repository"
-  fi
-done
+# JSON output structure
+./bin/run.js repo:list --owner motlin --limit 3 --json
 ```
 
-### Selective processing with custom logic
+```json
+[
+	{
+		"name": "JUnit-Java-8-Runner",
+		"owner": {"login": "motlin", "type": "User"},
+		"language": "Java",
+		"topics": ["junit", "maven"],
+		"visibility": "public",
+		"fork": false,
+		"archived": false
+	}
+]
+```
+
+### repo:clone Output
+
+Returns the clone status and path to the cloned repository:
 
 ```bash
-# Clone all repositories but only topic Java repositories
-./bin/run.js repo:list --owner motlin --json | jq -c '.[]' | while read repo; do
-  REPO_NAME=$(echo "$repo" | jq -r '.name')
-  REPO_OWNER=$(echo "$repo" | jq -r '.owner.login')
-  LANGUAGE=$(echo "$repo" | jq -r '.language // empty')
+# Clone a single repository
+echo '{"name": "example", "owner": {"login": "user"}}' | ./bin/run.js repo:clone --output-directory ./repos --json
+```
 
-  # Always clone
-  echo "$repo" | ./bin/run.js repo:clone --output-directory ./repos
+```json
+{
+	"owner": "user",
+	"name": "example",
+	"path": "/absolute/path/to/repos/user/example",
+	"cloned": true,
+	"alreadyExists": false
+}
+```
 
-  # Validate
-  if ./bin/run.js repo:validate "./repos/$REPO_OWNER/$REPO_NAME"; then
-    # Only topic if it's a Java repository
-    if [ "$LANGUAGE" = "Java" ]; then
-      ./bin/run.js repo:topic --owner "$REPO_OWNER" --name "$REPO_NAME" --topic maven
+### repo:validate Output
+
+Checks if a directory contains a valid Maven project:
+
+```bash
+./bin/run.js repo:validate ./repos/owner/repo-name --json
+```
+
+```json
+{
+	"path": "/absolute/path/to/repos/owner/repo-name",
+	"valid": true,
+	"pomExists": true,
+	"compiles": true,
+	"hasNoBuildErrors": true
+}
+```
+
+### repo:process Output
+
+Combines clone, validate, and topic operations with comprehensive results:
+
+```bash
+echo '{"name": "example", "owner": {"login": "user"}}' | ./bin/run.js repo:process ./repos --topic maven --json
+```
+
+```json
+{
+	"name": "example",
+	"owner": {"login": "user", "type": "User"},
+	"language": "Java",
+	"topics": ["maven", "java"],
+	"path": "/absolute/path/to/repos/user/example",
+	"cloned": true,
+	"valid": true,
+	"topicAdded": true
+}
+```
+
+### aggregator:create Output
+
+Returns details about the created aggregator POM:
+```bash
+./bin/run.js aggregator:create ./maven-repos --groupId com.example --json
+```
+
+```json
+{
+	"success": true,
+	"pomPath": "/absolute/path/to/maven-repos/pom.xml",
+	"modules": [
+		{"path": "owner/repo1", "valid": true},
+		{"path": "owner/repo2", "valid": false, "reason": "Missing pom.xml"}
+	],
+	"stats": {
+		"totalScanned": 10,
+		"validRepositories": 8,
+		"skippedRepositories": 2
+	},
+	"mavenCoordinates": {
+		"groupId": "com.example",
+		"artifactId": "aggregator",
+		"version": "1.0.0-SNAPSHOT"
+	}
+}
+```
+
+## Command Composition Examples
+
+The JSON outputs enable powerful command composition using tools like `jq`:
+
+### Filter and Process by Language
+
+```bash
+# Only process Java repositories
+./bin/run.js repo:list --owner motlin --json | \
+  jq -c '.[] | select(.language == "Java")' | \
+  while read repo; do
+    echo "$repo" | ./bin/run.js repo:process ./repos --topic maven --json
+  done
+```
+
+### Process Only Non-Archived Repositories
+```bash
+# Skip archived repositories
+./bin/run.js repo:list --owner motlin --include-archived --json | \
+  jq -c '.[] | select(.archived == false)' | \
+  while read repo; do
+    echo "$repo" | ./bin/run.js repo:process ./repos --topic maven --json
+  done
+```
+
+### Collect Processing Results
+
+```bash
+# Process repositories and collect results
+./bin/run.js repo:list --owner motlin --limit 10 --json | jq -c '.[]' | \
+  while read repo; do
+    echo "$repo" | ./bin/run.js repo:process ./repos --topic maven --json
+  done | jq -s '{
+  total: length,
+  cloned: map(select(.cloned == true)) | length,
+  valid: map(select(.valid == true)) | length,
+  tagged: map(select(.topicAdded == true)) | length,
+  repositories: map({name: .name, owner: .owner.login, valid: .valid})
+}'
+```
+
+### Dry Run Analysis
+```bash
+# Preview what would be done without making changes
+./bin/run.js repo:list --owner motlin --topic java --json | jq -c '.[]' | \
+  while read repo; do
+    echo "$repo" | ./bin/run.js repo:process ./repos --topic maven --dryRun --json
+  done | jq -s 'map(select(.valid == true)) | \
+  {
+    wouldTag: length,
+    repositories: map(.name)
+  }'
+```
+
+### Create Aggregator from Filtered Repos
+
+```bash
+# Clone only non-forked Java repos and create aggregator
+./bin/run.js repo:list --owner motlin --language Java --json | \
+  jq -c '.[] | select(.fork == false)' | \
+  while read repo; do
+    echo "$repo" | ./bin/run.js repo:clone --output-directory ./maven-repos --json
+  done
+
+# Create aggregator from cloned repos
+./bin/run.js aggregator:create ./maven-repos --groupId com.example --json | \
+  jq '{
+    created: .success,
+    pomPath: .pomPath,
+    validModules: .stats.validRepositories,
+    totalScanned: .stats.totalScanned
+  }'
+```
+
+### Pipeline with Error Handling
+
+```bash
+# Process repos and handle errors gracefully
+./bin/run.js repo:list --owner motlin --json | jq -c '.[]' | \
+  while read repo; do
+    if result=$(echo "$repo" | ./bin/run.js repo:process ./repos --topic maven --json 2>&1); then
+      echo "$result" | jq -c '{name: .name, status: "success", valid: .valid}'
+    else
+      repo_name=$(echo "$repo" | jq -r '.name')
+      echo "{\"name\": \"$repo_name\", \"status\": \"failed\", \"error\": true}" | jq -c .
     fi
-  fi
-done
-```
-
-### Dry run to preview changes
-
-```bash
-# See what would be topiced without making changes
-./bin/run.js repo:list --owner motlin --topic java --json | jq -c '.[]' | while read repo; do
-  echo "$repo" | ./bin/run.js repo:process ./repos --topic maven --dryRun --json
-done | jq -s 'map(select(.valid == true))'
+  done | jq -s '{
+    processed: length,
+    succeeded: map(select(.status == "success")) | length,
+    failed: map(select(.status == "failed")) | length,
+    validRepos: map(select(.valid == true)) | map(.name)
+  }'
 ```
 
 # Directory Structure
