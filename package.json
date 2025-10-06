@@ -20,6 +20,7 @@
 		"zod": "^4.1.12"
 	},
 	"devDependencies": {
+		"@biomejs/biome": "^2.2.5",
 		"@eslint/compat": "^1",
 		"@oclif/prettier-config": "^0.2.1",
 		"@oclif/test": "^4",
@@ -41,7 +42,7 @@
 		"sinon": "^21.0.0",
 		"ts-node": "^10",
 		"tsx": "^4.20.6",
-		"typescript": "^5"
+		"typescript": "^5.8.3"
 	},
 	"engines": {
 		"node": ">=18.0.0"
@@ -86,10 +87,11 @@
 	"scripts": {
 		"build": "shx rm -rf dist && tsc -b",
 		"lint": "eslint --fix",
-		"format": "prettier --write \"**/*.{ts,json,yaml,yml}\"",
+		"format": "biome format --write . && prettier --write .",
 		"typecheck": "tsc --noEmit",
 		"ci:eslint": "eslint",
 		"ci:prettier": "prettier --check \"**/*.{ts,json,yaml,yml}\"",
+		"ci:biome": "biome format",
 		"ci:typecheck": "tsc --noEmit",
 		"postpack": "shx rm -f oclif.manifest.json",
 		"posttest": "npm run lint",
