@@ -2,27 +2,26 @@
 
 CLI tool that creates Maven aggregator POMs from a set of repositories. Maven aggregators combine multiple Maven projects into a single build, allowing you to compile and test related modules together.
 
-[![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-24292e.svg)](https://github.com/motlin/aggregator-creator)
+[![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-24292e.svg)](https://github.com/motlin/aggregator-creator)
 
 <!-- toc -->
-* [aggregator-creator](#aggregator-creator)
-* [Overview](#overview)
-* [Environment Setup](#environment-setup)
-* [Usage](#usage)
-* [Complete Workflow](#complete-workflow)
-* [Process repositories individually](#process-repositories-individually)
-* [Then create the aggregator](#then-create-the-aggregator)
-* [Run the workflow test](#run-the-workflow-test)
-* [Run workflow test and keep temporary files](#run-workflow-test-and-keep-temporary-files)
-* [Use exit codes to filter - only process repositories that validate successfully](#use-exit-codes-to-filter---only-process-repositories-that-validate-successfully)
-* [Clone all repositories but only topic Java repositories](#clone-all-repositories-but-only-topic-java-repositories)
-* [See what would be topiced without making changes](#see-what-would-be-topiced-without-making-changes)
-* [Directory Structure](#directory-structure)
-* [License](#license)
-* [Commands](#commands)
-<!-- tocstop -->
+
+- [aggregator-creator](#aggregator-creator)
+- [Overview](#overview)
+- [Environment Setup](#environment-setup)
+- [Usage](#usage)
+- [Complete Workflow](#complete-workflow)
+- [Process repositories individually](#process-repositories-individually)
+- [Then create the aggregator](#then-create-the-aggregator)
+- [Run the workflow test](#run-the-workflow-test)
+- [Run workflow test and keep temporary files](#run-workflow-test-and-keep-temporary-files)
+- [Use exit codes to filter - only process repositories that validate successfully](#use-exit-codes-to-filter---only-process-repositories-that-validate-successfully)
+- [Clone all repositories but only topic Java repositories](#clone-all-repositories-but-only-topic-java-repositories)
+- [See what would be topiced without making changes](#see-what-would-be-topiced-without-making-changes)
+- [Directory Structure](#directory-structure)
+- [License](#license)
+- [Commands](#commands)
+  <!-- tocstop -->
 
 # Overview
 
@@ -51,15 +50,18 @@ The aggregator-creator CLI provides commands for managing repositories and creat
 The main command groups include:
 
 **Single Repository Commands:**
+
 - `repo:clone` - Clone a single GitHub repository
 - `repo:validate` - Validate a single Maven repository
 - `repo:topic` - Topic a single GitHub repository with a topic
 - `repo:process` - Process a single repository (clone, validate, and topic)
 
 **Multiple Repository Commands:**
+
 - `repo:list` - Find GitHub repositories matching specific criteria
 
 **Aggregator Commands:**
+
 - `aggregator:create` - Generate a Maven aggregator POM from a directory of repositories
 
 For detailed usage information on each command, see the [Commands](#commands) section below.
@@ -77,6 +79,7 @@ Use `repo:process` to handle each repository individually:
 3. **Create aggregator:** Use `aggregator:create` to generate an aggregator POM from the processed repositories
 
 Example:
+
 ```bash
 # Process repositories individually
 ./bin/run.js repo:list --owner motlin --language Java --json | jq -c '.[]' | while read repo; do
@@ -102,6 +105,7 @@ just workflow-test false
 The single-repository commands can be composed in various ways for different use cases:
 
 ### Process only valid Maven repositories
+
 ```bash
 # Use exit codes to filter - only process repositories that validate successfully
 ./bin/run.js repo:list --owner motlin --json | jq -c '.[]' | while read repo; do
@@ -112,6 +116,7 @@ done
 ```
 
 ### Selective processing with custom logic
+
 ```bash
 # Clone all repositories but only topic Java repositories
 ./bin/run.js repo:list --owner motlin --json | jq -c '.[]' | while read repo; do
@@ -133,6 +138,7 @@ done
 ```
 
 ### Dry run to preview changes
+
 ```bash
 # See what would be topiced without making changes
 ./bin/run.js repo:list --owner motlin --topic java --json | jq -c '.[]' | while read repo; do
@@ -146,36 +152,36 @@ The aggregator-creator CLI expects and creates specific directory structures for
 
 - **For cloning repositories:** Creates an `owner/repo` directory structure
 
-  ```
-  target-directory/
-  ├── owner1/
-  │   ├── repo1/
-  │   └── repo2/
-  └── owner2/
-      └── repo3/
-  ```
+    ```
+    target-directory/
+    ├── owner1/
+    │   ├── repo1/
+    │   └── repo2/
+    └── owner2/
+        └── repo3/
+    ```
 
 - **For validating repositories:** Expects either a single repository or an `owner/repo` structure
 
-  ```
-  repos-directory/
-  ├── owner1/
-  │   ├── repo1/  # Must contain pom.xml to be valid
-  │   └── repo2/
-  └── owner2/
-      └── repo3/
-  ```
+    ```
+    repos-directory/
+    ├── owner1/
+    │   ├── repo1/  # Must contain pom.xml to be valid
+    │   └── repo2/
+    └── owner2/
+        └── repo3/
+    ```
 
 - **For creating an aggregator:** Creates a pom.xml in the specified directory
-  ```
-  maven-repos/
-  ├── pom.xml  # Created aggregator POM
-  ├── owner1/
-  │   ├── repo1/
-  │   └── repo2/
-  └── owner2/
-      └── repo3/
-  ```
+    ```
+    maven-repos/
+    ├── pom.xml  # Created aggregator POM
+    ├── owner1/
+    │   ├── repo1/
+    │   └── repo2/
+    └── owner2/
+        └── repo3/
+    ```
 
 # License
 
@@ -184,13 +190,14 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 # Commands
 
 <!-- commands -->
-* [`aggregator aggregator create [DIRECTORY]`](#aggregator-aggregator-create-directory)
-* [`aggregator help [COMMAND]`](#aggregator-help-command)
-* [`aggregator repo clone`](#aggregator-repo-clone)
-* [`aggregator repo list`](#aggregator-repo-list)
-* [`aggregator repo process OUTPUT-DIRECTORY`](#aggregator-repo-process-output-directory)
-* [`aggregator repo topic`](#aggregator-repo-topic)
-* [`aggregator repo validate REPOPATH`](#aggregator-repo-validate-repopath)
+
+- [`aggregator aggregator create [DIRECTORY]`](#aggregator-aggregator-create-directory)
+- [`aggregator help [COMMAND]`](#aggregator-help-command)
+- [`aggregator repo clone`](#aggregator-repo-clone)
+- [`aggregator repo list`](#aggregator-repo-list)
+- [`aggregator repo process OUTPUT-DIRECTORY`](#aggregator-repo-process-output-directory)
+- [`aggregator repo topic`](#aggregator-repo-topic)
+- [`aggregator repo validate REPOPATH`](#aggregator-repo-validate-repopath)
 
 ## `aggregator aggregator create [DIRECTORY]`
 
@@ -254,7 +261,7 @@ DESCRIPTION
   Display help for aggregator.
 ```
 
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.32/src/commands/help.ts)_
+_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.33/src/commands/help.ts)_
 
 ## `aggregator repo clone`
 
@@ -429,4 +436,5 @@ EXAMPLES
 ```
 
 _See code: [src/commands/repo/validate.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/validate.ts)_
+
 <!-- commandsstop -->

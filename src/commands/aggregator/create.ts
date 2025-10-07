@@ -131,9 +131,9 @@ export default class AggregatorCreate extends Command {
 			const errorMessage = error instanceof Error ? error.message : String(error);
 
 			if (
-				errorMessage.includes('Non-resolvable parent POM')
-				|| errorMessage.includes('parent.relativePath')
-				|| errorMessage.includes('Could not find artifact')
+				errorMessage.includes('Non-resolvable parent POM') ||
+				errorMessage.includes('parent.relativePath') ||
+				errorMessage.includes('Could not find artifact')
 			) {
 				this.log(
 					`│  │  │ ⚠️ ${chalk.yellow(pomFileRelativePath)} has parent POM resolution issues, treating as non-parent POM`,
@@ -423,9 +423,9 @@ export default class AggregatorCreate extends Command {
 			const errorMessage = error instanceof Error ? error.message : String(error);
 
 			if (
-				errorMessage.includes('Non-resolvable parent POM')
-				|| errorMessage.includes('parent.relativePath')
-				|| errorMessage.includes('Could not find artifact')
+				errorMessage.includes('Non-resolvable parent POM') ||
+				errorMessage.includes('parent.relativePath') ||
+				errorMessage.includes('Could not find artifact')
 			) {
 				this.log(
 					`│  │  │ ⚠️ Could not process ${chalk.yellow(pomFileRelativePath)} due to parent POM resolution issues: ${errorMessage}`,
@@ -448,23 +448,43 @@ export default class AggregatorCreate extends Command {
 	): string {
 		// prettier-ignore
 		const pom = create({version: '1.0'})
-      .ele('project', {
-        'xmlns': 'http://maven.apache.org/POM/4.0.0',
-        'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
-        'xsi:schemaLocation': 'http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd',
-      })
-      .ele('modelVersion').txt('4.0.0').up()
-      .ele('parent')
-        .ele('groupId').txt('io.liftwizard').up()
-        .ele('artifactId').txt('liftwizard-profile-parent').up()
-        .ele('version').txt(liftwizardVersion).up()
-      .up()
-      .ele('groupId').txt(groupId).up()
-      .ele('artifactId').txt(artifactId).up()
-      .ele('version').txt(version).up()
-      .ele('packaging').txt('pom').up()
-      .ele('name').txt(`${artifactId} Aggregator POM`).up()
-      .ele('description').txt('Aggregator POM for multiple Maven repositories').up()
+			.ele('project', {
+				xmlns: 'http://maven.apache.org/POM/4.0.0',
+				'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+				'xsi:schemaLocation': 'http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd',
+			})
+			.ele('modelVersion')
+			.txt('4.0.0')
+			.up()
+			.ele('parent')
+			.ele('groupId')
+			.txt('io.liftwizard')
+			.up()
+			.ele('artifactId')
+			.txt('liftwizard-profile-parent')
+			.up()
+			.ele('version')
+			.txt(liftwizardVersion)
+			.up()
+			.up()
+			.ele('groupId')
+			.txt(groupId)
+			.up()
+			.ele('artifactId')
+			.txt(artifactId)
+			.up()
+			.ele('version')
+			.txt(version)
+			.up()
+			.ele('packaging')
+			.txt('pom')
+			.up()
+			.ele('name')
+			.txt(`${artifactId} Aggregator POM`)
+			.up()
+			.ele('description')
+			.txt('Aggregator POM for multiple Maven repositories')
+			.up();
 
 		const modulesEle = pom.ele('modules');
 		for (const module of modules) {
@@ -853,8 +873,8 @@ export default class AggregatorCreate extends Command {
 			// Create maven.config
 			const mavenConfigPath = path.join(mvnDir, 'maven.config');
 			const mavenConfig =
-				['--errors', '--no-transfer-progress', '--fail-fast', '--color=always', '--threads=2C'].join('\n')
-				+ '\n';
+				['--errors', '--no-transfer-progress', '--fail-fast', '--color=always', '--threads=2C'].join('\n') +
+				'\n';
 			await fs.writeFile(mavenConfigPath, mavenConfig);
 
 			this.log(`│  │`);
