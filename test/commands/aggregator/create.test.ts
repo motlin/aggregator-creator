@@ -1,6 +1,7 @@
 import {runCommand} from '@oclif/test';
 import {expect} from 'chai';
 import fs from 'fs-extra';
+import https from 'node:https';
 import path from 'node:path';
 import os from 'node:os';
 import {createSandbox} from 'sinon';
@@ -98,7 +99,41 @@ describe('aggregator:create', () => {
 	});
 
 	it('creates an aggregator POM with default values', async function () {
-		this.timeout(10_000);
+		this.timeout(30_000);
+		const mockResponse = {
+			statusCode: 200,
+			on(event: string, callback: (data?: string) => void) {
+				if (event === 'data') {
+					callback(
+						JSON.stringify({
+							response: {
+								docs: [
+									{
+										latestVersion: '2.1.1',
+									},
+								],
+							},
+						}),
+					);
+				} else if (event === 'end') {
+					callback();
+				}
+
+				return this;
+			},
+		};
+
+		sandbox.stub(https, 'get').callsFake((url, options, callback) => {
+			if (typeof options === 'function') {
+				callback = options;
+			}
+			callback!(mockResponse as Parameters<typeof https.get>[2] extends (res: infer R) => void ? R : never);
+			return {
+				on() {
+					return this;
+				},
+			} as unknown as ReturnType<typeof https.get>;
+		});
 
 		const result = await runCommand(['aggregator:create', tempDir, '--yes', '--json'], root);
 
@@ -167,8 +202,41 @@ describe('aggregator:create', () => {
 	});
 
 	it('creates an aggregator POM with custom values', async function () {
-		this.timeout(10_000);
+		this.timeout(30_000);
+		const mockResponse = {
+			statusCode: 200,
+			on(event: string, callback: (data?: string) => void) {
+				if (event === 'data') {
+					callback(
+						JSON.stringify({
+							response: {
+								docs: [
+									{
+										latestVersion: '2.1.1',
+									},
+								],
+							},
+						}),
+					);
+				} else if (event === 'end') {
+					callback();
+				}
 
+				return this;
+			},
+		};
+
+		sandbox.stub(https, 'get').callsFake((url, options, callback) => {
+			if (typeof options === 'function') {
+				callback = options;
+			}
+			callback!(mockResponse as Parameters<typeof https.get>[2] extends (res: infer R) => void ? R : never);
+			return {
+				on() {
+					return this;
+				},
+			} as unknown as ReturnType<typeof https.get>;
+		});
 		const result = await runCommand(
 			[
 				'aggregator:create',
@@ -230,7 +298,41 @@ describe('aggregator:create', () => {
 	});
 
 	it('outputs in json format when --json flag is provided', async function () {
-		this.timeout(10_000);
+		this.timeout(30_000);
+		const mockResponse = {
+			statusCode: 200,
+			on(event: string, callback: (data?: string) => void) {
+				if (event === 'data') {
+					callback(
+						JSON.stringify({
+							response: {
+								docs: [
+									{
+										latestVersion: '2.1.1',
+									},
+								],
+							},
+						}),
+					);
+				} else if (event === 'end') {
+					callback();
+				}
+
+				return this;
+			},
+		};
+
+		sandbox.stub(https, 'get').callsFake((url, options, callback) => {
+			if (typeof options === 'function') {
+				callback = options;
+			}
+			callback!(mockResponse as Parameters<typeof https.get>[2] extends (res: infer R) => void ? R : never);
+			return {
+				on() {
+					return this;
+				},
+			} as unknown as ReturnType<typeof https.get>;
+		});
 
 		const {stdout} = await runCommand(['aggregator:create', tempDir, '--json', '--yes'], root);
 
@@ -263,7 +365,41 @@ describe('aggregator:create', () => {
 	});
 
 	it('returns a structured error when no Maven repositories are found with --json flag', async function () {
-		this.timeout(10_000);
+		this.timeout(30_000);
+		const mockResponse = {
+			statusCode: 200,
+			on(event: string, callback: (data?: string) => void) {
+				if (event === 'data') {
+					callback(
+						JSON.stringify({
+							response: {
+								docs: [
+									{
+										latestVersion: '2.1.1',
+									},
+								],
+							},
+						}),
+					);
+				} else if (event === 'end') {
+					callback();
+				}
+
+				return this;
+			},
+		};
+
+		sandbox.stub(https, 'get').callsFake((url, options, callback) => {
+			if (typeof options === 'function') {
+				callback = options;
+			}
+			callback!(mockResponse as Parameters<typeof https.get>[2] extends (res: infer R) => void ? R : never);
+			return {
+				on() {
+					return this;
+				},
+			} as unknown as ReturnType<typeof https.get>;
+		});
 
 		const emptyDir = await fs.mkdtemp(path.join(os.tmpdir(), 'empty-dir-'));
 
