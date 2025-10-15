@@ -16,3 +16,6 @@ build
 package.json
 package-lock.json
 pnpm-lock.yaml
+
+# oclif generates this, don't reformat
+README.md
