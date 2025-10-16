@@ -1,60 +1,75 @@
 # `just --list --unsorted`
+[group('default')]
 default:
     @just --list --unsorted
 
 # `npm install`
+[group('dev')]
 install:
     npm install
 
 # `npm ci`
+[group('ci')]
 install-ci:
     npm ci
 
 # `npm run lint`
+[group('dev')]
 lint: install
     npm run lint
 
 # `npm run ci:eslint`
+[group('ci')]
 eslint-ci: install-ci
     npm run ci:eslint
 
 # `npm run format`
+[group('dev')]
 format: install
     npm run format
 
 # `npm run ci:biome`
+[group('ci')]
 biome-ci: install-ci
     npm run ci:biome
 
 # `npm run ci:prettier`
+[group('ci')]
 prettier-ci: install-ci
     npm run ci:prettier
 
 # `npm run test:run`
+[group('dev')]
 test: install
     CHAI_TRUNCATE_THRESHOLD=0 npm test
 
 # `npm run test:run`
+[group('ci')]
 test-ci: install-ci
     CHAI_TRUNCATE_THRESHOLD=0 npm run test:run
 
 # `npm run typecheck`
+[group('dev')]
 typecheck: install
     npm run typecheck
 
 # `npm run typecheck`
+[group('ci')]
 typecheck-ci: install-ci
     npm run typecheck
 
 # `npm run build`
+[group('dev')]
 build: install
     npm run build
 
 # `npm run build`
+[group('ci')]
 build-ci: install-ci
     npm run build
 
 # `npm run prepack`
+[group('dev')]
 manifest: install
     npm run prepack
 
@@ -73,11 +88,13 @@ manifest: install
 #   -g = --language
 #   -t = --topic
 #   -o = --owner
+[group('integration-test')]
 repo-list OWNER *FLAGS="": build
     @echo "🔍 Listing GitHub repositories for {{OWNER}}..."
     ./bin/run.js repo:list --owner {{OWNER}} {{FLAGS}}
 
 # Find and validate Maven repositories, then topic them
+[group('integration-test')]
 find-validate-repos CLEAN="true": build
     #!/usr/bin/env bash
     set -e
@@ -203,6 +220,7 @@ find-validate-repos CLEAN="true": build
     fi
 
 # Create aggregator from repositories already topiced with 'maven' topic
+[group('integration-test')]
 create-aggregator-from-topiced CLEAN="true": build
     #!/usr/bin/env bash
     set -e
@@ -308,6 +326,7 @@ create-aggregator-from-topiced CLEAN="true": build
     fi
 
 # Run a complete workflow test demonstrating the full process
+[group('integration-test')]
 workflow-test CLEAN="true": build
     #!/usr/bin/env bash
     set -e
@@ -335,5 +354,6 @@ workflow-test CLEAN="true": build
     echo "🎉 Complete workflow test finished!"
 
 # Run all pre-commit checks
+[group('dev')]
 precommit: format lint typecheck build test manifest
     @echo "✅ All pre-commit checks passed!"
