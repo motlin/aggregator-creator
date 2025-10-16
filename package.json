@@ -20,7 +20,7 @@
 		"zod": "^4.1.12"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.2.5",
+		"@biomejs/biome": "^2.2.6",
 		"@eslint/compat": "^1",
 		"@oclif/prettier-config": "^0.2.1",
 		"@oclif/test": "^4",
