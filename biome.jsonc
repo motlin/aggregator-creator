@@ -40,7 +40,8 @@
 			"bracketSpacing": false,
 			"bracketSameLine": false,
 			"quoteStyle": "single",
-			"attributePosition": "multiline"
+			"attributePosition": "multiline",
+			"operatorLinebreak": "before"
 		}
 	},
 	"json": {
