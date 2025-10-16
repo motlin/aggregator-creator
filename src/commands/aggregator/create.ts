@@ -1,15 +1,15 @@
-import {Args, Command, Flags} from '@oclif/core';
-import fs from 'fs-extra';
-import path from 'node:path';
 import os from 'node:os';
-import {execa as _execa} from 'execa';
-import {create} from 'xmlbuilder2';
+import path from 'node:path';
+import {Args, Command, Flags} from '@oclif/core';
 import chalk from 'chalk';
+import {execa as _execa} from 'execa';
+import fs from 'fs-extra';
 import inquirer from 'inquirer';
+import {create} from 'xmlbuilder2';
 import MavenGAVCoords from '../../maven-gav.js';
 import {validatedRepositoriesSchema, type ValidatedRepository} from '../../types/repository.js';
-import {parsePomForGAV, parsePomForModules, parsePomForPackaging} from '../../utils/pom-parser.js';
 import {DependencyRewriter} from '../../utils/dependency-rewriter.js';
+import {parsePomForGAV, parsePomForModules, parsePomForPackaging} from '../../utils/pom-parser.js';
 import {XmlDependencyRewriter} from '../../utils/xml-dependency-rewriter.js';
 
 export default class AggregatorCreate extends Command {
