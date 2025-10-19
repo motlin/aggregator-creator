@@ -72,7 +72,7 @@ export default class AggregatorCreate extends Command {
 		execaFn = _execa,
 	): Promise<Awaited<ReturnType<typeof _execa>>> {
 		try {
-			return await execaFn(command, args);
+			return await execaFn(command, args, {timeout: 8000});
 		} catch (error: unknown) {
 			this.error(`├─ Command failed: ${command} ${args.join(' ')}`);
 			const errorObj = error as Error & {stderr?: string};
