@@ -16,7 +16,7 @@
 		"inquirer": "^13.0.1",
 		"log-update": "^7.0.2",
 		"xml2js": "^0.6.2",
-		"xmlbuilder2": "^4.0.1",
+		"xmlbuilder2": "^4.0.3",
 		"zod": "^4.1.13"
 	},
 	"devDependencies": {
