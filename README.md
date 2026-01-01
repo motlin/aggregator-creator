@@ -146,8 +146,19 @@ echo '{"name": "example", "owner": {"login": "user"}}' | ./bin/run.js repo:clone
 	"owner": "user",
 	"name": "example",
 	"path": "/absolute/path/to/repos/user/example",
-	"cloned": true,
-	"alreadyExists": false
+	"cloned": true
+}
+```
+
+When the repository already exists:
+
+```json
+{
+	"owner": "user",
+	"name": "example",
+	"path": "/absolute/path/to/repos/user/example",
+	"cloned": false,
+	"alreadyExists": true
 }
 ```
 
@@ -162,10 +173,48 @@ Checks if a directory contains a valid Maven project:
 ```json
 {
 	"path": "/absolute/path/to/repos/owner/repo-name",
+	"hasPom": true,
 	"valid": true,
-	"pomExists": true,
-	"compiles": true,
-	"hasNoBuildErrors": true
+	"error": null
+}
+```
+
+When validation fails:
+
+```json
+{
+	"path": "/absolute/path/to/repos/owner/repo-name",
+	"hasPom": true,
+	"valid": false,
+	"error": "Maven validation failed"
+}
+```
+
+### repo:topic Output
+
+Adds a GitHub topic to a repository:
+
+```bash
+echo '{"name": "example", "owner": {"login": "user"}}' | ./bin/run.js repo:topic --topic maven --json
+```
+
+```json
+{
+	"owner": "user",
+	"name": "example",
+	"topics": ["java", "maven"],
+	"topicAdded": true
+}
+```
+
+When the topic already exists:
+
+```json
+{
+	"owner": "user",
+	"name": "example",
+	"topics": ["java", "maven"],
+	"topicAdded": false
 }
 ```
 
@@ -186,7 +235,22 @@ echo '{"name": "example", "owner": {"login": "user"}}' | ./bin/run.js repo:proce
 	"path": "/absolute/path/to/repos/user/example",
 	"cloned": true,
 	"valid": true,
-	"topicAdded": true
+	"topicAdded": true,
+	"error": null
+}
+```
+
+When processing fails:
+
+```json
+{
+	"name": "example",
+	"owner": {"login": "user"},
+	"path": "/absolute/path/to/repos/user/example",
+	"cloned": true,
+	"valid": false,
+	"topicAdded": false,
+	"error": "Not a valid Maven repository"
 }
 ```
 
