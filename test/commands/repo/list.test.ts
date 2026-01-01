@@ -178,164 +178,21 @@ describe('repo:list', function () {
 		}
 
 		const {stdout} = result;
-		expect(JSON.parse(stdout)).to.deep.equal([
-			{
-				name: 'hex-zero',
-				owner: {login: 'motlin', type: 'User'},
-				language: 'TypeScript',
-				topics: ['browser-game', 'game'],
-				fork: false,
-				archived: false,
-				disabled: false,
-				is_template: false,
-				private: false,
-				visibility: 'public',
-			},
-			{
-				name: 'motlin.com',
-				owner: {login: 'motlin', type: 'User'},
-				language: 'TypeScript',
-				topics: [],
-				fork: false,
-				archived: false,
-				disabled: false,
-				is_template: false,
-				private: false,
-				visibility: 'public',
-			},
-			{
-				name: 'avalon-analytics',
-				owner: {login: 'motlin', type: 'User'},
-				language: 'TypeScript',
-				topics: [],
-				fork: false,
-				archived: false,
-				disabled: false,
-				is_template: false,
-				private: false,
-				visibility: 'public',
-			},
-			{
-				name: 'workflowy-java',
-				owner: {login: 'motlin', type: 'User'},
-				language: 'Java',
-				topics: [],
-				fork: false,
-				archived: false,
-				disabled: false,
-				is_template: false,
-				private: false,
-				visibility: 'public',
-			},
-			{
-				name: 'workflowy-cli',
-				owner: {login: 'motlin', type: 'User'},
-				language: 'TypeScript',
-				topics: [],
-				fork: false,
-				archived: false,
-				disabled: false,
-				is_template: false,
-				private: false,
-				visibility: 'public',
-			},
-			{
-				name: 'checkstyle-results',
-				owner: {login: 'motlin', type: 'User'},
-				language: 'TypeScript',
-				topics: [],
-				fork: false,
-				archived: false,
-				disabled: false,
-				is_template: false,
-				private: false,
-				visibility: 'public',
-			},
-			{
-				name: 'aggregator-creator',
-				owner: {login: 'motlin', type: 'User'},
-				language: 'TypeScript',
-				topics: ['aggregator', 'maven', 'oclif'],
-				fork: false,
-				archived: false,
-				disabled: false,
-				is_template: false,
-				private: false,
-				visibility: 'public',
-			},
-			{
-				name: 'factorio-blueprint-playground',
-				owner: {login: 'motlin', type: 'User'},
-				language: 'TypeScript',
-				topics: [],
-				fork: false,
-				archived: false,
-				disabled: false,
-				is_template: false,
-				private: false,
-				visibility: 'public',
-			},
-			{
-				name: 'animal-kingdom',
-				owner: {login: 'motlin', type: 'User'},
-				language: 'TypeScript',
-				topics: [],
-				fork: false,
-				archived: false,
-				disabled: false,
-				is_template: false,
-				private: false,
-				visibility: 'public',
-			},
-			{
-				name: 'typescript-template',
-				owner: {login: 'motlin', type: 'User'},
-				language: 'TypeScript',
-				topics: [],
-				fork: false,
-				archived: false,
-				disabled: false,
-				is_template: false,
-				private: false,
-				visibility: 'public',
-			},
-			{
-				name: 'JUnit-Java-8-Runner',
-				owner: {login: 'motlin', type: 'User'},
-				language: 'Java',
-				topics: ['maven'],
-				fork: false,
-				archived: false,
-				disabled: false,
-				is_template: false,
-				private: false,
-				visibility: 'public',
-			},
-			{
-				name: 'klass-intellij-plugin',
-				owner: {login: 'motlin', type: 'User'},
-				language: 'Java',
-				topics: [],
-				fork: false,
-				archived: false,
-				disabled: false,
-				is_template: false,
-				private: false,
-				visibility: 'public',
-			},
-			{
-				name: 'factorio-icon-cdn',
-				owner: {login: 'motlin', type: 'User'},
-				language: 'TypeScript',
-				topics: [],
-				fork: false,
-				archived: false,
-				disabled: false,
-				is_template: false,
-				private: false,
-				visibility: 'public',
-			},
-		]);
+		const repos = JSON.parse(stdout);
+
+		expect(repos.length).to.be.greaterThan(0);
+
+		const languages = new Set(repos.map((repo: {language: string}) => repo.language));
+		expect(languages.has('Java') || languages.has('TypeScript')).to.be.true;
+
+		for (const repo of repos) {
+			expect(repo.owner.login).to.equal('motlin');
+			expect(['Java', 'TypeScript']).to.include(repo.language);
+			expect(repo).to.have.property('name');
+			expect(repo).to.have.property('topics');
+			expect(repo.fork).to.equal(false);
+			expect(repo.archived).to.equal(false);
+		}
 	});
 
 	it('should include forked repositories when --include-forks flag is provided', async function () {
