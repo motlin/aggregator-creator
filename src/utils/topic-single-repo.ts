@@ -6,6 +6,7 @@ export interface TopicSingleRepoOptions {
 	name: string;
 	topic: string;
 	dryRun?: boolean;
+	verbose?: boolean;
 	execa?: typeof execa_;
 	logger?: {
 		log: (message: string) => void;
@@ -25,7 +26,8 @@ export interface TopicSingleRepoResult {
 }
 
 export async function topicSingleRepository(options: TopicSingleRepoOptions): Promise<TopicSingleRepoResult> {
-	const {owner, name, topic, dryRun = false, execa = execa_, logger} = options;
+	const {owner, name, topic, dryRun = false, verbose = false, execa = execa_, logger} = options;
+	const verboseLogger = verbose ? logger : undefined;
 
 	try {
 		// Get current topics
@@ -68,8 +70,8 @@ export async function topicSingleRepository(options: TopicSingleRepoOptions): Pr
 
 		// Check if topic already exists
 		if (topics.includes(topic)) {
-			if (logger) {
-				logger.log(`Topic ${topic} already exists on ${owner}/${name}`);
+			if (verboseLogger) {
+				verboseLogger.log(`Topic ${topic} already exists on ${owner}/${name}`);
 			}
 			return {
 				success: true,
@@ -84,8 +86,8 @@ export async function topicSingleRepository(options: TopicSingleRepoOptions): Pr
 		// Add new topic
 		if (dryRun) {
 			topics.push(topic);
-			if (logger) {
-				logger.log(`[DRY RUN] Would add topic ${topic} to ${owner}/${name}`);
+			if (verboseLogger) {
+				verboseLogger.log(`[DRY RUN] Would add topic ${topic} to ${owner}/${name}`);
 			}
 			return {
 				success: true,

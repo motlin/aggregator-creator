@@ -434,8 +434,8 @@ Create Maven aggregator POM from a directory of repositories
 
 ```
 USAGE
-  $ aggregator aggregator create [DIRECTORY] [--json] [-g <value>] [-a <value>] [-v <value>] [-y] [--parallel]
-    [--rewriteDependencies]
+  $ aggregator aggregator create [DIRECTORY] [--json] [-g <value>] [-a <value>] [--pomVersion <value>] [-y]
+    [--parallel] [--rewriteDependencies] [-v]
 
 ARGUMENTS
   [DIRECTORY]  Directory containing final Maven repos (or omit to read from stdin)
@@ -443,9 +443,10 @@ ARGUMENTS
 FLAGS
   -a, --artifactId=<value>        [default: aggregator] ArtifactId for aggregator POM
   -g, --groupId=<value>           [default: com.example] GroupId for aggregator POM
-  -v, --pomVersion=<value>        [default: 1.0.0-SNAPSHOT] Version for aggregator POM
+  -v, --verbose                   Show verbose output during aggregator creation
   -y, --yes                       Automatically answer "yes" to all prompts
       --[no-]parallel             Enable parallel processing
+      --pomVersion=<value>        [default: 1.0.0-SNAPSHOT] Version for aggregator POM
       --[no-]rewriteDependencies  Rewrite child pom dependencies to use versions from dependencyManagement
 
 GLOBAL FLAGS
@@ -468,6 +469,8 @@ EXAMPLES
   $ aggregator aggregator create ./maven-repos --no-rewrite-dependencies
 
   $ aggregator repo:list --owner someuser --json | aggregator aggregator create ./output-dir
+
+  $ aggregator aggregator create ./maven-repos --verbose
 ```
 
 _See code: [src/commands/aggregator/create.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/aggregator/create.ts)_
@@ -498,11 +501,12 @@ Clone a single GitHub repository
 
 ```
 USAGE
-  $ aggregator repo clone --output-directory <value> [--json] [-o <value>] [-n <value>]
+  $ aggregator repo clone --output-directory <value> [--json] [-o <value>] [-n <value>] [-v]
 
 FLAGS
   -n, --name=<value>              Repository name (required when not using stdin)
   -o, --owner=<value>             GitHub username or organization (required when not using stdin)
+  -v, --verbose                   Show verbose output during cloning
       --output-directory=<value>  (required) Directory where the repository will be cloned
 
 GLOBAL FLAGS
@@ -517,6 +521,8 @@ EXAMPLES
   echo '{"name": "JUnit-Java-8-Runner", "owner": {"login": "motlin"}}' | aggregator repo clone --output-directory ./repos
 
   $ aggregator repo:list --owner motlin --limit 1 --json | jq -c '.[0]' | aggregator repo clone --output-directory ./repos
+
+  $ aggregator repo clone --output-directory ./repos --owner motlin --name JUnit-Java-8-Runner --verbose
 ```
 
 _See code: [src/commands/repo/clone.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/clone.ts)_
@@ -528,13 +534,14 @@ List GitHub repositories based on filters
 ```
 USAGE
   $ aggregator repo list [--json] [-o <value>...] [-t <value>...] [-x <value>...] [-g <value>...]
-    [--include-forks] [--include-archived] [--visibility public|private|all] [-l <value>]
+    [--include-forks] [--include-archived] [--visibility public|private|all] [-l <value>] [-v]
 
 FLAGS
   -g, --language=<value>...       Language filter
   -l, --limit=<value>             Max repositories
   -o, --owner=<value>...          GitHub username/org to filter by
   -t, --topic=<value>...          Topic filter
+  -v, --verbose                   Show verbose output during listing
   -x, --exclude-topic=<value>...  Exclude repositories with this topic
       --include-archived          Include archived repositories
       --include-forks             Include forked repositories
@@ -613,13 +620,14 @@ Add a github topic to a single GitHub repository
 
 ```
 USAGE
-  $ aggregator repo topic -t <value> [--json] [-o <value>] [-n <value>] [-d]
+  $ aggregator repo topic -t <value> [--json] [-o <value>] [-n <value>] [-d] [-v]
 
 FLAGS
   -d, --dryRun         Show what would be done without making changes
   -n, --name=<value>   Repository name (required when not using stdin)
   -o, --owner=<value>  GitHub username or organization (required when not using stdin)
   -t, --topic=<value>  (required) Github topic to add to the repository
+  -v, --verbose        Show verbose output during topic addition
 
 GLOBAL FLAGS
   --json  Format output as json.
@@ -645,10 +653,13 @@ Validate a single Maven repository
 
 ```
 USAGE
-  $ aggregator repo validate REPOPATH [--json]
+  $ aggregator repo validate REPOPATH [--json] [-v]
 
 ARGUMENTS
   REPOPATH  Path to the repository to validate
+
+FLAGS
+  -v, --verbose  Show verbose output during validation
 
 GLOBAL FLAGS
   --json  Format output as json.
@@ -662,6 +673,8 @@ EXAMPLES
   $ aggregator repo validate /repos/owner/repo-name
 
   $ aggregator repo validate ./my-maven-project --json
+
+  $ aggregator repo validate ./my-maven-project --verbose
 ```
 
 _See code: [src/commands/repo/validate.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/validate.ts)_

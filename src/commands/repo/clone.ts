@@ -16,6 +16,7 @@ export default class RepoClone extends Command {
 		'<%= config.bin %> <%= command.id %> --output-directory ./repos --owner motlin --name JUnit-Java-8-Runner',
 		'echo \'{"name": "JUnit-Java-8-Runner", "owner": {"login": "motlin"}}\' | <%= config.bin %> <%= command.id %> --output-directory ./repos',
 		"<%= config.bin %> repo:list --owner motlin --limit 1 --json | jq -c '.[0]' | <%= config.bin %> <%= command.id %> --output-directory ./repos",
+		'<%= config.bin %> <%= command.id %> --output-directory ./repos --owner motlin --name JUnit-Java-8-Runner --verbose',
 	];
 
 	static override flags = {
@@ -33,6 +34,11 @@ export default class RepoClone extends Command {
 			description: 'Repository name (required when not using stdin)',
 			required: false,
 		}),
+		verbose: Flags.boolean({
+			char: 'v',
+			description: 'Show verbose output during cloning',
+			default: false,
+		}),
 	};
 
 	public async run(): Promise<{
@@ -45,6 +51,7 @@ export default class RepoClone extends Command {
 	}> {
 		const {flags} = await this.parse(RepoClone);
 		const outputDirectory = flags['output-directory'];
+		const {verbose} = flags;
 
 		let repository: Repository;
 
@@ -52,7 +59,9 @@ export default class RepoClone extends Command {
 		const useStdin = !process.stdin.isTTY && (!flags.owner || !flags.name);
 
 		if (useStdin) {
-			this.log(`🔍 Reading repository information from stdin...`);
+			if (verbose) {
+				this.log(`Reading repository information from stdin...`);
+			}
 
 			let fullInput = '';
 			for await (const chunk of process.stdin) {
@@ -122,7 +131,7 @@ export default class RepoClone extends Command {
 				repository.name,
 				outputDirectory,
 				execa_,
-				this,
+				verbose ? this : undefined,
 			);
 
 			const response = {
@@ -135,13 +144,21 @@ export default class RepoClone extends Command {
 			};
 
 			if (result.cloned) {
-				this.log(
-					`✅ Successfully cloned ${chalk.yellow(repository.owner.login)}/${chalk.yellow(repository.name)} to ${chalk.cyan(result.path)}`,
-				);
+				if (verbose) {
+					this.log(
+						`Successfully cloned ${chalk.yellow(repository.owner.login)}/${chalk.yellow(repository.name)} to ${chalk.cyan(result.path)}`,
+					);
+				} else {
+					this.log(`${repository.owner.login}/${repository.name}: cloned`);
+				}
 			} else if (result.skipped) {
-				this.log(
-					`⏩ Repository ${chalk.yellow(repository.owner.login)}/${chalk.yellow(repository.name)} already exists at ${chalk.cyan(result.path)}`,
-				);
+				if (verbose) {
+					this.log(
+						`Repository ${chalk.yellow(repository.owner.login)}/${chalk.yellow(repository.name)} already exists at ${chalk.cyan(result.path)}`,
+					);
+				} else {
+					this.log(`${repository.owner.login}/${repository.name}: already exists`);
+				}
 			} else if (result.error) {
 				this.error(`Failed to clone repository: ${result.error}`, {exit: 1});
 			}

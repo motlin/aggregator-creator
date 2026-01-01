@@ -96,7 +96,6 @@ describe('topicSingleRepository', () => {
 		});
 
 		expect(execaStub.callCount).to.equal(1);
-		expect(logger.log.calledWith('Topic target-topic already exists on owner/repo')).to.be.true;
 	});
 
 	it('handles dry run mode', async () => {
@@ -125,7 +124,6 @@ describe('topicSingleRepository', () => {
 		});
 
 		expect(execaStub.callCount).to.equal(1);
-		expect(logger.log.calledWith('[DRY RUN] Would add topic new-topic to owner/repo')).to.be.true;
 	});
 
 	it('handles error getting current topics', async () => {

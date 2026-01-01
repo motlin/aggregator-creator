@@ -119,7 +119,7 @@ describe('repo:topic', () => {
 
 			// In dry run mode, it should fetch existing topics and show what would be done
 			expect(result).to.deep.equal({
-				stdout: "╭─── 🏷️  Adding github topic to repository: octocat/Hello-World\n│\n[DRY RUN] Would add topic maven to octocat/Hello-World\n├──╯ 🔍 [DRY RUN] Would add github topic 'maven'\n│\n╰─── 🏷️  Github topic operation complete\n",
+				stdout: "octocat/Hello-World: would add topic 'maven'\n",
 				stderr: '',
 				result: {
 					owner: 'octocat',

@@ -158,7 +158,7 @@ describe('repo:process', () => {
 		expect(result).to.deep.equal({
 			result: expectedResult,
 			stderr: '',
-			stdout: '╭─── 🔄 Processing repository test-user/test-repo...\n│\n├──╮ 📥 Cloning repository...\n├──╯ ❌ Failed to clone repository\n├──╯\n│\n╰─── ❌ Processing failed\n',
+			stdout: 'test-user/test-repo: clone failed\n',
 		});
 	});
 

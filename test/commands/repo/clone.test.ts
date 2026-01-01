@@ -109,7 +109,7 @@ describe('repo:clone', () => {
 			);
 
 			expect(result).to.deep.equal({
-				stdout: `Skipped: Directory already exists and is not empty\n⏩ Repository test-owner/test-repo already exists at ${repoPath}\n`,
+				stdout: `test-owner/test-repo: already exists\n`,
 				stderr: '',
 				result: {
 					owner: 'test-owner',

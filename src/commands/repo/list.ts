@@ -35,6 +35,11 @@ export default class RepoList extends Command {
 			default: 'public',
 		}),
 		limit: Flags.integer({char: 'l', description: 'Max repositories'}),
+		verbose: Flags.boolean({
+			char: 'v',
+			description: 'Show verbose output during listing',
+			default: false,
+		}),
 	};
 
 	private async fetchRepositories(
@@ -47,13 +52,18 @@ export default class RepoList extends Command {
 		includeArchived: boolean,
 		visibility: string,
 		execa: typeof execa_,
+		verbose: boolean,
 	): Promise<z.infer<typeof repositoriesSchema>> {
-		this.log(
-			`├──╮ 🔍 Fetching GitHub repositories${usernames.length > 0 ? ` for users: ${chalk.yellow(usernames.join(', '))}` : ''}`,
-		);
+		if (verbose) {
+			this.log(
+				`├──╮ Fetching GitHub repositories${usernames.length > 0 ? ` for users: ${chalk.yellow(usernames.join(', '))}` : ''}`,
+			);
+		}
 
 		try {
-			this.log(`│  ├──╮ Building search query`);
+			if (verbose) {
+				this.log(`│  ├──╮ Building search query`);
+			}
 			const topicQueries = topics.map((topic) => `topic:${topic}`).join(' ');
 			const excludeTopicQueries = excludeTopics.map((topic) => `-topic:${topic}`).join(' ');
 			const languageQueries = languages.map((language) => `language:${language}`).join(' ');
@@ -78,16 +88,19 @@ export default class RepoList extends Command {
 				query += ' archived:false';
 			}
 
-			this.log(`│  │  │ Query: ${chalk.yellow(query)}`);
-			this.log(`│  ├──╯`);
-
-			this.log(`│  ├──╮ Executing GitHub API search`);
+			if (verbose) {
+				this.log(`│  │  │ Query: ${chalk.yellow(query)}`);
+				this.log(`│  ├──╯`);
+				this.log(`│  ├──╮ Executing GitHub API search`);
+			}
 
 			const args = ['api', '-X', 'GET', 'search/repositories', '-f', `q=${query}`, '--jq', '.items'];
 
 			if (limit) {
 				args.splice(6, 0, '-f', `per_page=${limit}`);
-				this.log(`│  │  │ Limit: ${chalk.yellow(limit)}`);
+				if (verbose) {
+					this.log(`│  │  │ Limit: ${chalk.yellow(limit)}`);
+				}
 			}
 
 			// Add sorting to ensure consistent results
@@ -95,8 +108,10 @@ export default class RepoList extends Command {
 
 			const {stdout} = await execa('gh', args);
 
-			this.log(`│  ├──╯`);
-			this.log(`├──╯`);
+			if (verbose) {
+				this.log(`│  ├──╯`);
+				this.log(`├──╯`);
+			}
 
 			const repositories = JSON.parse(stdout);
 			return repositoriesSchema.parse(repositories);
@@ -131,15 +146,20 @@ export default class RepoList extends Command {
 
 	public async run(): Promise<z.infer<typeof repositoriesSchema>> {
 		const {flags} = await this.parse(RepoList);
+		const {verbose} = flags;
 
 		const execa = execa_;
 
-		this.log(`╭─── 🔍 Listing GitHub repositories...`);
-		this.log(`│`);
-		this.log(`├──╮ 🔍 Prerequisites`);
+		if (verbose) {
+			this.log(`╭─── Listing GitHub repositories...`);
+			this.log(`│`);
+			this.log(`├──╮ Prerequisites`);
+		}
 
 		try {
-			this.log(`│  ├──╮ Check gh CLI`);
+			if (verbose) {
+				this.log(`│  ├──╮ Check gh CLI`);
+			}
 			await execa('gh', ['--version']);
 		} catch {
 			this.error(
@@ -156,8 +176,10 @@ export default class RepoList extends Command {
 			);
 		}
 
-		this.log(`├──╯ ✅ Prerequisites complete`);
-		this.log(`│`);
+		if (verbose) {
+			this.log(`├──╯ Prerequisites complete`);
+			this.log(`│`);
+		}
 
 		try {
 			const repositories = await this.fetchRepositories(
@@ -174,34 +196,46 @@ export default class RepoList extends Command {
 				flags['include-archived'],
 				flags.visibility,
 				execa,
+				verbose,
 			);
 
 			if (repositories.length === 0) {
-				this.log(`├──╯ ℹ️ No repositories found matching the criteria.`);
-				this.log(`│`);
+				if (verbose) {
+					this.log(`├──╯ No repositories found matching the criteria.`);
+					this.log(`│`);
+				} else {
+					this.log(`No repositories found.`);
+				}
 				return repositoriesSchema.parse([]);
 			}
 
-			this.log(`├──╮ 📋 Results: ${chalk.yellow(repositories.length)} repositories`);
+			if (verbose) {
+				this.log(`├──╮ Results: ${chalk.yellow(repositories.length)} repositories`);
 
-			for (const repo of repositories) {
-				const language = repo.language || 'No language';
-				const topics =
-					repo.topics && repo.topics.length > 0 ? `Topics: [${repo.topics.join(', ')}]` : 'No topics';
+				for (const repo of repositories) {
+					const language = repo.language || 'No language';
+					const topics =
+						repo.topics && repo.topics.length > 0 ? `Topics: [${repo.topics.join(', ')}]` : 'No topics';
 
-				const visibilityTag =
-					repo.visibility === 'public'
-						? chalk.green(`[${repo.visibility}]`)
-						: chalk.red(`[${repo.visibility}]`);
+					const visibilityTag =
+						repo.visibility === 'public'
+							? chalk.green(`[${repo.visibility}]`)
+							: chalk.red(`[${repo.visibility}]`);
 
-				this.log(
-					`│  │ ${chalk.yellow(repo.owner.login)}/${chalk.yellow(repo.name)} ${visibilityTag} (${chalk.yellow(language)}) ${topics}`,
-				);
+					this.log(
+						`│  │ ${chalk.yellow(repo.owner.login)}/${chalk.yellow(repo.name)} ${visibilityTag} (${chalk.yellow(language)}) ${topics}`,
+					);
+				}
+				this.log(`├──╯`);
+
+				this.log(`│`);
+				this.log(`╰─── Repository listing complete`);
+			} else {
+				this.log(`Found ${repositories.length} repositories.`);
+				for (const repo of repositories) {
+					this.log(`${repo.owner.login}/${repo.name}`);
+				}
 			}
-			this.log(`├──╯ ✅`);
-
-			this.log(`│`);
-			this.log(`╰─── ✅ Repository listing complete`);
 			return repositories;
 		} catch (error) {
 			let errorMessage = 'Unknown error';

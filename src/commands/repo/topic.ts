@@ -39,6 +39,11 @@ export default class RepoTopic extends Command {
 			description: 'Show what would be done without making changes',
 			default: false,
 		}),
+		verbose: Flags.boolean({
+			char: 'v',
+			description: 'Show verbose output during topic addition',
+			default: false,
+		}),
 	};
 
 	public async run(): Promise<{
@@ -48,6 +53,7 @@ export default class RepoTopic extends Command {
 		topicAdded: boolean;
 	}> {
 		const {flags} = await this.parse(RepoTopic);
+		const {verbose} = flags;
 
 		let repository: Repository;
 
@@ -55,7 +61,9 @@ export default class RepoTopic extends Command {
 		const useStdin = !process.stdin.isTTY && (!flags.owner || !flags.name);
 
 		if (useStdin) {
-			this.log(`🔍 Reading repository information from stdin...`);
+			if (verbose) {
+				this.log(`Reading repository information from stdin...`);
+			}
 
 			let fullInput = '';
 			for await (const chunk of process.stdin) {
@@ -119,8 +127,10 @@ export default class RepoTopic extends Command {
 			};
 		}
 
-		this.log(`╭─── 🏷️  Adding github topic to repository: ${repository.owner.login}/${repository.name}`);
-		this.log(`│`);
+		if (verbose) {
+			this.log(`╭─── Adding github topic to repository: ${repository.owner.login}/${repository.name}`);
+			this.log(`│`);
+		}
 
 		const logger = {
 			log: (message: string) => this.log(message),
@@ -139,24 +149,39 @@ export default class RepoTopic extends Command {
 			name: repository.name,
 			topic: flags.topic,
 			dryRun: flags.dryRun,
+			verbose,
 			execa: execa_,
 			logger,
 		});
 
 		if (result.success) {
 			if (result.alreadyAdded) {
-				this.log(`├──╯ ✅ Github topic '${flags.topic}' already exists`);
+				if (verbose) {
+					this.log(`├──╯ Github topic '${flags.topic}' already exists`);
+				} else {
+					this.log(`${repository.owner.login}/${repository.name}: topic '${flags.topic}' already exists`);
+				}
 			} else if (flags.dryRun) {
-				this.log(`├──╯ 🔍 [DRY RUN] Would add github topic '${flags.topic}'`);
+				if (verbose) {
+					this.log(`├──╯ [DRY RUN] Would add github topic '${flags.topic}'`);
+				} else {
+					this.log(`${repository.owner.login}/${repository.name}: would add topic '${flags.topic}'`);
+				}
+			} else if (verbose) {
+				this.log(`├──╯ Successfully added github topic '${flags.topic}'`);
 			} else {
-				this.log(`├──╯ ✅ Successfully added github topic '${flags.topic}'`);
+				this.log(`${repository.owner.login}/${repository.name}: added topic '${flags.topic}'`);
 			}
+		} else if (verbose) {
+			this.log(`├──╯ Failed to add github topic to repository: ${result.error || 'Unknown error'}`);
 		} else {
-			this.log(`├──╯ ❌ Failed to add github topic to repository: ${result.error || 'Unknown error'}`);
+			this.log(`${repository.owner.login}/${repository.name}: failed (${result.error || 'Unknown error'})`);
 		}
 
-		this.log(`│`);
-		this.log(`╰─── 🏷️  Github topic operation complete`);
+		if (verbose) {
+			this.log(`│`);
+			this.log(`╰─── Github topic operation complete`);
+		}
 
 		const response = {
 			owner: repository.owner.login,

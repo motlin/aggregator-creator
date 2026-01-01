@@ -13,6 +13,14 @@ import {parsePomForGAV, parsePomForModules, parsePomForPackaging} from '../../ut
 import {XmlDependencyRewriter} from '../../utils/xml-dependency-rewriter.js';
 
 export default class AggregatorCreate extends Command {
+	private _verbose = false;
+
+	private verboseLog(message: string): void {
+		if (this._verbose) {
+			this.log(message);
+		}
+	}
+
 	static override args = {
 		directory: Args.string({
 			description: 'Directory containing final Maven repos (or omit to read from stdin)',
@@ -30,6 +38,7 @@ export default class AggregatorCreate extends Command {
 		'<%= config.bin %> <%= command.id %> ./maven-repos --json',
 		'<%= config.bin %> <%= command.id %> ./maven-repos --no-rewrite-dependencies',
 		'<%= config.bin %> repo:list --owner someuser --json | <%= config.bin %> <%= command.id %> ./output-dir',
+		'<%= config.bin %> <%= command.id %> ./maven-repos --verbose',
 	];
 
 	static override enableJsonFlag = true;
@@ -46,7 +55,6 @@ export default class AggregatorCreate extends Command {
 			default: 'aggregator',
 		}),
 		pomVersion: Flags.string({
-			char: 'v',
 			description: 'Version for aggregator POM',
 			default: '1.0.0-SNAPSHOT',
 		}),
@@ -64,6 +72,11 @@ export default class AggregatorCreate extends Command {
 			description: 'Rewrite child pom dependencies to use versions from dependencyManagement',
 			default: true,
 			allowNo: true,
+		}),
+		verbose: Flags.boolean({
+			char: 'v',
+			description: 'Show verbose output during aggregator creation',
+			default: false,
 		}),
 	};
 
@@ -119,11 +132,11 @@ export default class AggregatorCreate extends Command {
 		try {
 			const modules = await this.getMavenProjectAttribute(pomFullPath, 'project.modules', execaFn);
 			if (modules.length > 0 && modules !== '<modules/>') {
-				this.log(`│  │  │ ✅ ${chalk.yellow(pomFileRelativePath)} is a parent POM`);
+				this.verboseLog(`│  │  │ ${chalk.yellow(pomFileRelativePath)} is a parent POM`);
 				return true;
 			}
 
-			this.log(`│  │  │ ❌ ${chalk.yellow(pomFileRelativePath)} is not a parent POM`);
+			this.verboseLog(`│  │  │ ${chalk.yellow(pomFileRelativePath)} is not a parent POM`);
 			return false;
 		} catch (error: unknown) {
 			const errorMessage = error instanceof Error ? error.message : String(error);
@@ -133,14 +146,14 @@ export default class AggregatorCreate extends Command {
 				|| errorMessage.includes('parent.relativePath')
 				|| errorMessage.includes('Could not find artifact')
 			) {
-				this.log(
-					`│  │  │ ⚠️ ${chalk.yellow(pomFileRelativePath)} has parent POM resolution issues, treating as non-parent POM`,
+				this.verboseLog(
+					`│  │  │ ${chalk.yellow(pomFileRelativePath)} has parent POM resolution issues, treating as non-parent POM`,
 				);
 				return false;
 			}
 
-			this.log(
-				`│  │  │ ❌ Failed to determine if ${chalk.yellow(pomFileRelativePath)} is a parent POM: ${errorMessage}`,
+			this.verboseLog(
+				`│  │  │ Failed to determine if ${chalk.yellow(pomFileRelativePath)} is a parent POM: ${errorMessage}`,
 			);
 			return false;
 		}
@@ -152,27 +165,27 @@ export default class AggregatorCreate extends Command {
 		execaFn = _execa,
 		parallel = true,
 	) {
-		this.log(
-			`│  │ ⏳ Processing all found POM files for jar/bundle modules to add to the dependencyManagement section...`,
+		this.verboseLog(
+			`│  │ Processing all found POM files for jar/bundle modules to add to the dependencyManagement section...`,
 		);
 
 		const processGAV = async (pomRelativePath: string) => {
-			this.log(`│  ├──╮ 📄 Processing ${chalk.yellow(pomRelativePath)}`);
+			this.verboseLog(`│  ├──╮ Processing ${chalk.yellow(pomRelativePath)}`);
 			try {
 				const pomFullPath = path.join(repositoryBaseDir, pomRelativePath);
 				const packaging = await this.getPackagingType(pomFullPath, execaFn);
 
 				if (packaging === 'jar' || packaging === 'bundle') {
-					this.log(`│  │  │ ✅ Has ${chalk.yellow(packaging)} packaging`);
+					this.verboseLog(`│  │  │ Has ${chalk.yellow(packaging)} packaging`);
 					const result = await this.getGAVFromPom(repositoryBaseDir, pomRelativePath, execaFn);
-					this.log(`│  ├──╯`);
+					this.verboseLog(`│  ├──╯`);
 					return result;
 				}
-				this.log(`│  │  │ ⏩ Skipping ${chalk.yellow(packaging)} packaging`);
-				this.log(`│  ├──╯`);
+				this.verboseLog(`│  │  │ Skipping ${chalk.yellow(packaging)} packaging`);
+				this.verboseLog(`│  ├──╯`);
 			} catch {
-				this.log(`│  │  │ ⚠️ Could not determine packaging type, skipping`);
-				this.log(`│  ├──╯`);
+				this.verboseLog(`│  │  │ Could not determine packaging type, skipping`);
+				this.verboseLog(`│  ├──╯`);
 			}
 			return null;
 		};
@@ -192,20 +205,20 @@ export default class AggregatorCreate extends Command {
 
 		const allGAVs = gavResults.filter((gav): gav is MavenGAVCoords => gav !== null);
 
-		this.log(`│  │ `);
-		this.log(`│  ├──╮ 📝 Adding to the dependencyManagement section of the aggregator...`);
+		this.verboseLog(`│  │ `);
+		this.verboseLog(`│  ├──╮ Adding to the dependencyManagement section of the aggregator...`);
 
 		if (allGAVs.length > 0) {
 			for (const gav of allGAVs) {
-				this.log(
+				this.verboseLog(
 					`│  │  │ Adding group: ${chalk.yellow(gav.getGroupId())}, artifact: ${chalk.yellow(gav.getArtifactId())}, and version: ${chalk.yellow(gav.getVersion())}`,
 				);
 			}
 		} else {
-			this.log(`│  │  │ ℹ️ No GAVs found to add to the dependencyManagement section of the aggregator...`);
+			this.verboseLog(`│  │  │ No GAVs found to add to the dependencyManagement section of the aggregator...`);
 		}
 
-		this.log(`│  ├──╯`);
+		this.verboseLog(`│  ├──╯`);
 
 		return allGAVs;
 	}
@@ -216,10 +229,10 @@ export default class AggregatorCreate extends Command {
 		execaFn = _execa,
 		parallel = true,
 	): Promise<MavenGAVCoords[]> {
-		this.log(`│  │ ⏳ Processing all reactor modules to add to the dependencyManagement section...`);
+		this.verboseLog(`│  │ Processing all reactor modules to add to the dependencyManagement section...`);
 
 		const processRepoModules = async (repo: {path: string; relativePath: string}) => {
-			this.log(`│  ├──╮ 📦 Processing repository ${chalk.yellow(repo.relativePath)}`);
+			this.verboseLog(`│  ├──╮ Processing repository ${chalk.yellow(repo.relativePath)}`);
 
 			let pomPaths: string[] = [];
 
@@ -243,11 +256,11 @@ export default class AggregatorCreate extends Command {
 						try {
 							const result = await this.getGAVFromPom(repo.path, pomRelativePath, execaFn);
 							if (result) {
-								this.log(`│  │  │ ✅ Added ${chalk.yellow(result.getArtifactId())}`);
+								this.verboseLog(`│  │  │ Added ${chalk.yellow(result.getArtifactId())}`);
 								return result;
 							}
 						} catch {
-							this.log(`│  │  │ ⚠️ Could not process ${chalk.yellow(pomRelativePath)}`);
+							this.verboseLog(`│  │  │ Could not process ${chalk.yellow(pomRelativePath)}`);
 						}
 						return null;
 					}),
@@ -256,7 +269,7 @@ export default class AggregatorCreate extends Command {
 				gavs.push(...batchResults.filter((r): r is MavenGAVCoords => r !== null));
 			}
 
-			this.log(`│  ├──╯`);
+			this.verboseLog(`│  ├──╯`);
 			return gavs;
 		};
 
@@ -272,8 +285,8 @@ export default class AggregatorCreate extends Command {
 			}
 		}
 
-		this.log(`│  │ `);
-		this.log(`│  ├──╮ 📝 Summary of modules for dependencyManagement:`);
+		this.verboseLog(`│  │ `);
+		this.verboseLog(`│  ├──╮ Summary of modules for dependencyManagement:`);
 
 		if (allGAVs.length > 0) {
 			const gavMap = new Map<string, MavenGAVCoords>();
@@ -285,15 +298,15 @@ export default class AggregatorCreate extends Command {
 			allGAVs = [...gavMap.values()];
 
 			for (const gav of allGAVs) {
-				this.log(
+				this.verboseLog(
 					`│  │  │ ${chalk.yellow(gav.getGroupId())}:${chalk.yellow(gav.getArtifactId())}:${chalk.yellow(gav.getVersion())}`,
 				);
 			}
 		} else {
-			this.log(`│  │  │ ℹ️ No modules found to add to dependencyManagement`);
+			this.verboseLog(`│  │  │ No modules found to add to dependencyManagement`);
 		}
 
-		this.log(`│  ├──╯`);
+		this.verboseLog(`│  ├──╯`);
 
 		return allGAVs;
 	}
@@ -373,7 +386,7 @@ export default class AggregatorCreate extends Command {
 			return [];
 		}
 
-		this.log(`│  │ 🔍  Following module declarations from root POM...`);
+		this.verboseLog(`│  │ Following module declarations from root POM...`);
 
 		while (pomsToProcess.length > 0) {
 			const batch = pomsToProcess.splice(0, 10);
@@ -384,7 +397,7 @@ export default class AggregatorCreate extends Command {
 					const newPoms: Array<{pomPath: string; relativePath: string}> = [];
 
 					if (modules.length > 0) {
-						this.log(
+						this.verboseLog(
 							`│  │  │ Found ${chalk.yellow(modules.length)} modules in ${chalk.yellow(relativePath || 'root')} POM`,
 						);
 
@@ -402,8 +415,8 @@ export default class AggregatorCreate extends Command {
 									};
 								}
 
-								this.log(
-									`│  │  │ ⚠️ Module ${chalk.yellow(module)} declared but POM not found at ${chalk.yellow(modulePomRelativePath)}`,
+								this.verboseLog(
+									`│  │  │ Module ${chalk.yellow(module)} declared but POM not found at ${chalk.yellow(modulePomRelativePath)}`,
 								);
 								return {exists: false};
 							}),
@@ -430,12 +443,12 @@ export default class AggregatorCreate extends Command {
 		}
 
 		const result = [...allPoms];
-		this.log(`│  │  │ Total POMs found: ${chalk.yellow(result.length)}`);
+		this.verboseLog(`│  │  │ Total POMs found: ${chalk.yellow(result.length)}`);
 		return result;
 	}
 
 	private async fetchLatestLiftwizardVersion(execaFn = _execa): Promise<string> {
-		this.log(`│  │ 🔍 Fetching latest liftwizard-profile-parent version using Maven...`);
+		this.verboseLog(`│  │ Fetching latest liftwizard-profile-parent version using Maven...`);
 
 		try {
 			const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'liftwizard-version-'));
@@ -484,7 +497,7 @@ export default class AggregatorCreate extends Command {
 
 						if (validVersions.length > 0) {
 							const latestVersion = validVersions[0];
-							this.log(`│  │ ✅ Found latest liftwizard version: ${chalk.yellow(latestVersion)}`);
+							this.verboseLog(`│  │ Found latest liftwizard version: ${chalk.yellow(latestVersion)}`);
 							return latestVersion;
 						}
 					}
@@ -493,14 +506,14 @@ export default class AggregatorCreate extends Command {
 				}
 
 				const latestVersion = versionMatch[1];
-				this.log(`│  │ ✅ Found latest liftwizard version: ${chalk.yellow(latestVersion)}`);
+				this.verboseLog(`│  │ Found latest liftwizard version: ${chalk.yellow(latestVersion)}`);
 				return latestVersion;
 			} finally {
 				await fs.remove(tempDir);
 			}
 		} catch (error) {
 			const fallbackVersion = '2.1.13';
-			this.log(`│  │ ⚠️ Could not fetch latest version, using fallback: ${chalk.yellow(fallbackVersion)}`);
+			this.verboseLog(`│  │ Could not fetch latest version, using fallback: ${chalk.yellow(fallbackVersion)}`);
 			this.debug(`Maven error: ${error instanceof Error ? error.message : String(error)}`);
 			return fallbackVersion;
 		}
@@ -516,7 +529,7 @@ export default class AggregatorCreate extends Command {
 			const parseResult = await parsePomForGAV(pomFullPath);
 
 			if (!parseResult.needsMavenFallback) {
-				this.log(`│  │  │ ⚡ Fast XML parsing`);
+				this.verboseLog(`│  │  │ Fast XML parsing`);
 				return new MavenGAVCoords(
 					parseResult.gav.groupId!,
 					parseResult.gav.artifactId!,
@@ -524,7 +537,7 @@ export default class AggregatorCreate extends Command {
 				);
 			}
 
-			this.log(`│  │  │ 🐌 Maven fallback for ${chalk.yellow(pomFileRelativePath)}: ${parseResult.reason}`);
+			this.verboseLog(`│  │  │ Maven fallback for ${chalk.yellow(pomFileRelativePath)}: ${parseResult.reason}`);
 
 			const groupId = await this.getMavenProjectAttribute(pomFullPath, 'project.groupId', execaFn);
 			const artifactId = await this.getMavenProjectAttribute(pomFullPath, 'project.artifactId', execaFn);
@@ -539,11 +552,13 @@ export default class AggregatorCreate extends Command {
 				|| errorMessage.includes('parent.relativePath')
 				|| errorMessage.includes('Could not find artifact')
 			) {
-				this.log(
-					`│  │  │ ⚠️ Could not process ${chalk.yellow(pomFileRelativePath)} due to parent POM resolution issues: ${errorMessage}`,
+				this.verboseLog(
+					`│  │  │ Could not process ${chalk.yellow(pomFileRelativePath)} due to parent POM resolution issues: ${errorMessage}`,
 				);
 			} else {
-				this.log(`│  │  │ ❌ Failed to collect GAV from ${chalk.yellow(pomFileRelativePath)}: ${errorMessage}`);
+				this.verboseLog(
+					`│  │  │ Failed to collect GAV from ${chalk.yellow(pomFileRelativePath)}: ${errorMessage}`,
+				);
 			}
 
 			return null;
@@ -618,6 +633,7 @@ export default class AggregatorCreate extends Command {
 		const execa = _execa;
 
 		const {args, flags} = await this.parse(AggregatorCreate);
+		this._verbose = flags.verbose;
 		let directoryPath: string;
 		let validRepos: ValidatedRepository[] = [];
 
@@ -702,15 +718,15 @@ export default class AggregatorCreate extends Command {
 			});
 		}
 
-		this.log(`╭─── 📄 Creating aggregator POM...`);
-		this.log(`│`);
+		this.verboseLog(`╭─── Creating aggregator POM...`);
+		this.verboseLog(`│`);
 
 		const mavenRepos: {path: string; relativePath: string}[] = [];
 		const skippedRepos: {path: string; relativePath: string; reason: string}[] = [];
 		let totalScanned = 0;
 
 		if (validRepos.length > 0) {
-			this.log(`├──╮ 🔍 Using ${chalk.yellow(validRepos.length)} validated repositories from input...`);
+			this.verboseLog(`├──╮ Using ${chalk.yellow(validRepos.length)} validated repositories from input...`);
 
 			for (const repo of validRepos) {
 				const relativePath = path.join(repo.owner.login, repo.name);
@@ -721,7 +737,7 @@ export default class AggregatorCreate extends Command {
 			}
 			totalScanned = validRepos.length;
 		} else {
-			this.log(`├──╮ 🔍 Scanning for Maven repositories in ${chalk.yellow(directoryPath)}...`);
+			this.verboseLog(`├──╮ Scanning for Maven repositories in ${chalk.yellow(directoryPath)}...`);
 
 			const entries = await fs.readdir(directoryPath);
 
@@ -737,7 +753,9 @@ export default class AggregatorCreate extends Command {
 				}
 			}
 
-			this.log(`│  │ Found ${chalk.yellow(firstLevelEntries.length)} potential repository containers to scan`);
+			this.verboseLog(
+				`│  │ Found ${chalk.yellow(firstLevelEntries.length)} potential repository containers to scan`,
+			);
 
 			if (firstLevelEntries.length === 0) {
 				const result = {
@@ -773,7 +791,7 @@ export default class AggregatorCreate extends Command {
 			}
 
 			for (const entry of firstLevelEntries) {
-				this.log(`│  │ ⏳ Examining: ${chalk.yellow(entry)}`);
+				this.verboseLog(`│  │ Examining: ${chalk.yellow(entry)}`);
 
 				const entryPath = path.join(directoryPath, entry);
 				const stats = await fs.stat(entryPath);
@@ -862,41 +880,41 @@ export default class AggregatorCreate extends Command {
 		const validModules = mavenRepos.map((repo) => repo.relativePath);
 
 		for (const repo of mavenRepos) {
-			this.log(`│  │ ✅ Found valid Maven repository: ${chalk.yellow(repo.relativePath)}`);
+			this.verboseLog(`│  │ Found valid Maven repository: ${chalk.yellow(repo.relativePath)}`);
 		}
 		const allGAVs = await this.processAllReactorModules(directoryPath, mavenRepos, execa, flags.parallel);
-		this.log(`│  │`);
-		this.log(`│  ├──╮ 📊 Repository scan summary:`);
-		this.log(`│  │  │ Found ${chalk.yellow(mavenRepos.length)} valid Maven repositories`);
-		this.log(
+		this.verboseLog(`│  │`);
+		this.verboseLog(`│  ├──╮ Repository scan summary:`);
+		this.verboseLog(`│  │  │ Found ${chalk.yellow(mavenRepos.length)} valid Maven repositories`);
+		this.verboseLog(
 			`│  │  │ Found ${chalk.yellow(allGAVs.length)} GAVs to add to the dependencyManagement section of the POM`,
 		);
 		if (skippedRepos.length > 0) {
-			this.log(`│  │  │ ⚠️ Skipped ${chalk.yellow(skippedRepos.length)} repositories`);
+			this.verboseLog(`│  │  │ Skipped ${chalk.yellow(skippedRepos.length)} repositories`);
 			for (const repo of skippedRepos) {
 				if (repo.reason === 'Missing pom.xml') {
-					this.log(`│  │  │   → ${chalk.yellow(repo.relativePath)}: Missing pom.xml file`);
+					this.verboseLog(`│  │  │   ${chalk.yellow(repo.relativePath)}: Missing pom.xml file`);
 				}
 			}
 		}
-		this.log(`│  ├──╯`);
+		this.verboseLog(`│  ├──╯`);
 
-		this.log(`│  │`);
+		this.verboseLog(`│  │`);
 		const liftwizardVersion = await this.fetchLatestLiftwizardVersion();
 
 		const {yes} = flags;
 		let proceed = yes;
 
 		if (!proceed) {
-			this.log(`│  │`);
-			this.log(`│  ├──╮ 📋 Ready to create aggregator POM with the following settings:`);
-			this.log(`│  │  │ - groupId: ${chalk.yellow(flags.groupId)}`);
-			this.log(`│  │  │ - artifactId: ${chalk.yellow(flags.artifactId)}`);
-			this.log(`│  │  │ - version: ${chalk.yellow(flags.pomVersion)}`);
-			this.log(
+			this.verboseLog(`│  │`);
+			this.verboseLog(`│  ├──╮ Ready to create aggregator POM with the following settings:`);
+			this.verboseLog(`│  │  │ - groupId: ${chalk.yellow(flags.groupId)}`);
+			this.verboseLog(`│  │  │ - artifactId: ${chalk.yellow(flags.artifactId)}`);
+			this.verboseLog(`│  │  │ - version: ${chalk.yellow(flags.pomVersion)}`);
+			this.verboseLog(
 				`│  │  │ - parent: ${chalk.yellow(`io.liftwizard:liftwizard-profile-parent:${liftwizardVersion}`)}`,
 			);
-			this.log(`│  │  │ - modules: ${chalk.yellow(validModules.length)} Maven repositories`);
+			this.verboseLog(`│  │  │ - modules: ${chalk.yellow(validModules.length)} Maven repositories`);
 
 			const {confirmed} = await inquirer.prompt([
 				{
@@ -963,26 +981,30 @@ export default class AggregatorCreate extends Command {
 				+ '\n';
 			await fs.writeFile(mavenConfigPath, mavenConfig);
 
-			this.log(`│  │`);
-			this.log(`│  ├──╮ ✅ Created aggregator POM at ${chalk.yellow(pomPath)}`);
-			this.log(`│  │  │ 📋 Included ${chalk.yellow(validModules.length)} modules`);
-			this.log(`│  │  │ 📁 Created .mvn directory with Maven configuration`);
-			this.log(`│  ├──╯`);
+			if (this._verbose) {
+				this.log(`│  │`);
+				this.log(`│  ├──╮ Created aggregator POM at ${chalk.yellow(pomPath)}`);
+				this.log(`│  │  │ Included ${chalk.yellow(validModules.length)} modules`);
+				this.log(`│  │  │ Created .mvn directory with Maven configuration`);
+				this.log(`│  ├──╯`);
+			} else {
+				this.log(`Created aggregator POM: ${pomPath} (${validModules.length} modules)`);
+			}
 
 			if (flags.rewriteDependencies && allGAVs.length > 0) {
 				const xmlRewriter = new XmlDependencyRewriter({
 					aggregatorPath: directoryPath,
 					gavs: allGAVs,
 					modules: validModules,
-					verbose: true,
-					log: (message: string) => this.log(message),
+					verbose: this._verbose,
+					log: (message: string) => this.verboseLog(message),
 				});
 
 				const xmlResult = await xmlRewriter.rewriteDependencies();
 
 				if (xmlResult.mavenFallbacks.length > 0) {
-					this.log(`│  │`);
-					this.log(`│  ├──╮ 🔧 Using Maven for complex dependency updates...`);
+					this.verboseLog(`│  │`);
+					this.verboseLog(`│  ├──╮ Using Maven for complex dependency updates...`);
 
 					const mavenRewriter = new DependencyRewriter(
 						{
@@ -990,7 +1012,7 @@ export default class AggregatorCreate extends Command {
 							gavs: allGAVs,
 							modules: xmlResult.mavenFallbacks,
 							verbose: false,
-							log: (message: string) => this.log(message),
+							log: (message: string) => this.verboseLog(message),
 						},
 						execa,
 					);
@@ -1000,32 +1022,36 @@ export default class AggregatorCreate extends Command {
 					xmlResult.rewrittenPoms.push(...mavenResult.rewrittenPoms);
 					xmlResult.errors.push(...mavenResult.errors);
 
-					this.log(`│  ├──╯`);
+					this.verboseLog(`│  ├──╯`);
 				}
 
 				if (xmlResult.rewrittenPoms.length > 0 || xmlResult.errors.length > 0) {
-					this.log(`│  │`);
-					this.log(`│  ├──╮ 📝 Dependency rewriting summary:`);
+					this.verboseLog(`│  │`);
+					this.verboseLog(`│  ├──╮ Dependency rewriting summary:`);
 					if (xmlResult.rewrittenPoms.length > 0) {
-						this.log(`│  │  │ ✅ Updated ${chalk.yellow(xmlResult.rewrittenPoms.length)} pom files`);
+						this.verboseLog(`│  │  │ Updated ${chalk.yellow(xmlResult.rewrittenPoms.length)} pom files`);
 					}
 					if (xmlResult.mavenFallbacks.length > 0) {
-						this.log(
-							`│  │  │ 🔧 Used Maven for ${chalk.yellow(xmlResult.mavenFallbacks.length)} complex pom files`,
+						this.verboseLog(
+							`│  │  │ Used Maven for ${chalk.yellow(xmlResult.mavenFallbacks.length)} complex pom files`,
 						);
 					}
 					if (xmlResult.errors.length > 0) {
-						this.log(`│  │  │ ⚠️ Failed to update ${chalk.yellow(xmlResult.errors.length)} pom files`);
+						this.verboseLog(`│  │  │ Failed to update ${chalk.yellow(xmlResult.errors.length)} pom files`);
 						for (const error of xmlResult.errors) {
-							this.log(`│  │  │   → ${chalk.yellow(error.pom)}: ${error.error}`);
+							this.verboseLog(`│  │  │   ${chalk.yellow(error.pom)}: ${error.error}`);
 						}
 					}
-					this.log(`│  ├──╯`);
+					this.verboseLog(`│  ├──╯`);
+				}
+
+				if (!this._verbose && xmlResult.rewrittenPoms.length > 0) {
+					this.log(`Rewrote dependencies in ${xmlResult.rewrittenPoms.length} pom files.`);
 				}
 			}
 
-			this.log(`│`);
-			this.log(`╰─── ✅ Successfully created aggregator POM at: ${chalk.yellow(pomPath)}`);
+			this.verboseLog(`│`);
+			this.verboseLog(`╰─── Successfully created aggregator POM at: ${chalk.yellow(pomPath)}`);
 
 			return {
 				success: true,

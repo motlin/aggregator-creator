@@ -74,27 +74,38 @@ done`,
 	}> {
 		const {args, flags} = await this.parse(RepoProcess);
 		const outputDir = args['output-directory'];
-		const {topic, dryRun} = flags;
+		const {topic, dryRun, verbose} = flags;
 
 		// Get repository info from flags or stdin
 		const repoInfo = await this.getRepoInfo(flags);
+		const repoName = `${repoInfo.owner.login}/${repoInfo.name}`;
 
 		try {
-			this.log(
-				`╭─── 🔄 Processing repository ${chalk.yellow(repoInfo.owner.login)}/${chalk.yellow(repoInfo.name)}...`,
+			if (verbose) {
+				this.log(
+					`╭─── Processing repository ${chalk.yellow(repoInfo.owner.login)}/${chalk.yellow(repoInfo.name)}...`,
+				);
+				this.log(`│`);
+				this.log(`├──╮ Cloning repository...`);
+			}
+
+			const cloneResult = await cloneSingleRepo(
+				repoInfo.owner.login,
+				repoInfo.name,
+				outputDir,
+				execa_,
+				verbose ? this : undefined,
 			);
-			this.log(`│`);
-
-			// 1. Clone repository using cloneSingleRepo utility
-			this.log(`├──╮ 📥 Cloning repository...`);
-
-			const cloneResult = await cloneSingleRepo(repoInfo.owner.login, repoInfo.name, outputDir, execa_, this);
 
 			if (!cloneResult.cloned && !cloneResult.skipped) {
-				this.log(`├──╯ ❌ Failed to clone repository`);
-				this.log(`├──╯`);
-				this.log(`│`);
-				this.log(`╰─── ❌ Processing failed`);
+				if (verbose) {
+					this.log(`├──╯ Failed to clone repository`);
+					this.log(`├──╯`);
+					this.log(`│`);
+					this.log(`╰─── Processing failed`);
+				} else {
+					this.log(`${repoName}: clone failed`);
+				}
 
 				const result = {
 					...repoInfo,
@@ -108,23 +119,32 @@ done`,
 				return result;
 			}
 
-			if (cloneResult.cloned) {
-				this.log(`├──╯ ✅ Repository cloned to ${chalk.cyan(cloneResult.path)}`);
-			} else if (cloneResult.skipped) {
-				this.log(`├──╯ ⏩ Repository already exists at ${chalk.cyan(cloneResult.path)}`);
+			if (verbose) {
+				if (cloneResult.cloned) {
+					this.log(`├──╯ Repository cloned to ${chalk.cyan(cloneResult.path)}`);
+				} else if (cloneResult.skipped) {
+					this.log(`├──╯ Repository already exists at ${chalk.cyan(cloneResult.path)}`);
+				}
+
+				this.log(`│`);
+				this.log(`├──╮ Validating repository...`);
 			}
 
-			// 2. Validate repository using validateMavenRepo utility
-			this.log(`│`);
-			this.log(`├──╮ 🔍 Validating repository...`);
-
-			const validateResult: MavenValidationResult = await validateMavenRepo(cloneResult.path, execa_, this);
+			const validateResult: MavenValidationResult = await validateMavenRepo(
+				cloneResult.path,
+				execa_,
+				verbose ? this : undefined,
+			);
 
 			if (!validateResult.valid) {
-				this.log(`├──╯ ❌ Repository is not a valid Maven project`);
-				this.log(`├──╯`);
-				this.log(`│`);
-				this.log(`╰─── ❌ Processing complete (repository not valid)`);
+				if (verbose) {
+					this.log(`├──╯ Repository is not a valid Maven project`);
+					this.log(`├──╯`);
+					this.log(`│`);
+					this.log(`╰─── Processing complete (repository not valid)`);
+				} else {
+					this.log(`${repoName}: not a valid Maven project`);
+				}
 
 				const result = {
 					...repoInfo,
@@ -138,17 +158,18 @@ done`,
 				return result;
 			}
 
-			this.log(`├──╯ ✅ Repository is a valid Maven project`);
-
-			// 3. Add topic to repository using topicSingleRepository utility
-			this.log(`│`);
-			this.log(`├──╮ 🏷️ Adding github topic to repository: ${chalk.cyan(topic)}...`);
+			if (verbose) {
+				this.log(`├──╯ Repository is a valid Maven project`);
+				this.log(`│`);
+				this.log(`├──╮ Adding github topic to repository: ${chalk.cyan(topic)}...`);
+			}
 
 			const topicSingleResult: TopicSingleRepoResult = await topicSingleRepository({
 				owner: repoInfo.owner.login,
 				name: repoInfo.name,
 				topic,
 				dryRun,
+				verbose,
 				execa: execa_,
 				logger: {
 					log: this.log.bind(this),
@@ -164,12 +185,16 @@ done`,
 			});
 
 			if (!topicSingleResult.success) {
-				this.log(
-					`├──╯ ❌ Failed to add github topic to repository: ${topicSingleResult.error || 'Unknown error'}`,
-				);
-				this.log(`├──╯`);
-				this.log(`│`);
-				this.log(`╰─── ❌ Processing failed`);
+				if (verbose) {
+					this.log(
+						`├──╯ Failed to add github topic to repository: ${topicSingleResult.error || 'Unknown error'}`,
+					);
+					this.log(`├──╯`);
+					this.log(`│`);
+					this.log(`╰─── Processing failed`);
+				} else {
+					this.log(`${repoName}: topic add failed (${topicSingleResult.error || 'Unknown error'})`);
+				}
 
 				const result = {
 					...repoInfo,
@@ -183,7 +208,6 @@ done`,
 				return result;
 			}
 
-			// Map TopicSingleRepoResult to expected format
 			const topicResult = {
 				owner: topicSingleResult.owner,
 				name: topicSingleResult.name,
@@ -191,19 +215,26 @@ done`,
 				topicAdded: topicSingleResult.success && !topicSingleResult.alreadyAdded,
 			};
 
-			if (topicResult.topicAdded) {
-				this.log(`├──╯ ✅ Repository github topic added: ${chalk.cyan(topic)}`);
+			if (verbose) {
+				if (topicResult.topicAdded) {
+					this.log(`├──╯ Repository github topic added: ${chalk.cyan(topic)}`);
+				} else if (dryRun) {
+					this.log(`├──╯ [DRY RUN] Would add github topic to repository: ${chalk.cyan(topic)}`);
+				} else {
+					this.log(`├──╯ Repository already has github topic: ${chalk.cyan(topic)}`);
+				}
+
+				this.log(`├──╯`);
+				this.log(`│`);
+				this.log(`╰─── Processing complete`);
+			} else if (topicResult.topicAdded) {
+				this.log(`${repoName}: processed, topic added`);
 			} else if (dryRun) {
-				this.log(`├──╯ 🔵 [DRY RUN] Would add github topic to repository: ${chalk.cyan(topic)}`);
+				this.log(`${repoName}: processed, would add topic`);
 			} else {
-				this.log(`├──╯ ℹ️ Repository already has github topic: ${chalk.cyan(topic)}`);
+				this.log(`${repoName}: processed, topic exists`);
 			}
 
-			this.log(`├──╯`);
-			this.log(`│`);
-			this.log(`╰─── ✅ Processing complete`);
-
-			// 4. Output combined result
 			const result = {
 				...repoInfo,
 				path: cloneResult.path,
