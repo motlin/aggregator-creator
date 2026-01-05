@@ -216,6 +216,18 @@ describe('repo:list', function () {
 				visibility: 'public',
 			},
 			{
+				name: 'workflowy-java',
+				owner: {login: 'motlin', type: 'User'},
+				language: 'Java',
+				topics: [],
+				fork: false,
+				archived: false,
+				disabled: false,
+				is_template: false,
+				private: false,
+				visibility: 'public',
+			},
+			{
 				name: 'workflowy-cli',
 				owner: {login: 'motlin', type: 'User'},
 				language: 'TypeScript',
