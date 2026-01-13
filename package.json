@@ -30,7 +30,7 @@
 		"@types/node": "25.0.3",
 		"@types/sinon": "21.0.0",
 		"@types/xml2js": "0.4.14",
-		"@typescript-eslint/parser": "8.52.0",
+		"@typescript-eslint/parser": "8.53.0",
 		"chai": "6.2.2",
 		"eslint": "9.39.2",
 		"eslint-config-oclif": "6.0.130",
