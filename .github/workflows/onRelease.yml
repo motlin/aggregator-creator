@@ -15,7 +15,7 @@ jobs:
             - run: npm install
             - run: npm run build
             - run: npm run prepack
-            - uses: JS-DevTools/npm-publish@7f8fe47b3bea1be0c3aec2b717c5ec1f3e03410b
+            - uses: JS-DevTools/npm-publish@4ce4bd0f334d5316473155078da1955d42148494
               with:
                   token: ${{ secrets.NPM_TOKEN }}
             - run: npm run postpack
