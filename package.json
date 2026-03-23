@@ -9,7 +9,7 @@
 	"bugs": "https://github.com/motlin/aggregator-creator/issues",
 	"dependencies": {
 		"@oclif/core": "4.10.2",
-		"@oclif/plugin-help": "6.2.38",
+		"@oclif/plugin-help": "6.2.40",
 		"chalk": "5.6.2",
 		"execa": "9.6.1",
 		"fs-extra": "11.3.4",
