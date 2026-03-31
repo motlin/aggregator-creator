@@ -30,7 +30,7 @@
 		"@types/node": "25.5.0",
 		"@types/sinon": "21.0.0",
 		"@types/xml2js": "0.4.14",
-		"@typescript-eslint/parser": "8.57.1",
+		"@typescript-eslint/parser": "8.58.0",
 		"chai": "6.2.2",
 		"eslint": "10.1.0",
 		"eslint-config-oclif": "6.0.154",
@@ -42,7 +42,7 @@
 		"sinon": "21.0.3",
 		"ts-node": "10.9.2",
 		"tsx": "4.21.0",
-		"typescript": "5.9.3"
+		"typescript": "6.0.2"
 	},
 	"engines": {
 		"node": ">=18.0.0"
