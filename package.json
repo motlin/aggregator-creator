@@ -21,7 +21,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.4.14",
-		"@eslint/compat": "2.0.5",
+		"@eslint/compat": "2.1.0",
 		"@oclif/prettier-config": "0.2.1",
 		"@oclif/test": "4.1.18",
 		"@types/chai": "5.2.3",
