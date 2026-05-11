@@ -33,7 +33,7 @@
 		"@typescript-eslint/parser": "8.59.2",
 		"chai": "6.2.2",
 		"eslint": "10.3.0",
-		"eslint-config-oclif": "6.0.162",
+		"eslint-config-oclif": "6.0.164",
 		"eslint-config-prettier": "10.1.8",
 		"mocha": "11.7.5",
 		"oclif": "4.23.0",
