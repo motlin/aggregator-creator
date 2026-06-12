@@ -29,7 +29,16 @@ export default [
       'max-params': 'off',
       'complexity': 'off',
       'no-warning-comments': 'off',
-      'max-depth': 'off'
+      'max-depth': 'off',
+      'import/default': 'off',
+      'import/export': 'off',
+      'import/named': 'off',
+      'import/namespace': 'off',
+      'import/no-named-as-default': 'off',
+      'import/no-named-as-default-member': 'off',
+      'import/no-duplicates': 'off',
+      'import/no-unresolved': 'off',
+      'mocha/consistent-spacing-between-blocks': 'off'
     }
   }
 ]
