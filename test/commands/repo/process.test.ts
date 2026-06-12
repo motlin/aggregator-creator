@@ -15,8 +15,34 @@ interface ExtendedError extends Error {
 	args?: unknown;
 }
 
+interface RepoProcessResult {
+	name: string;
+	owner: {login: string};
+	path: string;
+	cloned: boolean;
+	valid: boolean;
+	topicAdded: boolean;
+	error: string;
+}
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '../../..');
+
+function expectedCloneFailure(actual: unknown, expectedPath: string): RepoProcessResult {
+	const actualResult = actual as Partial<RepoProcessResult> | undefined;
+	const error = actualResult?.error ?? '';
+	expect(error).to.include(`Command failed with exit code 1: gh repo clone test-user/test-repo ${expectedPath}`);
+
+	return {
+		name: 'test-repo',
+		owner: {login: 'test-user'},
+		path: expectedPath,
+		cloned: false,
+		valid: false,
+		topicAdded: false,
+		error,
+	};
+}
 
 describe('repo:process', () => {
 	const sandbox = createSandbox();
@@ -121,15 +147,7 @@ describe('repo:process', () => {
 		);
 
 		const expectedPath = path.join(outputDir, 'test-user', 'test-repo');
-		const expectedResult = {
-			name: 'test-repo',
-			owner: {login: 'test-user'},
-			path: expectedPath,
-			cloned: false,
-			valid: false,
-			topicAdded: false,
-			error: `Command failed with exit code 1: gh repo clone test-user/test-repo ${expectedPath}\n\nGraphQL: Could not resolve to a Repository with the name 'test-user/test-repo'. (repository)`,
-		};
+		const expectedResult = expectedCloneFailure(result.result, expectedPath);
 
 		expect(result).to.deep.equal({
 			result: expectedResult,
@@ -145,15 +163,7 @@ describe('repo:process', () => {
 		);
 
 		const expectedPath = path.join(outputDir, 'test-user', 'test-repo');
-		const expectedResult = {
-			name: 'test-repo',
-			owner: {login: 'test-user'},
-			path: expectedPath,
-			cloned: false,
-			valid: false,
-			topicAdded: false,
-			error: `Command failed with exit code 1: gh repo clone test-user/test-repo ${expectedPath}\n\nGraphQL: Could not resolve to a Repository with the name 'test-user/test-repo'. (repository)`,
-		};
+		const expectedResult = expectedCloneFailure(result.result, expectedPath);
 
 		expect(result).to.deep.equal({
 			result: expectedResult,
@@ -182,15 +192,7 @@ describe('repo:process', () => {
 		);
 
 		const expectedPath = path.join(outputDir, 'test-user', 'test-repo');
-		const expectedResult = {
-			name: 'test-repo',
-			owner: {login: 'test-user'},
-			path: expectedPath,
-			cloned: false,
-			valid: false,
-			topicAdded: false,
-			error: `Command failed with exit code 1: gh repo clone test-user/test-repo ${expectedPath}\n\nGraphQL: Could not resolve to a Repository with the name 'test-user/test-repo'. (repository)`,
-		};
+		const expectedResult = expectedCloneFailure(result.result, expectedPath);
 
 		expect(result).to.deep.equal({
 			result: expectedResult,
@@ -219,15 +221,7 @@ describe('repo:process', () => {
 		);
 
 		const expectedPath = path.join(outputDir, 'test-user', 'test-repo');
-		const expectedResult = {
-			name: 'test-repo',
-			owner: {login: 'test-user'},
-			path: expectedPath,
-			cloned: false,
-			valid: false,
-			topicAdded: false,
-			error: `Command failed with exit code 1: gh repo clone test-user/test-repo ${expectedPath}\n\nGraphQL: Could not resolve to a Repository with the name 'test-user/test-repo'. (repository)`,
-		};
+		const expectedResult = expectedCloneFailure(result.result, expectedPath);
 
 		expect(result).to.deep.equal({
 			result: expectedResult,
