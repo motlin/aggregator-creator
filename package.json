@@ -32,7 +32,7 @@
 		"@types/xml2js": "0.4.14",
 		"@typescript-eslint/parser": "8.61.0",
 		"chai": "6.2.2",
-		"eslint": "10.4.1",
+		"eslint": "10.5.0",
 		"eslint-config-oclif": "6.0.171",
 		"eslint-config-prettier": "10.1.8",
 		"mocha": "11.7.6",
