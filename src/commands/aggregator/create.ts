@@ -142,9 +142,9 @@ export default class AggregatorCreate extends Command {
 			const errorMessage = error instanceof Error ? error.message : String(error);
 
 			if (
-				errorMessage.includes('Non-resolvable parent POM')
-				|| errorMessage.includes('parent.relativePath')
-				|| errorMessage.includes('Could not find artifact')
+				errorMessage.includes('Non-resolvable parent POM') ||
+				errorMessage.includes('parent.relativePath') ||
+				errorMessage.includes('Could not find artifact')
 			) {
 				this.verboseLog(
 					`│  │  │ ${chalk.yellow(pomFileRelativePath)} has parent POM resolution issues, treating as non-parent POM`,
@@ -193,7 +193,7 @@ export default class AggregatorCreate extends Command {
 		let gavResults: (MavenGAVCoords | null)[];
 
 		if (parallel) {
-			const gavPromises = pomRelativePaths.map((pomRelativePath) => processGAV(pomRelativePath));
+			const gavPromises = pomRelativePaths.map(async (pomRelativePath) => processGAV(pomRelativePath));
 			gavResults = await Promise.all(gavPromises);
 		} else {
 			gavResults = [];
@@ -276,7 +276,7 @@ export default class AggregatorCreate extends Command {
 		let allGAVs: MavenGAVCoords[] = [];
 
 		if (parallel) {
-			const results = await Promise.all(mavenRepos.map((repo) => processRepoModules(repo)));
+			const results = await Promise.all(mavenRepos.map(async (repo) => processRepoModules(repo)));
 			allGAVs = results.flat();
 		} else {
 			for (const repo of mavenRepos) {
@@ -548,9 +548,9 @@ export default class AggregatorCreate extends Command {
 			const errorMessage = error instanceof Error ? error.message : String(error);
 
 			if (
-				errorMessage.includes('Non-resolvable parent POM')
-				|| errorMessage.includes('parent.relativePath')
-				|| errorMessage.includes('Could not find artifact')
+				errorMessage.includes('Non-resolvable parent POM') ||
+				errorMessage.includes('parent.relativePath') ||
+				errorMessage.includes('Could not find artifact')
 			) {
 				this.verboseLog(
 					`│  │  │ Could not process ${chalk.yellow(pomFileRelativePath)} due to parent POM resolution issues: ${errorMessage}`,
@@ -573,25 +573,44 @@ export default class AggregatorCreate extends Command {
 		gavs: MavenGAVCoords[],
 		liftwizardVersion: string,
 	): string {
-		// biome-ignore format: preserve method chaining
 		const pom = create({version: '1.0'})
 			.ele('project', {
-				'xmlns': 'http://maven.apache.org/POM/4.0.0',
+				xmlns: 'http://maven.apache.org/POM/4.0.0',
 				'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
 				'xsi:schemaLocation': 'http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd',
 			})
-			.ele('modelVersion').txt('4.0.0').up()
-			.ele('parent')
-				.ele('groupId').txt('io.liftwizard').up()
-				.ele('artifactId').txt('liftwizard-profile-parent').up()
-				.ele('version').txt(liftwizardVersion).up()
+			.ele('modelVersion')
+			.txt('4.0.0')
 			.up()
-			.ele('groupId').txt(groupId).up()
-			.ele('artifactId').txt(artifactId).up()
-			.ele('version').txt(version).up()
-			.ele('packaging').txt('pom').up()
-			.ele('name').txt(`${artifactId} Aggregator POM`).up()
-			.ele('description').txt('Aggregator POM for multiple Maven repositories').up();
+			.ele('parent')
+			.ele('groupId')
+			.txt('io.liftwizard')
+			.up()
+			.ele('artifactId')
+			.txt('liftwizard-profile-parent')
+			.up()
+			.ele('version')
+			.txt(liftwizardVersion)
+			.up()
+			.up()
+			.ele('groupId')
+			.txt(groupId)
+			.up()
+			.ele('artifactId')
+			.txt(artifactId)
+			.up()
+			.ele('version')
+			.txt(version)
+			.up()
+			.ele('packaging')
+			.txt('pom')
+			.up()
+			.ele('name')
+			.txt(`${artifactId} Aggregator POM`)
+			.up()
+			.ele('description')
+			.txt('Aggregator POM for multiple Maven repositories')
+			.up();
 
 		const modulesEle = pom.ele('modules');
 		for (const module of modules) {
@@ -977,8 +996,8 @@ export default class AggregatorCreate extends Command {
 
 			const mavenConfigPath = path.join(mvnDir, 'maven.config');
 			const mavenConfig =
-				['--errors', '--no-transfer-progress', '--fail-fast', '--color=always', '--threads=2C'].join('\n')
-				+ '\n';
+				['--errors', '--no-transfer-progress', '--fail-fast', '--color=always', '--threads=2C'].join('\n') +
+				'\n';
 			await fs.writeFile(mavenConfigPath, mavenConfig);
 
 			if (this._verbose) {
@@ -997,7 +1016,9 @@ export default class AggregatorCreate extends Command {
 					gavs: allGAVs,
 					modules: validModules,
 					verbose: this._verbose,
-					log: (message: string) => this.verboseLog(message),
+					log: (message: string) => {
+						this.verboseLog(message);
+					},
 				});
 
 				const xmlResult = await xmlRewriter.rewriteDependencies();
@@ -1012,7 +1033,9 @@ export default class AggregatorCreate extends Command {
 							gavs: allGAVs,
 							modules: xmlResult.mavenFallbacks,
 							verbose: false,
-							log: (message: string) => this.verboseLog(message),
+							log: (message: string) => {
+								this.verboseLog(message);
+							},
 						},
 						execa,
 					);

@@ -12,5 +12,5 @@
 		"types": ["mocha", "node"]
 	},
 	"include": ["./**/*"],
-	"references": [{ "path": "../src" }]
+	"references": [{"path": "../src"}]
 }

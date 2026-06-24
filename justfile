@@ -3,75 +3,66 @@
 default:
     @just --list --unsorted
 
-# `npm install`
-[group('dev')]
+ci := env("CI", "")
+
+# Install dependencies
+[group('setup')]
 install:
-    npm install
+    vp install
+    vp fmt --no-error-on-unmatched-pattern CLAUDE.md
 
-# `npm ci`
-[group('ci')]
-install-ci:
-    npm ci
-
-# `npm run lint`
+# Run linter
 [group('dev')]
 lint: install
-    npm run lint
+    vp lint {{ if ci != "" { "--format github" } else { "--fix" } }}
 
-# `npm run ci:eslint`
-[group('ci')]
-eslint-ci: install-ci
-    npm run ci:eslint
-
-# `npm run format`
+# Run formatter
 [group('dev')]
 format: install
-    npm run format
+    vp fmt {{ if ci != "" { "--check" } else { "" } }}
 
-# `npm run ci:biome`
-[group('ci')]
-biome-ci: install-ci
-    npm run ci:biome
-
-# `npm run ci:prettier`
-[group('ci')]
-prettier-ci: install-ci
-    npm run ci:prettier
-
-# `npm run test:run`
+# Run checks (format + lint + typecheck)
 [group('dev')]
-test: install
-    CHAI_TRUNCATE_THRESHOLD=0 npm test
+check: install
+    vp check {{ if ci != "" { "" } else { "--fix" } }}
 
-# `npm run test:run`
-[group('ci')]
-test-ci: install-ci
-    CHAI_TRUNCATE_THRESHOLD=0 npm run test:run
+# Run tests
+# Package-qualified task name avoids colliding with vp's built-in `test` task.
+[group('dev')]
+test *args: install
+    CHAI_TRUNCATE_THRESHOLD=0 vp run aggregator-creator#test:run {{args}}
 
-# `npm run typecheck`
+# Type-check the project
 [group('dev')]
 typecheck: install
-    npm run typecheck
+    vp run typecheck
 
-# `npm run typecheck`
-[group('ci')]
-typecheck-ci: install-ci
-    npm run typecheck
-
-# `npm run build`
+# Build the project
 [group('dev')]
 build: install
-    npm run build
-
-# `npm run build`
-[group('ci')]
-build-ci: install-ci
-    npm run build
+    vp run build
 
 # `npm run prepack`
 [group('dev')]
 manifest: install
-    npm run prepack
+    vp run prepack
+
+# Run fallow codebase intelligence (dead code, duplication, drift)
+[group('dev')]
+fallow: install
+    vp run {{ if ci != "" { "fallow:ci" } else { "fallow" } }}
+
+# Run pre-commit hooks on all files (same as CI's pre-commit job)
+[group('dev')]
+pre-commit: install
+    pre-commit run --all-files
+
+# Run all pre-commit checks
+[arg("quick", long, value="true", help="Skip tests")]
+[group('dev')]
+precommit quick="": check build manifest fallow pre-commit
+    {{ if quick != "true" { "just test" } else { "true" } }}
+    @echo "All pre-commit checks passed!"
 
 # Run repo:list command to list GitHub repositories
 # Examples:
@@ -352,8 +343,3 @@ workflow-test CLEAN="true": build
 
     echo ""
     echo "🎉 Complete workflow test finished!"
-
-# Run all pre-commit checks
-[group('dev')]
-precommit: format lint typecheck build test manifest
-    @echo "✅ All pre-commit checks passed!"

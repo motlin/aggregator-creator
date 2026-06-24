@@ -143,13 +143,13 @@ export class XmlDependencyRewriter {
 	private async updatePomDependencies(pomPath: string): Promise<{updated: boolean; fallbackNeeded: boolean}> {
 		const pomContent = await fs.readFile(pomPath, 'utf8');
 
-		const pomData = (await parseXML(pomContent, {
+		const pomData = await parseXML(pomContent, {
 			preserveChildrenOrder: true,
 			explicitArray: true,
 			normalizeTags: false,
 			attrkey: '$',
 			charkey: '_',
-		})) as PomData;
+		});
 
 		if (this.options.verbose) {
 			this.log(`│  │  │   → Parsed POM structure`);

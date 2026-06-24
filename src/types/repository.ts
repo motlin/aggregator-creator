@@ -21,7 +21,7 @@ export const repositoriesSchema = z.array(repositorySchema);
 export type Repository = z.infer<typeof repositorySchema>;
 export type Repositories = z.infer<typeof repositoriesSchema>;
 
-export const validatedRepositorySchema = repositorySchema.extend({
+const validatedRepositorySchema = repositorySchema.extend({
 	path: z.string(),
 	hasPom: z.boolean(),
 	valid: z.boolean(),
