@@ -1,12 +1,54 @@
 {
 	"name": "aggregator-creator",
-	"description": "CLI for managing Maven repositories and creating aggregator POMs",
 	"version": "0.0.0",
+	"description": "CLI for managing Maven repositories and creating aggregator POMs",
+	"keywords": [
+		"aggregator",
+		"cli",
+		"maven",
+		"oclif",
+		"pom"
+	],
+	"homepage": "https://github.com/motlin/aggregator-creator",
+	"bugs": "https://github.com/motlin/aggregator-creator/issues",
+	"license": "Apache 2.0",
 	"author": "Craig P. Motlin",
+	"repository": "motlin/aggregator-creator",
 	"bin": {
 		"aggregator": "./bin/run.js"
 	},
-	"bugs": "https://github.com/motlin/aggregator-creator/issues",
+	"files": [
+		"./bin",
+		"./dist",
+		"./oclif.manifest.json"
+	],
+	"type": "module",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"publishConfig": {
+		"access": "public"
+	},
+	"scripts": {
+		"preinstall": "npx only-allow pnpm",
+		"build": "shx rm -rf dist && tsc -b",
+		"oxlint": "vp lint . --fix",
+		"oxlint:ci": "vp lint . --format github",
+		"fmt": "vp fmt",
+		"fmt:ci": "vp fmt --check",
+		"fallow": "fallow fix --yes",
+		"fallow:ci": "fallow dead-code",
+		"typecheck": "tsc --noEmit",
+		"postpack": "shx rm -f oclif.manifest.json",
+		"prepack": "oclif manifest && oclif readme",
+		"test": "CHAI_TRUNCATE_THRESHOLD=0 mocha --forbid-only \"test/**/*.test.ts\"",
+		"test:run": "CHAI_TRUNCATE_THRESHOLD=0 mocha --forbid-only \"test/**/*.test.ts\"",
+		"version": "oclif readme && git add README.md",
+		"prepublishOnly": "pnpm run build && pnpm test",
+		"release:patch": "npm version patch && npm publish",
+		"release:minor": "npm version minor && npm publish",
+		"release:major": "npm version major && npm publish",
+		"prepare": "vp config"
+	},
 	"dependencies": {
 		"@oclif/core": "4.11.6",
 		"@oclif/plugin-help": "6.2.52",
@@ -14,15 +56,11 @@
 		"execa": "9.6.1",
 		"fs-extra": "11.3.5",
 		"inquirer": "14.0.2",
-		"log-update": "8.0.0",
 		"xml2js": "0.6.2",
 		"xmlbuilder2": "4.0.3",
 		"zod": "4.4.3"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.5.1",
-		"@eslint/compat": "2.1.0",
-		"@oclif/prettier-config": "0.2.1",
 		"@oclif/test": "4.1.20",
 		"@types/chai": "5.2.3",
 		"@types/fs-extra": "11.0.4",
@@ -30,78 +68,39 @@
 		"@types/node": "26.0.0",
 		"@types/sinon": "21.0.1",
 		"@types/xml2js": "0.4.14",
-		"@typescript-eslint/parser": "8.62.0",
 		"chai": "6.2.2",
-		"eslint": "10.5.0",
-		"eslint-config-oclif": "6.0.173",
-		"eslint-config-prettier": "10.1.8",
+		"fallow": "^2.95.0",
+		"markdownlint-cli2": "^0.22.1",
 		"mocha": "11.7.6",
 		"oclif": "4.23.20",
-		"prettier": "3.8.4",
 		"shx": "0.4.0",
 		"sinon": "22.0.0",
 		"ts-node": "10.9.2",
 		"tsx": "4.22.4",
-		"typescript": "6.0.3"
+		"typescript": "6.0.3",
+		"vite": "catalog:",
+		"vite-plus": "catalog:",
+		"vitest": "catalog:"
 	},
-	"engines": {
-		"node": ">=18.0.0"
-	},
-	"files": [
-		"./bin",
-		"./dist",
-		"./oclif.manifest.json"
-	],
-	"homepage": "https://github.com/motlin/aggregator-creator",
-	"keywords": [
-		"oclif",
-		"cli",
-		"maven",
-		"aggregator",
-		"pom"
-	],
-	"publishConfig": {
-		"access": "public"
-	},
-	"license": "Apache 2.0",
-	"main": "dist/index.js",
-	"type": "module",
 	"oclif": {
 		"bin": "aggregator",
-		"dirname": "aggregator",
 		"commands": "./dist/commands",
+		"dirname": "aggregator",
 		"plugins": [
 			"@oclif/plugin-help"
 		],
 		"topicSeparator": " ",
 		"topics": {
-			"repo": {
-				"description": "Repository management commands"
-			},
 			"aggregator": {
 				"description": "Maven aggregator POM management"
+			},
+			"repo": {
+				"description": "Repository management commands"
 			}
 		}
 	},
-	"repository": "motlin/aggregator-creator",
-	"scripts": {
-		"build": "shx rm -rf dist && tsc -b",
-		"lint": "eslint --fix",
-		"format": "biome format --write . && prettier --write .",
-		"typecheck": "tsc --noEmit",
-		"ci:eslint": "eslint",
-		"ci:prettier": "prettier --check \"**/*.{ts,json,yaml,yml}\"",
-		"ci:biome": "biome format",
-		"ci:typecheck": "tsc --noEmit",
-		"postpack": "shx rm -f oclif.manifest.json",
-		"posttest": "npm run lint",
-		"prepack": "oclif manifest && oclif readme",
-		"test": "CHAI_TRUNCATE_THRESHOLD=0 mocha --forbid-only \"test/**/*.test.ts\"",
-		"version": "oclif readme && git add README.md",
-		"prepublishOnly": "npm run build && npm test && npm run lint",
-		"release:patch": "npm version patch && npm publish",
-		"release:minor": "npm version minor && npm publish",
-		"release:major": "npm version major && npm publish"
+	"engines": {
+		"node": ">=18.0.0"
 	},
-	"types": "dist/index.d.ts"
+	"packageManager": "pnpm@11.1.1"
 }
