@@ -12,6 +12,7 @@ jobs:
             - uses: actions/setup-node@v6
               with:
                   node-version: latest
+                  cache: false
             - run: npm install
             - run: npm run build
             - run: npm run prepack
