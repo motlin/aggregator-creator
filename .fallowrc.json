@@ -1,0 +1,15 @@
+{
+	"$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+	"entry": ["src/index.ts", "src/commands/**/*.ts", "bin/run.js", "bin/dev.js"],
+	"ignoreDependencies": ["@oclif/plugin-help"],
+	"usedClassMembers": ["getGroupId", "getArtifactId", "getVersion"],
+	"duplicates": {
+		"minOccurrences": 3
+	},
+	"rules": {
+		"unused-dependencies": "warn",
+		"unused-exports": "warn",
+		"unused-types": "warn",
+		"unused-class-members": "warn"
+	}
+}
