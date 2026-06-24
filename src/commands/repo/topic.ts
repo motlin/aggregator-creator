@@ -133,7 +133,9 @@ export default class RepoTopic extends Command {
 		}
 
 		const logger = {
-			log: (message: string) => this.log(message),
+			log: (message: string) => {
+				this.log(message);
+			},
 			warn: (message: string) => this.warn(message),
 			error: (message: string, options?: {exit?: boolean}) => {
 				if (options?.exit === false) {
