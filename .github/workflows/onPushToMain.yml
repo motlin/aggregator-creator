@@ -32,8 +32,11 @@ jobs:
             - name: Setup git
               if: ${{ steps.version-check.outputs.skipped == 'false' }}
               run: |
-                  git config --global user.email ${{ secrets.GH_EMAIL }}
-                  git config --global user.name ${{ secrets.GH_USERNAME }}
+                  git config --global user.email "$GH_EMAIL"
+                  git config --global user.name "$GH_USERNAME"
+              env:
+                  GH_EMAIL: ${{ secrets.GH_EMAIL }}
+                  GH_USERNAME: ${{ secrets.GH_USERNAME }}
             - name: Generate oclif README
               if: ${{ steps.version-check.outputs.skipped == 'false' }}
               id: oclif-readme
@@ -43,8 +46,10 @@ jobs:
                   if [ -n "$(git status --porcelain)" ]; then
                     git add .
                     git commit -am "chore: update README.md"
-                    git push -u origin ${{ github.ref_name }}
+                    git push -u origin "$GIT_REF_NAME"
                   fi
+              env:
+                  GIT_REF_NAME: ${{ github.ref_name }}
             - name: Create Github Release
               uses: ncipollo/release-action@b7eabc95ff50cbeeedec83973935c8f306dfcd0b
               if: ${{ steps.version-check.outputs.skipped == 'false' }}
