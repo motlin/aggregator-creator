@@ -17,8 +17,8 @@ jobs:
             checks: write
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v7
-            - uses: actions/setup-node@v6
+            - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+            - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
               with:
                   node-version: '22.x'
                   cache: 'npm'
@@ -28,14 +28,14 @@ jobs:
             - run: npm run ci:eslint
               continue-on-error: true
 
-            - uses: ataylorme/eslint-annotate-action@v3
+            - uses: ataylorme/eslint-annotate-action@21a1ba0738d8b732639999029c4ff40b6e121bb4 # v3
 
     prettier:
         runs-on: ubuntu-latest
 
         steps:
-            - uses: actions/checkout@v7
-            - uses: actions/setup-node@v6
+            - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+            - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
               with:
                   node-version: '22.x'
                   cache: 'npm'
@@ -47,8 +47,8 @@ jobs:
     typecheck:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v7
-            - uses: actions/setup-node@v6
+            - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+            - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
               with:
                   node-version: '22.x'
                   cache: 'npm'
@@ -66,8 +66,8 @@ jobs:
             fail-fast: false
 
         steps:
-            - uses: actions/checkout@v7
-            - uses: actions/setup-node@v6
+            - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+            - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
               with:
                   node-version: ${{ matrix.node-version }}
                   cache: 'npm'
@@ -90,8 +90,8 @@ jobs:
     build:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v7
-            - uses: actions/setup-node@v6
+            - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+            - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
               with:
                   node-version: '22.x'
                   cache: 'npm'
@@ -102,7 +102,7 @@ jobs:
 
             - name: Upload build artifacts
               if: success()
-              uses: actions/upload-artifact@v6
+              uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
               with:
                   name: dist
                   path: dist/
@@ -114,7 +114,7 @@ jobs:
         needs: [eslint, prettier, typecheck, test, build]
         runs-on: ubuntu-latest
         steps:
-            - uses: re-actors/alls-green@release/v1
+            - uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe # release/v1
               with:
                   jobs: ${{ toJSON(needs) }}
 
@@ -125,7 +125,7 @@ jobs:
             pull-requests: write
             contents: write
         steps:
-            - uses: actions/checkout@v7
+            - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
             - name: Enable auto-merge for Dependabot PR
               run: gh pr merge --rebase --auto "${{ github.event.pull_request.number }}"
