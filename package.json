@@ -36,7 +36,7 @@
 		"eslint-config-oclif": "6.0.174",
 		"eslint-config-prettier": "10.1.8",
 		"mocha": "11.7.6",
-		"oclif": "4.23.21",
+		"oclif": "4.23.24",
 		"prettier": "3.9.1",
 		"shx": "0.4.0",
 		"sinon": "22.0.0",
