@@ -75,25 +75,27 @@ manifest: install
 
 # Run repo:list command to list GitHub repositories
 # Examples:
-#   just repo-list motlin
-#   just repo-list motlin --limit 100
-#   just repo-list motlin --language Java
-#   just repo-list motlin --topic maven
-#   just repo-list motlin --language Java --limit 100
-#   just repo-list motlin --visibility public --type org
-#   just repo-list motlin --visibility all --type all
+#   just repo-list --owner motlin
+#   just repo-list --owner motlin --limit 100
+#   just repo-list --owner motlin --language Java
+#   just repo-list --owner motlin --topic maven
+#   just repo-list --owner motlin --language Java --limit 100
+#   just repo-list --owner motlin --visibility public --type org
+#   just repo-list --owner motlin --visibility all --type all
 #
 # Short flag alternatives:
 #   -l = --limit
 #   -g = --language
 #   -t = --topic
-#   -o = --owner
+# -o = --owner
+[arg("OWNER", long="owner", help="GitHub owner")]
 [group('integration-test')]
 repo-list OWNER *FLAGS="": build
-    @echo "🔍 Listing GitHub repositories for {{OWNER}}..."
-    ./bin/run.js repo:list --owner {{OWNER}} {{FLAGS}}
+    @echo "🔍 Listing GitHub repositories for {{ OWNER }}..."
+    ./bin/run.js repo:list --owner {{ OWNER }} {{ FLAGS }}
 
 # Find and validate Maven repositories, then topic them
+[arg("CLEAN", long="no-clean", value="false", help="Keep generated files")]
 [group('integration-test')]
 find-validate-repos CLEAN="true": build
     #!/usr/bin/env bash
@@ -209,7 +211,7 @@ find-validate-repos CLEAN="true": build
     echo "✅ Find and validate workflow completed!"
 
     # Clean up or preserve test directory based on parameter
-    if [ "{{CLEAN}}" = "true" ]; then
+    if [ "{{ CLEAN }}" = "true" ]; then
         echo "🧹 Cleaning up test directory..."
         rm -rf "${TEST_DIR}"
     else
@@ -220,6 +222,7 @@ find-validate-repos CLEAN="true": build
     fi
 
 # Create aggregator from repositories already topiced with 'maven' topic
+[arg("CLEAN", long="no-clean", value="false", help="Keep generated files")]
 [group('integration-test')]
 create-aggregator-from-topiced CLEAN="true": build
     #!/usr/bin/env bash
@@ -315,7 +318,7 @@ create-aggregator-from-topiced CLEAN="true": build
     echo "✅ Create aggregator workflow completed!"
 
     # Clean up or preserve test directory based on parameter
-    if [ "{{CLEAN}}" = "true" ]; then
+    if [ "{{ CLEAN }}" = "true" ]; then
         echo "🧹 Cleaning up test directory..."
         rm -rf "${TEST_DIR}"
     else
@@ -326,6 +329,7 @@ create-aggregator-from-topiced CLEAN="true": build
     fi
 
 # Run a complete workflow test demonstrating the full process
+[arg("CLEAN", long="no-clean", value="false", help="Keep generated files")]
 [group('integration-test')]
 workflow-test CLEAN="true": build
     #!/usr/bin/env bash
@@ -342,13 +346,13 @@ workflow-test CLEAN="true": build
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "Running: just find-validate-repos"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    just find-validate-repos "{{CLEAN}}"
+    just find-validate-repos {{ if CLEAN == "false" { "--no-clean" } else { "" } }}
 
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "Running: just create-aggregator-from-topiced"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    just create-aggregator-from-topiced "{{CLEAN}}"
+    just create-aggregator-from-topiced {{ if CLEAN == "false" { "--no-clean" } else { "" } }}
 
     echo ""
     echo "🎉 Complete workflow test finished!"

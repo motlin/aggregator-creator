@@ -102,7 +102,7 @@ You can run this complete workflow with:
 just workflow-test
 
 # Run workflow test and keep temporary files
-just workflow-test false
+just workflow-test --no-clean
 ```
 
 ## Command Output Reference
