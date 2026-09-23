@@ -26,6 +26,7 @@ eslint-ci: install-ci
 # `npm run format`
 [group('dev')]
 format: install
+    pre-commit run just-fmt --all-files
     npm run format
 
 # `npm run ci:biome`
@@ -87,11 +88,11 @@ manifest: install
 #   -l = --limit
 #   -g = --language
 #   -t = --topic
-#   -o = --owner
+# -o = --owner
 [group('integration-test')]
 repo-list OWNER *FLAGS="": build
-    @echo "🔍 Listing GitHub repositories for {{OWNER}}..."
-    ./bin/run.js repo:list --owner {{OWNER}} {{FLAGS}}
+    @echo "🔍 Listing GitHub repositories for {{ OWNER }}..."
+    ./bin/run.js repo:list --owner {{ OWNER }} {{ FLAGS }}
 
 # Find and validate Maven repositories, then topic them
 [group('integration-test')]
@@ -209,7 +210,7 @@ find-validate-repos CLEAN="true": build
     echo "✅ Find and validate workflow completed!"
 
     # Clean up or preserve test directory based on parameter
-    if [ "{{CLEAN}}" = "true" ]; then
+    if [ "{{ CLEAN }}" = "true" ]; then
         echo "🧹 Cleaning up test directory..."
         rm -rf "${TEST_DIR}"
     else
@@ -315,7 +316,7 @@ create-aggregator-from-topiced CLEAN="true": build
     echo "✅ Create aggregator workflow completed!"
 
     # Clean up or preserve test directory based on parameter
-    if [ "{{CLEAN}}" = "true" ]; then
+    if [ "{{ CLEAN }}" = "true" ]; then
         echo "🧹 Cleaning up test directory..."
         rm -rf "${TEST_DIR}"
     else
@@ -342,13 +343,13 @@ workflow-test CLEAN="true": build
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "Running: just find-validate-repos"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    just find-validate-repos "{{CLEAN}}"
+    just find-validate-repos "{{ CLEAN }}"
 
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "Running: just create-aggregator-from-topiced"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    just create-aggregator-from-topiced "{{CLEAN}}"
+    just create-aggregator-from-topiced "{{ CLEAN }}"
 
     echo ""
     echo "🎉 Complete workflow test finished!"
