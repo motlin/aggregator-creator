@@ -88,7 +88,7 @@ describe('repo:list', function () {
 				visibility: 'public',
 			},
 			{
-				name: 'uemacs',
+				name: 'AudioNoise',
 				owner: {login: 'torvalds', type: 'User'},
 				language: 'C',
 				topics: [],
@@ -108,7 +108,7 @@ describe('repo:list', function () {
 		}
 		const expected = [
 			{
-				name: 'claude-code-prompts',
+				name: 'claude-code-plugins',
 				owner: {login: 'motlin', type: 'User'},
 				language: 'Shell',
 				topics: [],

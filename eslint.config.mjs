@@ -8,6 +8,7 @@ const gitignorePath = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
 
 export default [
   includeIgnoreFile(gitignorePath),
+  {ignores: ['.llm/']},
   ...oclif,
   prettier,
   {
