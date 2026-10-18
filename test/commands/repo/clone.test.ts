@@ -180,9 +180,8 @@ describe('repo:clone', () => {
 		});
 
 		it('should handle clone failure gracefully', async () => {
-			// FIXME: @oclif/test v4 doesn't capture command errors properly
 			// Use a non-existent repository to trigger a clone failure
-			const result = await runCommand(
+			const {error, stdout} = await runCommand(
 				[
 					'repo:clone',
 					'--output-directory',
@@ -191,31 +190,23 @@ describe('repo:clone', () => {
 					'non-existent-owner-12345',
 					'--name',
 					'non-existent-repo-67890',
-					'--json',
 				],
 				root,
 			);
-			expect(result).to.deep.equal({
-				stdout:
-					JSON.stringify(
-						{
-							error: {
-								code: 'CLONE_FAILED',
-								oclif: {
-									exit: 1,
-								},
-							},
-						},
-						null,
-						2,
-					) + '\n',
-				stderr: '',
-				result: undefined,
+			expect({
+				message: error?.message.split(':')[0],
+				code: (error as ExtendedError | undefined)?.code,
+				exit: (error as ExtendedError | undefined)?.oclif?.exit,
+				stdout,
+			}).to.deep.equal({
+				message: 'Failed to clone non-existent-owner-12345/non-existent-repo-67890',
+				code: 'CLONE_FAILED',
+				exit: 1,
+				stdout: '',
 			});
 		});
 
 		it('should return error in JSON when clone fails with --json flag', async () => {
-			// FIXME: @oclif/test v4 doesn't capture command output properly when commands fail
 			// Use a non-existent repository to trigger a clone failure
 			const result = await runCommand(
 				[
