@@ -18,6 +18,16 @@ export default defineConfig({
 		endOfLine: 'lf',
 		experimentalOperatorPosition: 'start',
 		sortPackageJson: false,
+		overrides: [
+			{
+				files: ['.yamllint.yaml', '**/*.yaml', '**/*.yml'],
+				options: {
+					useTabs: false,
+					tabWidth: 2,
+					singleQuote: false,
+				},
+			},
+		],
 		ignorePatterns: [
 			'**/*.{ts,js,mjs,cjs,json,json5,jsonc}',
 			'node_modules',

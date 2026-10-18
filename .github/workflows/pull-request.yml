@@ -1,143 +1,143 @@
 on:
-    pull_request:
-    push:
-        branches: [main]
+  pull_request:
+  push:
+    branches: [main]
 
 permissions:
-    contents: read
+  contents: read
 
 concurrency:
-    group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-    cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-    eslint:
-        permissions:
-            pull-requests: read
-            checks: write
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-              with:
-                  persist-credentials: false
-            - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-              with:
-                  node-version: '22.x'
-                  cache: 'npm'
+  eslint:
+    permissions:
+      pull-requests: read
+      checks: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22.x"
+          cache: "npm"
 
-            - run: npm ci
+      - run: npm ci
 
-            - run: npm run ci:eslint
-              continue-on-error: true
+      - run: npm run ci:eslint
+        continue-on-error: true
 
-            - uses: ataylorme/eslint-annotate-action@21a1ba0738d8b732639999029c4ff40b6e121bb4 # v3
+      - uses: ataylorme/eslint-annotate-action@21a1ba0738d8b732639999029c4ff40b6e121bb4 # v3
 
-    prettier:
-        runs-on: ubuntu-latest
+  prettier:
+    runs-on: ubuntu-latest
 
-        steps:
-            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-              with:
-                  persist-credentials: false
-            - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-              with:
-                  node-version: '22.x'
-                  cache: 'npm'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22.x"
+          cache: "npm"
 
-            - run: npm ci
+      - run: npm ci
 
-            - run: npm run ci:prettier
+      - run: npm run ci:prettier
 
-    typecheck:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-              with:
-                  persist-credentials: false
-            - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-              with:
-                  node-version: '22.x'
-                  cache: 'npm'
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22.x"
+          cache: "npm"
 
-            - run: npm ci
+      - run: npm ci
 
-            - run: npm run ci:typecheck
+      - run: npm run ci:typecheck
 
-    test:
-        runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                node-version: [20.x, 22.x, 24.x]
-            # Don't cancel other matrix jobs if one fails
-            fail-fast: false
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x, 24.x]
+      # Don't cancel other matrix jobs if one fails
+      fail-fast: false
 
-        steps:
-            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-              with:
-                  persist-credentials: false
-            - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-              with:
-                  node-version: ${{ matrix.node-version }}
-                  cache: 'npm'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
 
-            - name: Configure GitHub CLI
-              run: |
-                  echo "${{ secrets.CI_GITHUB_PAT_FOR_TESTS || secrets.GITHUB_TOKEN }}" | gh auth login --with-token
-                  gh auth status
+      - name: Configure GitHub CLI
+        run: |
+          echo "${{ secrets.CI_GITHUB_PAT_FOR_TESTS || secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+          gh auth status
 
-            - run: npm ci
+      - run: npm ci
 
-            - run: npm run build
+      - run: npm run build
 
-            - run: npx oclif manifest
+      - run: npx oclif manifest
 
-            - run: npm test
-              env:
-                  GITHUB_TOKEN: ${{ secrets.CI_GITHUB_PAT_FOR_TESTS || secrets.GITHUB_TOKEN }}
+      - run: npm test
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_GITHUB_PAT_FOR_TESTS || secrets.GITHUB_TOKEN }}
 
-    build:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-              with:
-                  persist-credentials: false
-            - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-              with:
-                  node-version: '22.x'
-                  cache: 'npm'
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22.x"
+          cache: "npm"
 
-            - run: npm ci
+      - run: npm ci
 
-            - run: npm run build
+      - run: npm run build
 
-            - name: Upload build artifacts
-              if: success()
-              uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-              with:
-                  name: dist
-                  path: dist/
-                  retention-days: 1
+      - name: Upload build artifacts
+        if: success()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
 
-    all-checks:
-        name: All checks
-        if: ${{ !cancelled() }}
-        needs: [eslint, prettier, typecheck, test, build]
-        runs-on: ubuntu-latest
-        steps:
-            - uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # release/v1
-              with:
-                  jobs: ${{ toJSON(needs) }}
+  all-checks:
+    name: All checks
+    if: ${{ !cancelled() }}
+    needs: [eslint, prettier, typecheck, test, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # release/v1
+        with:
+          jobs: ${{ toJSON(needs) }}
 
-    automerge-dependabot:
-        if: github.event.pull_request.user.login == 'dependabot[bot]'
-        runs-on: ubuntu-latest
-        permissions:
-            pull-requests: write
-            contents: write
-        steps:
-            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+  automerge-dependabot:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-            - name: Enable auto-merge for Dependabot PR
-              run: gh pr merge --rebase --auto "${{ github.event.pull_request.number }}"
-              env:
-                  GITHUB_TOKEN: ${{ secrets.CI_GITHUB_PAT_FOR_TESTS || secrets.GITHUB_TOKEN }}
+      - name: Enable auto-merge for Dependabot PR
+        run: gh pr merge --rebase --auto "${{ github.event.pull_request.number }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_GITHUB_PAT_FOR_TESTS || secrets.GITHUB_TOKEN }}

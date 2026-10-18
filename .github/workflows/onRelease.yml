@@ -1,27 +1,27 @@
 name: publish
 
 on:
-    release:
-        types: [released]
+  release:
+    types: [released]
 
 permissions:
-    contents: read
+  contents: read
 
 jobs:
-    publish:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-              with:
-                  persist-credentials: false
-            - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-              with:
-                  node-version: latest
-                  cache: false
-            - run: npm install
-            - run: npm run build
-            - run: npm run prepack
-            - uses: JS-DevTools/npm-publish@0fd2f4369c5d6bcfcde6091a7c527d810b9b5c3f # v4.1.5
-              with:
-                  token: ${{ secrets.NPM_TOKEN }}
-            - run: npm run postpack
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: latest
+          cache: false
+      - run: npm install
+      - run: npm run build
+      - run: npm run prepack
+      - uses: JS-DevTools/npm-publish@0fd2f4369c5d6bcfcde6091a7c527d810b9b5c3f # v4.1.5
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
+      - run: npm run postpack
