@@ -2,6 +2,7 @@ import {Command, Flags} from '@oclif/core';
 import chalk from 'chalk';
 import {execa as execa_} from 'execa';
 import {withDebugLogging} from '../../utils/debug-execa.js';
+import {readStdin} from '../../utils/read-stdin.js';
 import {cloneSingleRepo} from '../../utils/clone-single-repo.js';
 import {describeGhError} from '../../utils/gh-errors.js';
 import {z} from 'zod';
@@ -93,10 +94,7 @@ export default class RepoClone extends Command {
 			this.log(`Reading repository information from stdin...`);
 		}
 
-		let fullInput = '';
-		for await (const chunk of process.stdin) {
-			fullInput += chunk;
-		}
+		const fullInput = await readStdin();
 
 		if (!fullInput.trim()) {
 			this.error('No input provided', {

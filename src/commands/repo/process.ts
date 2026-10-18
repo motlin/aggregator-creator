@@ -2,10 +2,25 @@ import {Args, Command, Flags} from '@oclif/core';
 import chalk from 'chalk';
 import {execa as execa_} from 'execa';
 import {withDebugLogging} from '../../utils/debug-execa.js';
-import {repositorySchema} from '../../types/repository.js';
+import {readStdin} from '../../utils/read-stdin.js';
+import {type Repository, repositorySchema} from '../../types/repository.js';
 import {cloneSingleRepo} from '../../utils/clone-single-repo.js';
 import {type MavenValidationResult, validateMavenRepo} from '../../utils/maven-validation.js';
 import {type TopicSingleRepoResult, topicSingleRepository} from '../../utils/topic-single-repo.js';
+
+/** A repository from flags (name and owner only) or from stdin (the full repo:list shape). */
+type RepoInfo = Partial<Omit<Repository, 'name' | 'owner'>> & {
+	name: string;
+	owner: {login: string; type?: string};
+};
+
+interface ProcessResult extends RepoInfo {
+	path: string;
+	cloned: boolean;
+	valid: boolean;
+	topicAdded: boolean;
+	error: string | null;
+}
 
 export default class RepoProcess extends Command {
 	static override args = {
@@ -56,23 +71,7 @@ done`,
 		}),
 	};
 
-	public async run(): Promise<{
-		name: string;
-		owner: {login: string; type?: string};
-		language?: string | null;
-		topics?: string[];
-		fork?: boolean;
-		archived?: boolean;
-		disabled?: boolean;
-		is_template?: boolean;
-		private?: boolean;
-		visibility?: string;
-		path: string;
-		cloned: boolean;
-		valid: boolean;
-		topicAdded: boolean;
-		error: string | null;
-	}> {
+	public async run(): Promise<ProcessResult> {
 		const {args, flags} = await this.parse(RepoProcess);
 		const outputDir = args['output-directory'];
 		const {topic, dryRun, verbose} = flags;
@@ -254,18 +253,7 @@ done`,
 		}
 	}
 
-	private async getRepoInfo(flags: {owner?: string; name?: string}): Promise<{
-		name: string;
-		owner: {login: string; type?: string};
-		language?: string | null;
-		topics?: string[];
-		fork?: boolean;
-		archived?: boolean;
-		disabled?: boolean;
-		is_template?: boolean;
-		private?: boolean;
-		visibility?: string;
-	}> {
+	private async getRepoInfo(flags: {owner?: string; name?: string}): Promise<RepoInfo> {
 		// If owner and name are provided via flags, use them
 		if (flags.owner && flags.name) {
 			return {
@@ -276,10 +264,7 @@ done`,
 
 		// If either flag is missing but we have stdin input, try to read from stdin
 		if (!process.stdin.isTTY) {
-			let fullInput = '';
-			for await (const chunk of process.stdin) {
-				fullInput += chunk;
-			}
+			const fullInput = await readStdin();
 
 			if (fullInput.trim()) {
 				try {

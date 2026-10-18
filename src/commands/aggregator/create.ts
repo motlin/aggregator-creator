@@ -9,6 +9,7 @@ import {create} from 'xmlbuilder2';
 import MavenGAVCoords from '../../maven-gav.js';
 import {validatedRepositoriesSchema, type ValidatedRepository} from '../../types/repository.js';
 import {withDebugLogging} from '../../utils/debug-execa.js';
+import {readStdin} from '../../utils/read-stdin.js';
 import {DependencyRewriter} from '../../utils/dependency-rewriter.js';
 import {parsePomForGAV, parsePomForModules, parsePomForPackaging} from '../../utils/pom-parser.js';
 import {XmlDependencyRewriter} from '../../utils/xml-dependency-rewriter.js';
@@ -654,10 +655,7 @@ export default class AggregatorCreate extends Command {
 		let validRepos: ValidatedRepository[] = [];
 
 		if (!args.directory && !process.stdin.isTTY) {
-			let fullInput = '';
-			for await (const chunk of process.stdin) {
-				fullInput += chunk;
-			}
+			const fullInput = await readStdin();
 
 			if (!fullInput.trim()) {
 				this.error('No input provided. Provide a directory path or pipe JSON data from stdin.', {
