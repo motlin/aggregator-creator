@@ -429,6 +429,50 @@ describe('aggregator:create', () => {
 		}
 	});
 
+	it('errors instead of creating the directory when it does not exist', async () => {
+		const missingDir = path.join(tempDir, 'does-not-exist');
+
+		const {error} = await runCommand(['aggregator:create', missingDir, '--yes'], root);
+
+		expect({
+			message: error?.message,
+			code: (error as {code?: string} | undefined)?.code,
+			created: await fs.pathExists(missingDir),
+		}).to.deep.equal({
+			message: `Directory does not exist: ${missingDir}`,
+			code: 'DIRECTORY_NOT_FOUND',
+			created: false,
+		});
+	});
+
+	it('skips repositories with a malformed pom.xml and reports why', async function () {
+		this.timeout(30_000);
+		const malformedRepo = path.join(tempDir, 'owner', 'malformed-repo');
+		await fs.ensureDir(malformedRepo);
+		await fs.writeFile(path.join(malformedRepo, 'pom.xml'), '<project><groupId>broken</groupId');
+
+		const {stdout} = await runCommand(['aggregator:create', tempDir, '--json', '--yes'], root);
+
+		const output = JSON.parse(stdout);
+
+		expect({modules: output.modules, stats: output.stats}).to.deep.equal({
+			modules: [
+				{path: 'valid-repo1', valid: true},
+				{path: 'valid-repo2', valid: true},
+				{
+					path: path.join('owner', 'malformed-repo'),
+					valid: false,
+					reason: 'Malformed pom.xml: XML parsing failed: Unclosed root tag\nLine: 0\nColumn: 33\nChar: ',
+				},
+			],
+			stats: {
+				totalScanned: 5,
+				validRepositories: 2,
+				skippedRepositories: 1,
+			},
+		});
+	});
+
 	it('uses the latest liftwizard-profile-parent version that maven-dependency-plugin resolves into the local repository', async () => {
 		const fakeHome = path.join(tempDir, 'fake-home');
 		const liftwizardVersionsDir = path.join(

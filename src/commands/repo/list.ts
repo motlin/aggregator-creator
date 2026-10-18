@@ -1,6 +1,7 @@
 import {Command, Flags} from '@oclif/core';
 import {execa as execa_} from 'execa';
 import {withDebugLogging} from '../../utils/debug-execa.js';
+import {describeGhError} from '../../utils/gh-errors.js';
 
 import chalk from 'chalk';
 import {z} from 'zod';
@@ -133,20 +134,13 @@ export default class RepoList extends Command {
 				});
 			}
 
-			let errorMessage = 'Unknown error';
-			let errorCode: string | undefined;
+			const {authenticated, message} = describeGhError(error instanceof Error ? error.message : 'Unknown error');
 
-			if (error instanceof Error) {
-				errorMessage = error.message;
-				errorCode = 'code' in error ? (error.code as string) : undefined;
-			}
-
-			this.error(`Failed to fetch repositories: ${errorMessage}`, {
+			this.error(`Failed to fetch repositories: ${message}`, {
 				exit: 1,
-				code: errorCode,
-				suggestions: [errorMessage, 'Check your GitHub authentication with: gh auth status'],
+				code: authenticated ? 'GH_API_ERROR' : 'GH_NOT_AUTHENTICATED',
+				suggestions: ['Check your GitHub authentication with: gh auth status'],
 			});
-			throw error;
 		}
 	}
 
@@ -187,77 +181,60 @@ export default class RepoList extends Command {
 			this.log(`│`);
 		}
 
-		try {
-			const repositories = await this.fetchRepositories(
-				flags.owner ? (Array.isArray(flags.owner) ? flags.owner : [flags.owner]) : [],
-				flags.topic ? (Array.isArray(flags.topic) ? flags.topic : [flags.topic]) : [],
-				flags['exclude-topic']
-					? Array.isArray(flags['exclude-topic'])
-						? flags['exclude-topic']
-						: [flags['exclude-topic']]
-					: [],
-				flags.language ? (Array.isArray(flags.language) ? flags.language : [flags.language]) : [],
-				flags.limit,
-				flags['include-forks'],
-				flags['include-archived'],
-				flags.visibility,
-				execa,
-				verbose,
-			);
+		const repositories = await this.fetchRepositories(
+			flags.owner ? (Array.isArray(flags.owner) ? flags.owner : [flags.owner]) : [],
+			flags.topic ? (Array.isArray(flags.topic) ? flags.topic : [flags.topic]) : [],
+			flags['exclude-topic']
+				? Array.isArray(flags['exclude-topic'])
+					? flags['exclude-topic']
+					: [flags['exclude-topic']]
+				: [],
+			flags.language ? (Array.isArray(flags.language) ? flags.language : [flags.language]) : [],
+			flags.limit,
+			flags['include-forks'],
+			flags['include-archived'],
+			flags.visibility,
+			execa,
+			verbose,
+		);
 
-			if (repositories.length === 0) {
-				if (verbose) {
-					this.log(`├──╯ No repositories found matching the criteria.`);
-					this.log(`│`);
-				} else {
-					this.log(`No repositories found.`);
-				}
-				return repositoriesSchema.parse([]);
-			}
-
+		if (repositories.length === 0) {
 			if (verbose) {
-				this.log(`├──╮ Results: ${chalk.yellow(repositories.length)} repositories`);
-
-				for (const repo of repositories) {
-					const language = repo.language || 'No language';
-					const topics =
-						repo.topics && repo.topics.length > 0 ? `Topics: [${repo.topics.join(', ')}]` : 'No topics';
-
-					const visibilityTag =
-						repo.visibility === 'public'
-							? chalk.green(`[${repo.visibility}]`)
-							: chalk.red(`[${repo.visibility}]`);
-
-					this.log(
-						`│  │ ${chalk.yellow(repo.owner.login)}/${chalk.yellow(repo.name)} ${visibilityTag} (${chalk.yellow(language)}) ${topics}`,
-					);
-				}
-				this.log(`├──╯`);
-
+				this.log(`├──╯ No repositories found matching the criteria.`);
 				this.log(`│`);
-				this.log(`╰─── Repository listing complete`);
 			} else {
-				this.log(`Found ${repositories.length} repositories.`);
-				for (const repo of repositories) {
-					this.log(`${repo.owner.login}/${repo.name}`);
-				}
+				this.log(`No repositories found.`);
 			}
-			return repositories;
-		} catch (error) {
-			let errorMessage = 'Unknown error';
-			let errorCode: string | undefined;
-
-			if (error instanceof Error) {
-				errorMessage = error.message;
-				errorCode = 'code' in error ? (error.code as string) : undefined;
-			}
-
-			this.error(`Error: ${errorMessage}`, {
-				exit: 1,
-				code: errorCode,
-				suggestions: [errorMessage],
-			});
-			return [];
+			return repositoriesSchema.parse([]);
 		}
+
+		if (verbose) {
+			this.log(`├──╮ Results: ${chalk.yellow(repositories.length)} repositories`);
+
+			for (const repo of repositories) {
+				const language = repo.language || 'No language';
+				const topics =
+					repo.topics && repo.topics.length > 0 ? `Topics: [${repo.topics.join(', ')}]` : 'No topics';
+
+				const visibilityTag =
+					repo.visibility === 'public'
+						? chalk.green(`[${repo.visibility}]`)
+						: chalk.red(`[${repo.visibility}]`);
+
+				this.log(
+					`│  │ ${chalk.yellow(repo.owner.login)}/${chalk.yellow(repo.name)} ${visibilityTag} (${chalk.yellow(language)}) ${topics}`,
+				);
+			}
+			this.log(`├──╯`);
+
+			this.log(`│`);
+			this.log(`╰─── Repository listing complete`);
+		} else {
+			this.log(`Found ${repositories.length} repositories.`);
+			for (const repo of repositories) {
+				this.log(`${repo.owner.login}/${repo.name}`);
+			}
+		}
+		return repositories;
 	}
 }

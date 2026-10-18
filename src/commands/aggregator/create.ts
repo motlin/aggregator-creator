@@ -89,18 +89,33 @@ export default class AggregatorCreate extends Command {
 		return execaFn(command, args, {timeout: 8000});
 	}
 
-	private async validateMavenRepo(repoPath: string): Promise<boolean> {
+	/**
+	 * Check whether repoPath holds a readable, well-formed pom.xml. Returns null when it does, 'missing'
+	 * when there is no readable pom.xml, or the reason the pom.xml cannot be used.
+	 */
+	private async checkMavenRepo(repoPath: string): Promise<null | 'missing' | string> {
 		const pomPath = path.join(repoPath, 'pom.xml');
 		try {
 			await fs.access(pomPath, fs.constants.R_OK);
-			const parseResult = await parsePomForGAV(pomPath);
-			if (parseResult.reason?.includes('XML parsing failed')) {
-				return false;
-			}
-			return true;
 		} catch {
-			return false;
+			return 'missing';
 		}
+
+		const parseResult = await parsePomForGAV(pomPath);
+		if (parseResult.reason?.includes('XML parsing failed')) {
+			return `Malformed pom.xml: ${parseResult.reason}`;
+		}
+		return null;
+	}
+
+	private skipMalformedRepo(
+		skippedRepos: {path: string; relativePath: string; reason: string}[],
+		repoPath: string,
+		relativePath: string,
+		reason: string,
+	): void {
+		skippedRepos.push({path: repoPath, relativePath, reason});
+		this.warn(`Skipping ${relativePath}: ${reason}`);
 	}
 
 	private async getMavenProjectAttribute(pomFile: string, attribute: string, execaFn = _execa): Promise<string> {
@@ -686,26 +701,22 @@ export default class AggregatorCreate extends Command {
 		} else if (args.directory) {
 			directoryPath = path.resolve(args.directory);
 
+			let isDirectory = false;
 			try {
-				await fs.ensureDir(directoryPath);
-			} catch (error: unknown) {
-				let errorMessage = 'Unknown error';
-				let errorCode: string | undefined;
-
-				if (error instanceof Error) {
-					errorMessage = error.message;
-					errorCode = 'code' in error ? (error.code as string) : undefined;
-				}
-
-				this.error(`Failed to access directory: ${errorMessage}`, {
+				isDirectory = (await fs.stat(directoryPath)).isDirectory();
+			} catch {
+				this.error(`Directory does not exist: ${directoryPath}`, {
 					exit: 1,
-					code: errorCode || 'DIRECTORY_ACCESS_ERROR',
+					code: 'DIRECTORY_NOT_FOUND',
 					suggestions: [
-						'Check if the directory path is valid',
-						'Verify you have read/write permissions',
-						`Try: mkdir -p "${directoryPath}"`,
+						'Check the directory path',
+						`Clone repositories into it first, for example: ${this.config.bin} repo:clone --output-directory "${directoryPath}"`,
 					],
 				});
+			}
+
+			if (!isDirectory) {
+				this.error(`Not a directory: ${directoryPath}`, {exit: 1, code: 'NOT_A_DIRECTORY'});
 			}
 		} else {
 			this.error('No input provided. Provide a directory path or pipe JSON data from stdin.', {
@@ -803,12 +814,17 @@ export default class AggregatorCreate extends Command {
 
 				totalScanned++;
 
-				const hasPom = await this.validateMavenRepo(entryPath);
-				if (hasPom) {
+				const problem = await this.checkMavenRepo(entryPath);
+				if (problem === null) {
 					mavenRepos.push({
 						path: entryPath,
 						relativePath: entry,
 					});
+					continue;
+				}
+
+				if (problem !== 'missing') {
+					this.skipMalformedRepo(skippedRepos, entryPath, entry, problem);
 					continue;
 				}
 
@@ -821,18 +837,20 @@ export default class AggregatorCreate extends Command {
 						if (!subStats.isDirectory()) continue;
 
 						totalScanned++;
-						const hasSubPom = await this.validateMavenRepo(subEntryPath);
-						if (hasSubPom) {
+						const subProblem = await this.checkMavenRepo(subEntryPath);
+						if (subProblem === null) {
 							mavenRepos.push({
 								path: subEntryPath,
 								relativePath: path.join(entry, subEntry),
 							});
-						} else {
+						} else if (subProblem === 'missing') {
 							skippedRepos.push({
 								path: subEntryPath,
 								relativePath: path.join(entry, subEntry),
 								reason: 'Missing pom.xml',
 							});
+						} else {
+							this.skipMalformedRepo(skippedRepos, subEntryPath, path.join(entry, subEntry), subProblem);
 						}
 					}
 				} catch (error) {

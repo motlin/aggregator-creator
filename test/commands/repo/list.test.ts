@@ -2,6 +2,7 @@ import {runCommand} from '@oclif/test';
 import {expect} from 'chai';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {useUnauthenticatedGh} from '../../helpers/unauthenticated-gh.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '../../..');
@@ -361,4 +362,22 @@ describe('repo:list', function () {
 			);
 		});
 	}
+	it('should explain once that gh is not authenticated', async () => {
+		const restore = await useUnauthenticatedGh();
+		try {
+			const {error} = await runCommand(['repo:list', '--owner', 'motlin', '--limit', '1'], root);
+			expect({
+				message: error?.message,
+				code: (error as {code?: string} | undefined)?.code,
+				suggestions: (error as {suggestions?: string[]} | undefined)?.suggestions,
+			}).to.deep.equal({
+				message:
+					'Failed to fetch repositories: GitHub CLI is not authenticated. Run `gh auth login` or set the GH_TOKEN environment variable.',
+				code: 'GH_NOT_AUTHENTICATED',
+				suggestions: ['Check your GitHub authentication with: gh auth status'],
+			});
+		} finally {
+			await restore();
+		}
+	});
 });

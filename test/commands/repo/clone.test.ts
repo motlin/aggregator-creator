@@ -4,6 +4,7 @@ import fs from 'fs-extra';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createSandbox, type SinonSandbox} from 'sinon';
+import {useUnauthenticatedGh} from '../../helpers/unauthenticated-gh.js';
 
 interface ExtendedError extends Error {
 	code?: string;
@@ -199,6 +200,7 @@ describe('repo:clone', () => {
 					JSON.stringify(
 						{
 							error: {
+								code: 'CLONE_FAILED',
 								oclif: {
 									exit: 1,
 								},
@@ -234,6 +236,7 @@ describe('repo:clone', () => {
 					JSON.stringify(
 						{
 							error: {
+								code: 'CLONE_FAILED',
 								oclif: {
 									exit: 1,
 								},
@@ -245,6 +248,22 @@ describe('repo:clone', () => {
 				stderr: '',
 				result: undefined,
 			});
+		});
+		it('should explain once that gh is not authenticated', async () => {
+			const restore = await useUnauthenticatedGh();
+			try {
+				const {error} = await runCommand(
+					['repo:clone', '--output-directory', tempDir, '--owner', 'motlin', '--name', 'JUnit-Java-8-Runner'],
+					root,
+				);
+				expect({message: error?.message, code: (error as ExtendedError | undefined)?.code}).to.deep.equal({
+					message:
+						'Failed to clone motlin/JUnit-Java-8-Runner: GitHub CLI is not authenticated. Run `gh auth login` or set the GH_TOKEN environment variable.',
+					code: 'GH_NOT_AUTHENTICATED',
+				});
+			} finally {
+				await restore();
+			}
 		});
 	});
 
@@ -367,6 +386,51 @@ describe('repo:clone', () => {
 					) + '\n',
 				stderr: '',
 				result: undefined,
+			});
+		});
+		it('should accept a minimal repository object with only name and owner.login', async () => {
+			const repoPath = await createExistingRepo(tempDir, 'test-owner', 'test-repo');
+			pipeToStdin(sandbox, '{"name": "test-repo", "owner": {"login": "test-owner"}}');
+
+			const result = await runCommand(['repo:clone', '--output-directory', tempDir], root);
+
+			expect(result).to.deep.equal({
+				stdout: 'test-owner/test-repo: already exists\n',
+				stderr: '',
+				result: {
+					owner: 'test-owner',
+					name: 'test-repo',
+					path: repoPath,
+					cloned: false,
+					alreadyExists: true,
+				},
+			});
+		});
+
+		it('should explain which field is missing when piped JSON is not a repository', async () => {
+			pipeToStdin(sandbox, '["motlin/foo"]');
+
+			const {error} = await runCommand(['repo:clone', '--output-directory', tempDir], root);
+
+			expect({message: error?.message, code: (error as ExtendedError | undefined)?.code}).to.deep.equal({
+				message: 'Invalid repository input from stdin: [0]: Invalid input: expected object, received string',
+				code: 'INVALID_REPOSITORY_INPUT',
+			});
+		});
+
+		it('should reject repository names that would escape the output directory', async () => {
+			pipeToStdin(sandbox, '{"name": "../evil", "owner": {"login": "motlin"}}');
+
+			const {error} = await runCommand(['repo:clone', '--output-directory', tempDir], root);
+
+			expect({
+				message: error?.message,
+				code: (error as ExtendedError | undefined)?.code,
+				escaped: await fs.pathExists(path.join(tempDir, 'evil')),
+			}).to.deep.equal({
+				message: 'Invalid repository input from stdin: name: Invalid GitHub repository name',
+				code: 'INVALID_REPOSITORY_INPUT',
+				escaped: false,
 			});
 		});
 	});

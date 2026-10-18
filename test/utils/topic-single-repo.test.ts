@@ -152,6 +152,37 @@ describe('topicSingleRepository', () => {
 		expect(logger.warn.calledWith('Failed to get topics: Not found')).to.be.true;
 	});
 
+	it('explains that gh is not authenticated when getting current topics fails for that reason', async () => {
+		execaStub.withArgs('gh', ['api', 'repos/owner/repo/topics', '--method', 'GET']).resolves({
+			exitCode: 4,
+			stdout: '',
+			stderr: 'To get started with GitHub CLI, please run:  gh auth login\nAlternatively, populate the GH_TOKEN environment variable with a GitHub API authentication token.',
+		});
+
+		const result = await topicSingleRepository({
+			owner: 'owner',
+			name: 'repo',
+			topic: 'new-topic',
+			execa: execaStub as Parameters<typeof topicSingleRepository>[0]['execa'],
+			logger,
+		});
+
+		expect({result, warnings: logger.warn.args}).to.deep.equal({
+			result: {
+				success: false,
+				owner: 'owner',
+				name: 'repo',
+				topic: 'new-topic',
+				error: 'Failed to get topics: GitHub CLI is not authenticated. Run `gh auth login` or set the GH_TOKEN environment variable.',
+			},
+			warnings: [
+				[
+					'Failed to get topics: GitHub CLI is not authenticated. Run `gh auth login` or set the GH_TOKEN environment variable.',
+				],
+			],
+		});
+	});
+
 	it('handles invalid JSON response', async () => {
 		execaStub.withArgs('gh', ['api', 'repos/owner/repo/topics', '--method', 'GET']).resolves({
 			exitCode: 0,

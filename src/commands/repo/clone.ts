@@ -3,8 +3,8 @@ import chalk from 'chalk';
 import {execa as execa_} from 'execa';
 import {withDebugLogging} from '../../utils/debug-execa.js';
 import {cloneSingleRepo} from '../../utils/clone-single-repo.js';
-import {repositoriesSchema, repositorySchema} from '../../types/repository.js';
-import type {Repository} from '../../types/repository.js';
+import {describeGhError} from '../../utils/gh-errors.js';
+import {z} from 'zod';
 
 interface CloneResponse {
 	owner: string;
@@ -13,6 +13,19 @@ interface CloneResponse {
 	cloned: boolean;
 	alreadyExists?: boolean;
 }
+
+const githubNameSchema = (kind: string) =>
+	z
+		.string()
+		.regex(/^[\w.-]+$/, `Invalid GitHub ${kind} name`)
+		.refine((value) => value !== '.' && value !== '..', `Invalid GitHub ${kind} name`);
+
+const cloneInputSchema = z.object({
+	name: githubNameSchema('repository'),
+	owner: z.object({login: githubNameSchema('owner')}),
+});
+
+type CloneInput = z.infer<typeof cloneInputSchema>;
 
 export default class RepoClone extends Command {
 	static override args = {};
@@ -97,10 +110,9 @@ export default class RepoClone extends Command {
 			});
 		}
 
-		let input: Repository | Repository[];
+		let jsonData: unknown;
 		try {
-			const jsonData: unknown = JSON.parse(fullInput);
-			input = Array.isArray(jsonData) ? repositoriesSchema.parse(jsonData) : repositorySchema.parse(jsonData);
+			jsonData = JSON.parse(fullInput);
 		} catch {
 			this.error('Invalid JSON input from stdin', {
 				exit: 1,
@@ -112,6 +124,29 @@ export default class RepoClone extends Command {
 				],
 			});
 		}
+
+		const parsed = (Array.isArray(jsonData) ? z.array(cloneInputSchema) : cloneInputSchema).safeParse(jsonData);
+		if (!parsed.success) {
+			const problems = parsed.error.issues
+				.map((issue) => {
+					const location = issue.path
+						.map((segment) => (typeof segment === 'number' ? `[${segment}]` : String(segment)))
+						.join('.')
+						.replaceAll('.[', '[');
+					return location ? `${location}: ${issue.message}` : issue.message;
+				})
+				.join('; ');
+			this.error(`Invalid repository input from stdin: ${problems}`, {
+				exit: 1,
+				code: 'INVALID_REPOSITORY_INPUT',
+				suggestions: [
+					'The input should be a repository object or the JSON array output of repo:list',
+					'Example: {"name": "repo", "owner": {"login": "user"}}',
+				],
+			});
+		}
+
+		const input: CloneInput | CloneInput[] = parsed.data;
 
 		if (!Array.isArray(input)) {
 			return this.cloneRepository(input.owner.login, input.name, outputDirectory, verbose);
@@ -133,47 +168,46 @@ export default class RepoClone extends Command {
 		outputDirectory: string,
 		verbose: boolean,
 	): Promise<CloneResponse> {
-		try {
-			const result = await cloneSingleRepo(
-				owner,
-				name,
-				outputDirectory,
-				withDebugLogging(execa_, (message) => this.debug(message)),
-				verbose ? this : undefined,
-			);
+		const result = await cloneSingleRepo(
+			owner,
+			name,
+			outputDirectory,
+			withDebugLogging(execa_, (message) => this.debug(message)),
+			verbose ? this : undefined,
+		);
 
-			if (result.error) {
-				this.error(`Failed to clone repository: ${result.error}`, {exit: 1});
-			}
-
-			if (result.cloned) {
-				if (verbose) {
-					this.log(
-						`Successfully cloned ${chalk.yellow(owner)}/${chalk.yellow(name)} to ${chalk.cyan(result.path)}`,
-					);
-				} else {
-					this.log(`${owner}/${name}: cloned`);
-				}
-			} else if (result.skipped) {
-				if (verbose) {
-					this.log(
-						`Repository ${chalk.yellow(owner)}/${chalk.yellow(name)} already exists at ${chalk.cyan(result.path)}`,
-					);
-				} else {
-					this.log(`${owner}/${name}: already exists`);
-				}
-			}
-
-			return {
-				owner,
-				name,
-				path: result.path,
-				cloned: result.cloned,
-				...(result.skipped && {alreadyExists: result.skipped}),
-			};
-		} catch (error) {
-			const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-			this.error(`Failed to clone repository: ${errorMessage}`, {exit: 1});
+		if (result.error) {
+			const {authenticated, message} = describeGhError(result.error);
+			this.error(`Failed to clone ${owner}/${name}: ${message}`, {
+				exit: 1,
+				code: authenticated ? 'CLONE_FAILED' : 'GH_NOT_AUTHENTICATED',
+			});
 		}
+
+		if (result.cloned) {
+			if (verbose) {
+				this.log(
+					`Successfully cloned ${chalk.yellow(owner)}/${chalk.yellow(name)} to ${chalk.cyan(result.path)}`,
+				);
+			} else {
+				this.log(`${owner}/${name}: cloned`);
+			}
+		} else if (result.skipped) {
+			if (verbose) {
+				this.log(
+					`Repository ${chalk.yellow(owner)}/${chalk.yellow(name)} already exists at ${chalk.cyan(result.path)}`,
+				);
+			} else {
+				this.log(`${owner}/${name}: already exists`);
+			}
+		}
+
+		return {
+			owner,
+			name,
+			path: result.path,
+			cloned: result.cloned,
+			...(result.skipped && {alreadyExists: result.skipped}),
+		};
 	}
 }

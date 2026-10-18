@@ -1,5 +1,6 @@
 import {execa as execa_} from 'execa';
 import {githubTopicsResponseSchema} from '../types/repository.js';
+import {describeGhError} from './gh-errors.js';
 
 export interface TopicSingleRepoOptions {
 	owner: string;
@@ -36,7 +37,7 @@ export async function topicSingleRepository(options: TopicSingleRepoOptions): Pr
 		});
 
 		if (result.exitCode !== 0) {
-			const error = `Failed to get topics: ${result.stderr}`;
+			const error = `Failed to get topics: ${describeGhError(result.stderr).message}`;
 			if (logger) {
 				logger.warn(error);
 			}
@@ -109,7 +110,7 @@ export async function topicSingleRepository(options: TopicSingleRepoOptions): Pr
 		const updateResult = await execa('gh', args, {reject: false});
 
 		if (updateResult.exitCode !== 0) {
-			const error = `Failed to update topics: ${updateResult.stderr}`;
+			const error = `Failed to update topics: ${describeGhError(updateResult.stderr).message}`;
 			if (logger) {
 				logger.error(error, {exit: false});
 			}
