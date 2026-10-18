@@ -77,7 +77,7 @@ export class XmlDependencyRewriter {
 
 	constructor(options: XmlDependencyRewriteOptions) {
 		this.options = options;
-		this.log = options.log || (() => {});
+		this.log = options.log ?? (() => {});
 
 		this.gavMap = new Map();
 		for (const gav of options.gavs) {
@@ -209,7 +209,8 @@ export class XmlDependencyRewriter {
 	}
 
 	private updateParent(pomData: PomData): boolean {
-		const parent = Array.isArray(pomData.project?.parent) ? pomData.project?.parent[0] : pomData.project?.parent;
+		const parentData = pomData.project?.parent;
+		const parent = Array.isArray(parentData) ? parentData[0] : parentData;
 		if (!parent) return false;
 
 		const groupId = Array.isArray(parent.groupId) ? parent.groupId[0] : parent.groupId;
@@ -269,7 +270,7 @@ export class XmlDependencyRewriter {
 					this.log(
 						`│  │  │   → Checking ${chalk.yellow(key)}: current=${chalk.yellow(
 							currentVersion,
-						)}, new=${chalk.yellow(newVersion || "not found")}`,
+						)}, new=${chalk.yellow(newVersion ?? "not found")}`,
 					);
 				}
 

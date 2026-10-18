@@ -107,7 +107,7 @@ done`,
 					this.log(`│`);
 					this.log(`╰─── Processing failed`);
 				} else {
-					this.log(`${repoName}: clone failed (${cloneResult.error || "Unknown error"})`);
+					this.log(`${repoName}: clone failed (${cloneResult.error ?? "Unknown error"})`);
 				}
 
 				const result = {
@@ -190,13 +190,13 @@ done`,
 			if (!topicSingleResult.success) {
 				if (verbose) {
 					this.log(
-						`├──╯ Failed to add github topic to repository: ${topicSingleResult.error || "Unknown error"}`,
+						`├──╯ Failed to add github topic to repository: ${topicSingleResult.error ?? "Unknown error"}`,
 					);
 					this.log(`├──╯`);
 					this.log(`│`);
 					this.log(`╰─── Processing failed`);
 				} else {
-					this.log(`${repoName}: topic add failed (${topicSingleResult.error || "Unknown error"})`);
+					this.log(`${repoName}: topic add failed (${topicSingleResult.error ?? "Unknown error"})`);
 				}
 
 				const result = {
@@ -205,7 +205,7 @@ done`,
 					cloned: true,
 					valid: true,
 					topicAdded: false,
-					error: `Failed to add github topic to repository: ${topicSingleResult.error || "Unknown error"}`,
+					error: `Failed to add github topic to repository: ${topicSingleResult.error ?? "Unknown error"}`,
 				};
 
 				return result;
@@ -214,8 +214,8 @@ done`,
 			const topicResult = {
 				owner: topicSingleResult.owner,
 				name: topicSingleResult.name,
-				topics: topicSingleResult.topics || [],
-				topicAdded: topicSingleResult.success && !topicSingleResult.alreadyAdded && !dryRun,
+				topics: topicSingleResult.topics ?? [],
+				topicAdded: !topicSingleResult.alreadyAdded && !dryRun,
 			};
 
 			if (verbose) {
@@ -251,7 +251,7 @@ done`,
 			return result;
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : "Unknown error";
-			this.error(`Failed to process repository: ${errorMessage}`, {exit: 1});
+			return this.error(`Failed to process repository: ${errorMessage}`, {exit: 1});
 		}
 	}
 
@@ -270,7 +270,7 @@ done`,
 
 			if (fullInput.trim()) {
 				try {
-					const jsonData = JSON.parse(fullInput);
+					const jsonData: unknown = JSON.parse(fullInput);
 					const validatedRepo = repositorySchema.parse(jsonData);
 					return validatedRepo;
 				} catch {
@@ -288,7 +288,7 @@ done`,
 		}
 
 		// No input provided
-		this.error("No input provided. Provide --owner and --name flags or pipe JSON data from stdin.", {
+		return this.error("No input provided. Provide --owner and --name flags or pipe JSON data from stdin.", {
 			exit: 1,
 			code: "NO_INPUT",
 			suggestions: [

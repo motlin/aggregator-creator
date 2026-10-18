@@ -13,14 +13,14 @@ export async function useUnauthenticatedGh(): Promise<() => Promise<void>> {
 	const configDir = await fs.mkdtemp(path.join(os.tmpdir(), "gh-unauthenticated-"));
 
 	for (const name of AUTH_VARIABLES) {
-		delete process.env[name];
+		Reflect.deleteProperty(process.env, name);
 	}
 	process.env.GH_CONFIG_DIR = configDir;
 
 	return async () => {
 		for (const [name, value] of Object.entries(saved)) {
 			if (value === undefined) {
-				delete process.env[name];
+				Reflect.deleteProperty(process.env, name);
 			} else {
 				process.env[name] = value;
 			}

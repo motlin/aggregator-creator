@@ -104,7 +104,7 @@ describe("repo:process", () => {
 		expectedError.skipOclifErrorHandling = undefined;
 		expectedError.suggestions = undefined;
 		expectedError.showHelp = false;
-		expectedError.parse = (result.error as ExtendedError)?.parse; // Copy the circular reference
+		expectedError.parse = (result.error as ExtendedError).parse; // Copy the circular reference
 
 		expect(result).to.deep.equal({
 			stdout: "",
@@ -128,8 +128,8 @@ describe("repo:process", () => {
 		expectedError.skipOclifErrorHandling = undefined;
 		expectedError.suggestions = undefined;
 		expectedError.showHelp = true;
-		expectedError.parse = (result.error as ExtendedError)?.parse; // Copy the circular reference
-		expectedError.args = (result.error as ExtendedError)?.args; // Copy the args property
+		expectedError.parse = (result.error as ExtendedError).parse; // Copy the circular reference
+		expectedError.args = (result.error as ExtendedError).args; // Copy the args property
 
 		expect(result).to.deep.equal({
 			stdout: "",

@@ -306,11 +306,13 @@ describe("XmlDependencyRewriter", () => {
 
 	it("processes multiple modules in parallel", async () => {
 		const modules = ["module1", "module2", "module3"];
-		for (const module of modules) {
-			const modulePath = path.join(tempDir, module);
-			await fs.ensureDir(modulePath);
-			await fs.writeFile(path.join(modulePath, "pom.xml"), pomTemplate(module, "1.0.0"));
-		}
+		await Promise.all(
+			modules.map(async (module) => {
+				const modulePath = path.join(tempDir, module);
+				await fs.ensureDir(modulePath);
+				await fs.writeFile(path.join(modulePath, "pom.xml"), pomTemplate(module, "1.0.0"));
+			}),
+		);
 
 		const gavs = [new MavenGAVCoords("com.example", "shared-lib", "1.5.0")];
 
@@ -326,8 +328,10 @@ describe("XmlDependencyRewriter", () => {
 		expect(result.rewrittenPoms).to.have.members(modules);
 		expect(result.errors).to.deep.equal([]);
 
-		for (const module of modules) {
-			const updatedContent = await fs.readFile(path.join(tempDir, module, "pom.xml"), "utf8");
+		const updatedContents = await Promise.all(
+			modules.map(async (module) => fs.readFile(path.join(tempDir, module, "pom.xml"), "utf8")),
+		);
+		for (const updatedContent of updatedContents) {
 			expect(updatedContent).to.include("<version>1.5.0</version>");
 		}
 	});

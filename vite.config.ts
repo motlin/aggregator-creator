@@ -201,28 +201,6 @@ export default defineConfig({
 					"vitest/no-identical-title": "error",
 				},
 			},
-			{
-				// PROJECT-SPECIFIC: rules the existing code predates; re-enable them as the code is fixed.
-				files: ["**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
-				rules: {
-					"no-await-in-loop": "off",
-					"@typescript-eslint/prefer-nullish-coalescing": "off",
-					"@typescript-eslint/no-unnecessary-condition": "off",
-					"@typescript-eslint/no-unsafe-assignment": "off",
-					"@typescript-eslint/no-unsafe-member-access": "off",
-					"@typescript-eslint/no-unsafe-type-assertion": "off",
-					"@typescript-eslint/no-non-null-assertion": "off",
-					"@typescript-eslint/consistent-return": "off",
-					"@typescript-eslint/restrict-template-expressions": "off",
-					"@typescript-eslint/no-dynamic-delete": "off",
-					"@typescript-eslint/no-redundant-type-constituents": "off",
-					"@typescript-eslint/prefer-optional-chain": "off",
-					"@typescript-eslint/require-await": "off",
-					"unicorn/no-array-sort": "off",
-					"promise/always-return": "off",
-					"vitest/expect-expect": "off",
-				},
-			},
 		],
 		options: {
 			typeAware: true,

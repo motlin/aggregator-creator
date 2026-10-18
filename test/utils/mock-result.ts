@@ -22,7 +22,8 @@ export function createMockResult(override: Partial<Result> = {}): Result {
 		isForcefullyTerminated: false,
 		killed: false,
 		...override,
-	} as unknown as Result;
+	};
 
-	return mockResult;
+	// oxlint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- execa's Result type depends on its options generic, which a partial mock cannot satisfy
+	return mockResult as unknown as Result;
 }

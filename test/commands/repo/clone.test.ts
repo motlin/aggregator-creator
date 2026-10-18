@@ -3,6 +3,7 @@ import {runCommand} from "@oclif/test";
 import {expect} from "chai";
 import fs from "fs-extra";
 import path from "node:path";
+import {Readable} from "node:stream";
 import {createSandbox, type SinonSandbox} from "sinon";
 import {useUnauthenticatedGh} from "../../helpers/unauthenticated-gh.js";
 
@@ -33,9 +34,7 @@ const makeRepository = (owner: string, name: string) => ({
 const pipeToStdin = (sandbox: SinonSandbox, input: string) => {
 	sandbox.stub(process.stdin, "isTTY").value(false);
 	Object.defineProperty(process.stdin, Symbol.asyncIterator, {
-		async *value() {
-			yield input;
-		},
+		value: () => Readable.from([input])[Symbol.asyncIterator](),
 		configurable: true,
 		writable: true,
 	});
@@ -113,7 +112,7 @@ describe("repo:clone", () => {
 			expectedError.skipOclifErrorHandling = undefined;
 			expectedError.suggestions = undefined;
 			expectedError.showHelp = false;
-			expectedError.parse = (result.error as ExtendedError)?.parse; // Copy the circular reference
+			expectedError.parse = (result.error as ExtendedError).parse; // Copy the circular reference
 
 			expect(result).to.deep.equal({
 				stdout: "",
@@ -259,7 +258,7 @@ describe("repo:clone", () => {
 
 	describe("with stdin", () => {
 		afterEach(() => {
-			delete (process.stdin as unknown as Record<symbol, unknown>)[Symbol.asyncIterator];
+			Reflect.deleteProperty(process.stdin, Symbol.asyncIterator);
 		});
 
 		it("should accept a single repository object from stdin", async () => {

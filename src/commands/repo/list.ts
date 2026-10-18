@@ -120,7 +120,7 @@ export default class RepoList extends Command {
 				this.log(`├──╯`);
 			}
 
-			const repositories = JSON.parse(stdout);
+			const repositories: unknown = JSON.parse(stdout);
 			return repositoriesSchema.parse(repositories);
 		} catch (error) {
 			if (error instanceof z.ZodError) {
@@ -136,7 +136,7 @@ export default class RepoList extends Command {
 
 			const {authenticated, message} = describeGhError(error instanceof Error ? error.message : "Unknown error");
 
-			this.error(`Failed to fetch repositories: ${message}`, {
+			return this.error(`Failed to fetch repositories: ${message}`, {
 				exit: 1,
 				code: authenticated ? "GH_API_ERROR" : "GH_NOT_AUTHENTICATED",
 				suggestions: ["Check your GitHub authentication with: gh auth status"],
@@ -214,7 +214,7 @@ export default class RepoList extends Command {
 			this.log(`├──╮ Results: ${chalk.yellow(repositories.length)} repositories`);
 
 			for (const repo of repositories) {
-				const language = repo.language || "No language";
+				const language = repo.language ?? "No language";
 				const topics =
 					repo.topics && repo.topics.length > 0 ? `Topics: [${repo.topics.join(", ")}]` : "No topics";
 

@@ -37,7 +37,8 @@ interface ParsedPomData {
 	};
 }
 
-const parseXML = promisify<string, OptionsV2, ParsedPomData>(parseString);
+// xml2js yields null for a document with no root element.
+const parseXML = promisify<string, OptionsV2, ParsedPomData | null>(parseString);
 
 /**
  * Attempts to extract GAV coordinates directly from POM XML without invoking Maven.
@@ -89,9 +90,7 @@ export async function parsePomForGAV(pomPath: string): Promise<ParsePomResult> {
 			};
 		}
 
-		const hasPlaceholders = [gav.groupId, gav.artifactId, gav.version].some(
-			(coord) => coord && coord.includes("${"),
-		);
+		const hasPlaceholders = [gav.groupId, gav.artifactId, gav.version].some((coord) => coord.includes("${"));
 
 		if (hasPlaceholders) {
 			return {
@@ -177,7 +176,8 @@ export async function parsePomForPackaging(pomPath: string): Promise<string> {
 			return "jar";
 		}
 
-		return pomData.project.packaging || "jar";
+		const packaging = pomData.project.packaging ?? "";
+		return packaging === "" ? "jar" : packaging;
 	} catch {
 		return "jar";
 	}

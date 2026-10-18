@@ -82,7 +82,7 @@ export default class RepoTopic extends Command {
 			}
 
 			try {
-				const jsonData = JSON.parse(fullInput);
+				const jsonData: unknown = JSON.parse(fullInput);
 				repository = repositorySchema.parse(jsonData);
 			} catch {
 				this.error("Invalid JSON input from stdin", {
@@ -176,9 +176,9 @@ export default class RepoTopic extends Command {
 				this.log(`${repository.owner.login}/${repository.name}: added topic '${flags.topic}'`);
 			}
 		} else if (verbose) {
-			this.log(`├──╯ Failed to add github topic to repository: ${result.error || "Unknown error"}`);
+			this.log(`├──╯ Failed to add github topic to repository: ${result.error ?? "Unknown error"}`);
 		} else {
-			this.log(`${repository.owner.login}/${repository.name}: failed (${result.error || "Unknown error"})`);
+			this.log(`${repository.owner.login}/${repository.name}: failed (${result.error ?? "Unknown error"})`);
 		}
 
 		if (verbose) {
@@ -189,7 +189,7 @@ export default class RepoTopic extends Command {
 		const response = {
 			owner: repository.owner.login,
 			name: repository.name,
-			topics: result.topics || [],
+			topics: result.topics ?? [],
 			topicAdded: result.success && !result.alreadyAdded && !flags.dryRun,
 		};
 

@@ -153,6 +153,7 @@ export default class RepoClone extends Command {
 		const responses: CloneResponse[] = [];
 		for (const repository of input) {
 			responses.push(
+				// oxlint-disable-next-line no-await-in-loop -- repositories are cloned one at a time so progress output stays ordered
 				await this.cloneRepository(repository.owner.login, repository.name, outputDirectory, verbose),
 			);
 		}

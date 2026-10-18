@@ -421,11 +421,12 @@ ${dependencies}
 	it("handles concurrent updates to different modules", async () => {
 		const modules = Array.from({length: 10}, (_, i) => `module${i}`);
 
-		for (const module of modules) {
-			const modulePath = path.join(tempDir, module);
-			await fs.ensureDir(modulePath);
+		await Promise.all(
+			modules.map(async (module) => {
+				const modulePath = path.join(tempDir, module);
+				await fs.ensureDir(modulePath);
 
-			const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
+				const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.test</groupId>
@@ -441,8 +442,9 @@ ${dependencies}
     </dependencies>
 </project>`;
 
-			await fs.writeFile(path.join(modulePath, "pom.xml"), pomContent);
-		}
+				await fs.writeFile(path.join(modulePath, "pom.xml"), pomContent);
+			}),
+		);
 
 		const gavs = [new MavenGAVCoords("com.example", "shared-lib", "2.0.0")];
 
@@ -457,8 +459,10 @@ ${dependencies}
 		expect(result.success).to.equal(true);
 		expect(result.rewrittenPoms).to.have.members(modules);
 
-		for (const module of modules) {
-			const updatedContent = await fs.readFile(path.join(tempDir, module, "pom.xml"), "utf8");
+		const updatedContents = await Promise.all(
+			modules.map(async (module) => fs.readFile(path.join(tempDir, module, "pom.xml"), "utf8")),
+		);
+		for (const updatedContent of updatedContents) {
 			expect(updatedContent).to.include("<version>2.0.0</version>");
 		}
 	});

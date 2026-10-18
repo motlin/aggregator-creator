@@ -13,8 +13,9 @@ describe("repo:list", () => {
 	it("should verify GitHub CLI is authenticated", async () => {
 		const {execa} = await import("execa");
 		try {
-			const {stdout} = await execa("gh", ["auth", "status"]);
+			const {stdout, exitCode} = await execa("gh", ["auth", "status"]);
 			console.log("GitHub auth status:", stdout);
+			expect(exitCode).to.equal(0);
 		} catch (error) {
 			console.error("GitHub auth check failed:", error instanceof Error ? error.message : error);
 			if (error && typeof error === "object" && "stdout" in error) console.log("stdout:", error.stdout);
@@ -62,7 +63,7 @@ describe("repo:list", () => {
 		);
 
 		if ("error" in result) {
-			throw new Error(`Command failed: ${result.error?.message || "Unknown error"}`);
+			throw new Error(`Command failed: ${result.error?.message ?? "Unknown error"}`);
 		}
 
 		const {stdout} = result;
@@ -113,7 +114,7 @@ describe("repo:list", () => {
 		const result = await runCommand(["repo:list", "--owner", "motlin", "--json", "--limit", "1"], root);
 
 		if ("error" in result) {
-			throw new Error(`Command failed: ${result.error?.message || "Unknown error"}`);
+			throw new Error(`Command failed: ${result.error?.message ?? "Unknown error"}`);
 		}
 
 		const {stdout} = result;
@@ -124,7 +125,7 @@ describe("repo:list", () => {
 		const result = await runCommand(["repo:list", "--owner", "freeCodeCamp", "--json", "--limit", "1"], root);
 
 		if ("error" in result) {
-			throw new Error(`Command failed: ${result.error?.message || "Unknown error"}`);
+			throw new Error(`Command failed: ${result.error?.message ?? "Unknown error"}`);
 		}
 
 		const {stdout} = result;
@@ -157,7 +158,7 @@ describe("repo:list", () => {
 		);
 
 		if ("error" in result) {
-			throw new Error(`Command failed: ${result.error?.message || "Unknown error"}`);
+			throw new Error(`Command failed: ${result.error?.message ?? "Unknown error"}`);
 		}
 
 		const {stdout} = result;
@@ -185,7 +186,7 @@ describe("repo:list", () => {
 		);
 
 		if ("error" in result) {
-			throw new Error(`Command failed: ${result.error?.message || "Unknown error"}`);
+			throw new Error(`Command failed: ${result.error?.message ?? "Unknown error"}`);
 		}
 
 		const {stdout} = result;
@@ -212,7 +213,7 @@ describe("repo:list", () => {
 		);
 
 		if ("error" in result) {
-			throw new Error(`Command failed: ${result.error?.message || "Unknown error"}`);
+			throw new Error(`Command failed: ${result.error?.message ?? "Unknown error"}`);
 		}
 
 		const {stdout} = result;
@@ -250,7 +251,7 @@ describe("repo:list", () => {
 		);
 
 		if ("error" in result) {
-			throw new Error(`Command failed: ${result.error?.message || "Unknown error"}`);
+			throw new Error(`Command failed: ${result.error?.message ?? "Unknown error"}`);
 		}
 
 		const {stdout} = result;
@@ -277,7 +278,7 @@ describe("repo:list", () => {
 		);
 
 		if ("error" in result) {
-			throw new Error(`Command failed: ${result.error?.message || "Unknown error"}`);
+			throw new Error(`Command failed: ${result.error?.message ?? "Unknown error"}`);
 		}
 
 		const {stdout} = result;
@@ -306,7 +307,7 @@ describe("repo:list", () => {
 		);
 
 		if ("error" in result) {
-			throw new Error(`Command failed: ${result.error?.message || "Unknown error"}`);
+			throw new Error(`Command failed: ${result.error?.message ?? "Unknown error"}`);
 		}
 
 		const {stdout} = result;

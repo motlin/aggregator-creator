@@ -55,10 +55,10 @@ export default class RepoValidate extends Command {
 				this.log(`├──╯ Repository is valid Maven project`);
 			} else if (validationResult.hasPom) {
 				this.log(
-					`├──╯ Repository has pom.xml but validation failed: ${validationResult.error || "Unknown error"}`,
+					`├──╯ Repository has pom.xml but validation failed: ${validationResult.error ?? "Unknown error"}`,
 				);
 			} else {
-				this.log(`├──╯ Repository is not a Maven project: ${validationResult.error || "No pom.xml found"}`);
+				this.log(`├──╯ Repository is not a Maven project: ${validationResult.error ?? "No pom.xml found"}`);
 			}
 
 			this.log(`│`);
@@ -66,9 +66,9 @@ export default class RepoValidate extends Command {
 		} else if (validationResult.valid) {
 			this.log(`${repoPath}: valid`);
 		} else if (validationResult.hasPom) {
-			this.log(`${repoPath}: invalid (${validationResult.error || "validation failed"})`);
+			this.log(`${repoPath}: invalid (${validationResult.error ?? "validation failed"})`);
 		} else {
-			this.log(`${repoPath}: not a Maven project (${validationResult.error || "No pom.xml found"})`);
+			this.log(`${repoPath}: not a Maven project (${validationResult.error ?? "No pom.xml found"})`);
 		}
 
 		if (!validationResult.valid) {

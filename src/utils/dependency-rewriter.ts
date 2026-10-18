@@ -18,6 +18,16 @@ export interface DependencyRewriteResult {
 	errors: Array<{pom: string; error: string}>;
 }
 
+function describeMavenError(error: unknown): string {
+	if (!(error instanceof Error)) {
+		return String(error);
+	}
+	if ("stderr" in error && typeof error.stderr === "string" && error.stderr !== "") {
+		return error.stderr;
+	}
+	return error.message;
+}
+
 export class DependencyRewriter {
 	private readonly options: DependencyRewriteOptions;
 	private readonly execa: typeof _execa;
@@ -26,7 +36,7 @@ export class DependencyRewriter {
 	constructor(options: DependencyRewriteOptions, execa = _execa) {
 		this.options = options;
 		this.execa = execa;
-		this.log = options.log || (() => {});
+		this.log = options.log ?? (() => {});
 	}
 
 	async rewriteDependencies(): Promise<DependencyRewriteResult> {
@@ -46,6 +56,7 @@ export class DependencyRewriter {
 		for (const module of this.options.modules) {
 			const pomPath = path.join(this.options.aggregatorPath, module, "pom.xml");
 
+			// oxlint-disable-next-line no-await-in-loop -- modules are processed one at a time so their log lines stay grouped
 			if (!(await fs.pathExists(pomPath))) {
 				this.log(`│  │  │ ⚠️ Skipping ${chalk.yellow(module)}: pom.xml not found`);
 				continue;
@@ -54,6 +65,7 @@ export class DependencyRewriter {
 			this.log(`│  │  │ Processing ${chalk.yellow(module)}...`);
 
 			try {
+				// oxlint-disable-next-line no-await-in-loop -- concurrent mvn runs would interleave output and contend for the local repository
 				const gavUpdated = await this.updateDependencyVersions(module);
 				if (gavUpdated) {
 					result.rewrittenPoms.push(module);
@@ -80,6 +92,7 @@ export class DependencyRewriter {
 
 		for (const gav of this.options.gavs) {
 			try {
+				// oxlint-disable-next-line no-await-in-loop -- each mvn run rewrites the same pom.xml, so they must not overlap
 				const result = await this.execa(
 					"mvn",
 					[
@@ -106,8 +119,7 @@ export class DependencyRewriter {
 				}
 			} catch (error) {
 				if (this.options.verbose) {
-					const errorObj = error as Error & {stderr?: string};
-					const errorMessage = errorObj.stderr || errorObj.message;
+					const errorMessage = describeMavenError(error);
 					if (!errorMessage.includes("No matching dependencies found")) {
 						this.log(
 							`│  │  │   ⚠️ Could not update ${chalk.yellow(gav.getGroupId())}:${chalk.yellow(gav.getArtifactId())}: ${errorMessage}`,
@@ -126,7 +138,9 @@ export class DependencyRewriter {
 		for (const module of this.options.modules) {
 			const backupPomPath = path.join(this.options.aggregatorPath, module, "pom.xml.versionsBackup");
 
+			// oxlint-disable-next-line no-await-in-loop -- modules are cleaned one at a time so verbose log lines follow module order
 			if (await fs.pathExists(backupPomPath)) {
+				// oxlint-disable-next-line no-await-in-loop -- see above
 				await fs.remove(backupPomPath);
 				if (this.options.verbose) {
 					this.log(`│  │   → Removed ${chalk.yellow(path.join(module, "pom.xml.versionsBackup"))}`);

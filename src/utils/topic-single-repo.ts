@@ -56,7 +56,7 @@ export async function topicSingleRepository(options: TopicSingleRepoOptions): Pr
 			const topicsData = githubTopicsResponseSchema.parse(JSON.parse(result.stdout));
 			topics = topicsData.names;
 		} catch (parseError) {
-			const error = `Error parsing topics: ${parseError}`;
+			const error = `Error parsing topics: ${String(parseError)}`;
 			if (logger) {
 				logger.error(error, {exit: false});
 			}
