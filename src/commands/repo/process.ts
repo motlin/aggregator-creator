@@ -212,7 +212,7 @@ done`,
 				owner: topicSingleResult.owner,
 				name: topicSingleResult.name,
 				topics: topicSingleResult.topics || [],
-				topicAdded: topicSingleResult.success && !topicSingleResult.alreadyAdded,
+				topicAdded: topicSingleResult.success && !topicSingleResult.alreadyAdded && !dryRun,
 			};
 
 			if (verbose) {

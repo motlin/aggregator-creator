@@ -457,8 +457,8 @@ export default class AggregatorCreate extends Command {
 				const result = await this.execute(
 					'mvn',
 					[
-						'org.apache.maven.plugins:maven-dependency:3.6.0:get',
-						'-Dartifact=io.liftwizard:liftwizard-profile-parent:LATEST',
+						'org.apache.maven.plugins:maven-dependency-plugin:3.6.0:get',
+						'-Dartifact=io.liftwizard:liftwizard-profile-parent:LATEST:pom',
 						'-DremoteRepositories=https://repo.maven.apache.org/maven2',
 						'-Dtransitive=false',
 						'--quiet',

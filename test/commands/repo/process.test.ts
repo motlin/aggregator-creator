@@ -201,6 +201,47 @@ describe('repo:process', () => {
 		});
 	});
 
+	it('should not report topicAdded on a dry run against a valid repository without the topic', async () => {
+		const repoDir = path.join(outputDir, 'test-user', 'test-repo');
+		await fs.outputFile(
+			path.join(repoDir, 'pom.xml'),
+			'<project><modelVersion>4.0.0</modelVersion><groupId>g</groupId><artifactId>a</artifactId><version>1</version></project>\n',
+		);
+
+		const fakeBin = path.join(outputDir, 'fake-bin');
+		const putLog = path.join(outputDir, 'gh-put.log');
+		await fs.outputFile(
+			path.join(fakeBin, 'gh'),
+			`#!/bin/sh\ncase "$*" in\n  *"--method GET"*) echo '{"names":[]}' ;;\n  *) echo "$*" >> '${putLog}'; exit 1 ;;\nesac\n`,
+			{mode: 0o755},
+		);
+		sandbox.stub(process.env, 'PATH').value(`${fakeBin}${path.delimiter}${process.env.PATH}`);
+
+		const result = await runCommand(
+			['repo:process', outputDir, '--owner', 'test-user', '--name', 'test-repo', '--topic', 'maven', '--dryRun'],
+			root,
+		);
+
+		expect({
+			result: result.result,
+			stdout: result.stdout,
+			putCalled: await fs.pathExists(putLog),
+		}).to.deep.equal({
+			result: {
+				name: 'test-repo',
+				owner: {login: 'test-user'},
+				path: repoDir,
+				cloned: true,
+				valid: true,
+				topicAdded: false,
+				topics: ['maven'],
+				error: null,
+			},
+			stdout: 'test-user/test-repo: processed, would add topic\n',
+			putCalled: false,
+		});
+	});
+
 	it('should handle verbose flag', async () => {
 		// The verbose flag would affect output verbosity
 		// This test validates that the flag is accepted

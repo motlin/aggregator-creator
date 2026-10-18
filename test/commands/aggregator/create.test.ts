@@ -428,4 +428,37 @@ describe('aggregator:create', () => {
 			await fs.remove(emptyDir);
 		}
 	});
+
+	it('uses the latest liftwizard-profile-parent version that maven-dependency-plugin resolves into the local repository', async () => {
+		const fakeHome = path.join(tempDir, 'fake-home');
+		const liftwizardVersionsDir = path.join(
+			fakeHome,
+			'.m2',
+			'repository',
+			'io',
+			'liftwizard',
+			'liftwizard-profile-parent',
+		);
+		await fs.ensureDir(path.join(liftwizardVersionsDir, '2.1.9'));
+		await fs.ensureDir(path.join(liftwizardVersionsDir, '2.1.40'));
+
+		const fakeBin = path.join(tempDir, 'fake-bin');
+		await fs.outputFile(
+			path.join(fakeBin, 'mvn'),
+			'#!/bin/sh\n[ "$1" = "org.apache.maven.plugins:maven-dependency-plugin:3.6.0:get" ] && [ "$2" = "-Dartifact=io.liftwizard:liftwizard-profile-parent:LATEST:pom" ] && exit 0\nexit 1\n',
+			{mode: 0o755},
+		);
+		sandbox.stub(process.env, 'PATH').value(`${fakeBin}${path.delimiter}${process.env.PATH}`);
+		sandbox.stub(process.env, 'HOME').value(fakeHome);
+		await fs.remove(path.join(tempDir, 'invalid-repo'));
+
+		await runCommand(['aggregator:create', tempDir, '--yes', '--json', '--no-rewriteDependencies'], root);
+
+		const pomContent = await fs.readFile(path.join(tempDir, 'pom.xml'), 'utf8');
+		expect(pomContent).to.include(`<parent>
+    <groupId>io.liftwizard</groupId>
+    <artifactId>liftwizard-profile-parent</artifactId>
+    <version>2.1.40</version>
+  </parent>`);
+	});
 });
