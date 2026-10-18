@@ -56,7 +56,7 @@ The main command groups include:
 
 **Single Repository Commands:**
 
-- `repo:clone` - Clone a single GitHub repository
+- `repo:clone` - Clone a GitHub repository, or every repository piped from `repo:list --json`
 - `repo:validate` - Validate a single Maven repository
 - `repo:topic` - Topic a single GitHub repository with a topic
 - `repo:process` - Process a single repository (clone, validate, and topic)
@@ -497,7 +497,7 @@ _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/6.2.53
 
 ## `aggregator repo clone`
 
-Clone a single GitHub repository
+Clone a GitHub repository, or every repository in the JSON array output of repo:list piped to stdin
 
 ```
 USAGE
@@ -513,12 +513,14 @@ GLOBAL FLAGS
   --json  Format output as json.
 
 DESCRIPTION
-  Clone a single GitHub repository
+  Clone a GitHub repository, or every repository in the JSON array output of repo:list piped to stdin
 
 EXAMPLES
   $ aggregator repo clone --output-directory ./repos --owner motlin --name JUnit-Java-8-Runner
 
   echo '{"name": "JUnit-Java-8-Runner", "owner": {"login": "motlin"}}' | aggregator repo clone --output-directory ./repos
+
+  $ aggregator repo:list --owner motlin --limit 5 --json | aggregator repo clone --output-directory ./repos
 
   $ aggregator repo:list --owner motlin --limit 1 --json | jq -c '.[0]' | aggregator repo clone --output-directory ./repos
 

@@ -3,7 +3,7 @@ import {expect} from 'chai';
 import fs from 'fs-extra';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {createSandbox} from 'sinon';
+import {createSandbox, type SinonSandbox} from 'sinon';
 
 interface ExtendedError extends Error {
 	code?: string;
@@ -16,6 +16,37 @@ interface ExtendedError extends Error {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '../../..');
+
+const makeRepository = (owner: string, name: string) => ({
+	name,
+	owner: {login: owner, type: 'User'},
+	language: 'Java',
+	topics: [],
+	fork: false,
+	archived: false,
+	disabled: false,
+	is_template: false,
+	private: false,
+	visibility: 'public',
+});
+
+const pipeToStdin = (sandbox: SinonSandbox, input: string) => {
+	sandbox.stub(process.stdin, 'isTTY').value(false);
+	Object.defineProperty(process.stdin, Symbol.asyncIterator, {
+		async *value() {
+			yield input;
+		},
+		configurable: true,
+		writable: true,
+	});
+};
+
+const createExistingRepo = async (directory: string, owner: string, name: string) => {
+	const repoPath = path.join(directory, owner, name);
+	await fs.ensureDir(repoPath);
+	await fs.writeFile(path.join(repoPath, 'README.md'), 'existing content');
+	return repoPath;
+};
 
 describe('repo:clone', () => {
 	let tempDir: string;
@@ -217,7 +248,126 @@ describe('repo:clone', () => {
 		});
 	});
 
-	// Note: stdin tests are difficult to implement with @oclif/test
-	// The command does support stdin input but testing it requires actual process spawning
-	// which is beyond the scope of unit tests. This functionality would be tested in integration tests.
+	describe('with stdin', () => {
+		afterEach(() => {
+			delete (process.stdin as unknown as Record<symbol, unknown>)[Symbol.asyncIterator];
+		});
+
+		it('should accept a single repository object from stdin', async () => {
+			const repoPath = await createExistingRepo(tempDir, 'test-owner', 'test-repo');
+			pipeToStdin(sandbox, JSON.stringify(makeRepository('test-owner', 'test-repo')));
+
+			const result = await runCommand(['repo:clone', '--output-directory', tempDir], root);
+
+			expect(result).to.deep.equal({
+				stdout: 'test-owner/test-repo: already exists\n',
+				stderr: '',
+				result: {
+					owner: 'test-owner',
+					name: 'test-repo',
+					path: repoPath,
+					cloned: false,
+					alreadyExists: true,
+				},
+			});
+		});
+
+		it('should accept the repo:list --json array output from stdin', async () => {
+			const firstPath = await createExistingRepo(tempDir, 'test-owner', 'first-repo');
+			const secondPath = await createExistingRepo(tempDir, 'other-owner', 'second-repo');
+			const repoListOutput = JSON.stringify(
+				[makeRepository('test-owner', 'first-repo'), makeRepository('other-owner', 'second-repo')],
+				null,
+				2,
+			);
+			pipeToStdin(sandbox, repoListOutput + '\n');
+
+			const result = await runCommand(['repo:clone', '--output-directory', tempDir, '--json'], root);
+
+			const expectedResult = [
+				{
+					owner: 'test-owner',
+					name: 'first-repo',
+					path: firstPath,
+					cloned: false,
+					alreadyExists: true,
+				},
+				{
+					owner: 'other-owner',
+					name: 'second-repo',
+					path: secondPath,
+					cloned: false,
+					alreadyExists: true,
+				},
+			];
+
+			expect(result).to.deep.equal({
+				stdout: JSON.stringify(expectedResult, null, 2) + '\n',
+				stderr: '',
+				result: expectedResult,
+			});
+		});
+
+		it('should log one line per repository for array input', async () => {
+			const firstPath = await createExistingRepo(tempDir, 'test-owner', 'first-repo');
+			const secondPath = await createExistingRepo(tempDir, 'other-owner', 'second-repo');
+			pipeToStdin(
+				sandbox,
+				JSON.stringify([
+					makeRepository('test-owner', 'first-repo'),
+					makeRepository('other-owner', 'second-repo'),
+				]),
+			);
+
+			const result = await runCommand(['repo:clone', '--output-directory', tempDir], root);
+
+			expect(result).to.deep.equal({
+				stdout: 'test-owner/first-repo: already exists\nother-owner/second-repo: already exists\n',
+				stderr: '',
+				result: [
+					{
+						owner: 'test-owner',
+						name: 'first-repo',
+						path: firstPath,
+						cloned: false,
+						alreadyExists: true,
+					},
+					{
+						owner: 'other-owner',
+						name: 'second-repo',
+						path: secondPath,
+						cloned: false,
+						alreadyExists: true,
+					},
+				],
+			});
+		});
+
+		it('should error on invalid JSON from stdin', async () => {
+			pipeToStdin(sandbox, 'not json');
+
+			const result = await runCommand(['repo:clone', '--output-directory', tempDir, '--json'], root);
+
+			expect(result).to.deep.equal({
+				stdout:
+					JSON.stringify(
+						{
+							error: {
+								code: 'INVALID_JSON',
+								oclif: {exit: 1},
+								suggestions: [
+									'Ensure the input is valid JSON',
+									'The input should be a repository object or the JSON array output of repo:list',
+									'Example: {"name": "repo", "owner": {"login": "user"}}',
+								],
+							},
+						},
+						null,
+						2,
+					) + '\n',
+				stderr: '',
+				result: undefined,
+			});
+		});
+	});
 });
