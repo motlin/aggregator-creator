@@ -1,50 +1,50 @@
-import {Command, Flags} from '@oclif/core';
-import {execa as execa_} from 'execa';
-import {withDebugLogging} from '../../utils/debug-execa.js';
-import {describeGhError} from '../../utils/gh-errors.js';
+import {Command, Flags} from "@oclif/core";
+import {execa as execa_} from "execa";
+import {withDebugLogging} from "../../utils/debug-execa.js";
+import {describeGhError} from "../../utils/gh-errors.js";
 
-import chalk from 'chalk';
-import {z} from 'zod';
-import {repositoriesSchema} from '../../types/repository.js';
+import chalk from "chalk";
+import {z} from "zod";
+import {repositoriesSchema} from "../../types/repository.js";
 
 export default class RepoList extends Command {
-	static override description = 'List GitHub repositories based on filters';
+	static override description = "List GitHub repositories based on filters";
 
 	static override examples = [
-		'<%= config.bin %> <%= command.id %> --limit 100',
-		'<%= config.bin %> <%= command.id %> --owner motlin --limit 100',
-		'<%= config.bin %> <%= command.id %> --owner motlin --owner liftwizard --limit 100',
-		'<%= config.bin %> <%= command.id %> --owner motlin --language Java --limit 100',
-		'<%= config.bin %> <%= command.id %> --owner motlin --topic maven --language Java --json',
-		'<%= config.bin %> <%= command.id %> --owner motlin --topic maven --exclude-topic patched --json',
-		'<%= config.bin %> <%= command.id %> --owner motlin --limit 100 --json',
-		'<%= config.bin %> <%= command.id %> --include-forks --include-archived',
-		'<%= config.bin %> <%= command.id %> --visibility public',
+		"<%= config.bin %> <%= command.id %> --limit 100",
+		"<%= config.bin %> <%= command.id %> --owner motlin --limit 100",
+		"<%= config.bin %> <%= command.id %> --owner motlin --owner liftwizard --limit 100",
+		"<%= config.bin %> <%= command.id %> --owner motlin --language Java --limit 100",
+		"<%= config.bin %> <%= command.id %> --owner motlin --topic maven --language Java --json",
+		"<%= config.bin %> <%= command.id %> --owner motlin --topic maven --exclude-topic patched --json",
+		"<%= config.bin %> <%= command.id %> --owner motlin --limit 100 --json",
+		"<%= config.bin %> <%= command.id %> --include-forks --include-archived",
+		"<%= config.bin %> <%= command.id %> --visibility public",
 	];
 
 	static override enableJsonFlag = true;
 
 	static override flags = {
-		owner: Flags.string({char: 'o', description: 'GitHub username/org to filter by', multiple: true}),
-		topic: Flags.string({char: 't', description: 'Topic filter', multiple: true}),
-		'exclude-topic': Flags.string({char: 'x', description: 'Exclude repositories with this topic', multiple: true}),
-		language: Flags.string({char: 'g', description: 'Language filter', multiple: true}),
-		'include-forks': Flags.boolean({description: 'Include forked repositories', default: false}),
-		'include-archived': Flags.boolean({description: 'Include archived repositories', default: false}),
+		owner: Flags.string({char: "o", description: "GitHub username/org to filter by", multiple: true}),
+		topic: Flags.string({char: "t", description: "Topic filter", multiple: true}),
+		"exclude-topic": Flags.string({char: "x", description: "Exclude repositories with this topic", multiple: true}),
+		language: Flags.string({char: "g", description: "Language filter", multiple: true}),
+		"include-forks": Flags.boolean({description: "Include forked repositories", default: false}),
+		"include-archived": Flags.boolean({description: "Include archived repositories", default: false}),
 		visibility: Flags.string({
-			description: 'Repository visibility filter',
-			options: ['public', 'private', 'all'],
-			default: 'public',
+			description: "Repository visibility filter",
+			options: ["public", "private", "all"],
+			default: "public",
 		}),
 		limit: Flags.integer({
-			char: 'l',
-			description: 'Max repositories (GitHub search returns at most 100)',
+			char: "l",
+			description: "Max repositories (GitHub search returns at most 100)",
 			min: 1,
 			max: 100,
 		}),
 		verbose: Flags.boolean({
-			char: 'v',
-			description: 'Show verbose output during listing',
+			char: "v",
+			description: "Show verbose output during listing",
 			default: false,
 		}),
 	};
@@ -63,7 +63,7 @@ export default class RepoList extends Command {
 	): Promise<z.infer<typeof repositoriesSchema>> {
 		if (verbose) {
 			this.log(
-				`├──╮ Fetching GitHub repositories${usernames.length > 0 ? ` for users: ${chalk.yellow(usernames.join(', '))}` : ''}`,
+				`├──╮ Fetching GitHub repositories${usernames.length > 0 ? ` for users: ${chalk.yellow(usernames.join(", "))}` : ""}`,
 			);
 		}
 
@@ -71,28 +71,28 @@ export default class RepoList extends Command {
 			if (verbose) {
 				this.log(`│  ├──╮ Building search query`);
 			}
-			const topicQueries = topics.map((topic) => `topic:${topic}`).join(' ');
-			const excludeTopicQueries = excludeTopics.map((topic) => `-topic:${topic}`).join(' ');
-			const languageQueries = languages.map((language) => `language:${language}`).join(' ');
-			let query = '';
+			const topicQueries = topics.map((topic) => `topic:${topic}`).join(" ");
+			const excludeTopicQueries = excludeTopics.map((topic) => `-topic:${topic}`).join(" ");
+			const languageQueries = languages.map((language) => `language:${language}`).join(" ");
+			let query = "";
 
 			if (usernames.length > 0) {
-				const userQueries = usernames.map((username) => `user:${username}`).join(' ');
+				const userQueries = usernames.map((username) => `user:${username}`).join(" ");
 				query += `${userQueries} `;
 			}
 
-			if (visibility !== 'all') {
+			if (visibility !== "all") {
 				query += `is:${visibility} `;
 			}
 
 			query += `${topicQueries} ${excludeTopicQueries} ${languageQueries}`;
 
 			if (!includeForks) {
-				query += ' fork:false';
+				query += " fork:false";
 			}
 
 			if (!includeArchived) {
-				query += ' archived:false';
+				query += " archived:false";
 			}
 
 			if (verbose) {
@@ -101,19 +101,19 @@ export default class RepoList extends Command {
 				this.log(`│  ├──╮ Executing GitHub API search`);
 			}
 
-			const args = ['api', '-X', 'GET', 'search/repositories', '-f', `q=${query}`, '--jq', '.items'];
+			const args = ["api", "-X", "GET", "search/repositories", "-f", `q=${query}`, "--jq", ".items"];
 
 			if (limit) {
-				args.splice(6, 0, '-f', `per_page=${limit}`);
+				args.splice(6, 0, "-f", `per_page=${limit}`);
 				if (verbose) {
 					this.log(`│  │  │ Limit: ${chalk.yellow(limit)}`);
 				}
 			}
 
 			// Add sorting to ensure consistent results
-			args.splice(6, 0, '-f', 'sort=created', '-f', 'order=asc');
+			args.splice(6, 0, "-f", "sort=created", "-f", "order=asc");
 
-			const {stdout} = await execa('gh', args);
+			const {stdout} = await execa("gh", args);
 
 			if (verbose) {
 				this.log(`│  ├──╯`);
@@ -124,22 +124,22 @@ export default class RepoList extends Command {
 			return repositoriesSchema.parse(repositories);
 		} catch (error) {
 			if (error instanceof z.ZodError) {
-				this.error('Invalid repository data format received from GitHub API', {
+				this.error("Invalid repository data format received from GitHub API", {
 					exit: 1,
-					code: 'INVALID_DATA_FORMAT',
+					code: "INVALID_DATA_FORMAT",
 					suggestions: [
-						'GitHub API response format may have changed',
-						'Try updating the CLI to the latest version',
+						"GitHub API response format may have changed",
+						"Try updating the CLI to the latest version",
 					],
 				});
 			}
 
-			const {authenticated, message} = describeGhError(error instanceof Error ? error.message : 'Unknown error');
+			const {authenticated, message} = describeGhError(error instanceof Error ? error.message : "Unknown error");
 
 			this.error(`Failed to fetch repositories: ${message}`, {
 				exit: 1,
-				code: authenticated ? 'GH_API_ERROR' : 'GH_NOT_AUTHENTICATED',
-				suggestions: ['Check your GitHub authentication with: gh auth status'],
+				code: authenticated ? "GH_API_ERROR" : "GH_NOT_AUTHENTICATED",
+				suggestions: ["Check your GitHub authentication with: gh auth status"],
 			});
 		}
 	}
@@ -148,7 +148,9 @@ export default class RepoList extends Command {
 		const {flags} = await this.parse(RepoList);
 		const {verbose} = flags;
 
-		const execa = withDebugLogging(execa_, (message) => this.debug(message));
+		const execa = withDebugLogging(execa_, (message) => {
+			this.debug(message);
+		});
 
 		if (verbose) {
 			this.log(`╭─── Listing GitHub repositories...`);
@@ -160,17 +162,17 @@ export default class RepoList extends Command {
 			if (verbose) {
 				this.log(`│  ├──╮ Check gh CLI`);
 			}
-			await execa('gh', ['--version']);
+			await execa("gh", ["--version"]);
 		} catch {
 			this.error(
-				'GitHub CLI (gh) is not installed or not in PATH. Please install it from https://cli.github.com/',
+				"GitHub CLI (gh) is not installed or not in PATH. Please install it from https://cli.github.com/",
 				{
 					exit: 1,
-					code: 'GH_NOT_FOUND',
+					code: "GH_NOT_FOUND",
 					suggestions: [
-						'Install GitHub CLI from https://cli.github.com/',
-						'On macOS: brew install gh',
-						'On Linux: See installation instructions at https://cli.github.com/manual/installation',
+						"Install GitHub CLI from https://cli.github.com/",
+						"On macOS: brew install gh",
+						"On Linux: See installation instructions at https://cli.github.com/manual/installation",
 					],
 				},
 			);
@@ -184,15 +186,15 @@ export default class RepoList extends Command {
 		const repositories = await this.fetchRepositories(
 			flags.owner ? (Array.isArray(flags.owner) ? flags.owner : [flags.owner]) : [],
 			flags.topic ? (Array.isArray(flags.topic) ? flags.topic : [flags.topic]) : [],
-			flags['exclude-topic']
-				? Array.isArray(flags['exclude-topic'])
-					? flags['exclude-topic']
-					: [flags['exclude-topic']]
+			flags["exclude-topic"]
+				? Array.isArray(flags["exclude-topic"])
+					? flags["exclude-topic"]
+					: [flags["exclude-topic"]]
 				: [],
 			flags.language ? (Array.isArray(flags.language) ? flags.language : [flags.language]) : [],
 			flags.limit,
-			flags['include-forks'],
-			flags['include-archived'],
+			flags["include-forks"],
+			flags["include-archived"],
 			flags.visibility,
 			execa,
 			verbose,
@@ -212,12 +214,12 @@ export default class RepoList extends Command {
 			this.log(`├──╮ Results: ${chalk.yellow(repositories.length)} repositories`);
 
 			for (const repo of repositories) {
-				const language = repo.language || 'No language';
+				const language = repo.language || "No language";
 				const topics =
-					repo.topics && repo.topics.length > 0 ? `Topics: [${repo.topics.join(', ')}]` : 'No topics';
+					repo.topics && repo.topics.length > 0 ? `Topics: [${repo.topics.join(", ")}]` : "No topics";
 
 				const visibilityTag =
-					repo.visibility === 'public'
+					repo.visibility === "public"
 						? chalk.green(`[${repo.visibility}]`)
 						: chalk.red(`[${repo.visibility}]`);
 

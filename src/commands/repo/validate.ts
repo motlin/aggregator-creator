@@ -1,33 +1,33 @@
-import {Args, Command, Flags} from '@oclif/core';
-import {execa as execa_} from 'execa';
-import {withDebugLogging} from '../../utils/debug-execa.js';
-import {type MavenValidationResult, validateMavenRepo} from '../../utils/maven-validation.js';
+import {Args, Command, Flags} from "@oclif/core";
+import {execa as execa_} from "execa";
+import {withDebugLogging} from "../../utils/debug-execa.js";
+import {type MavenValidationResult, validateMavenRepo} from "../../utils/maven-validation.js";
 
 export default class RepoValidate extends Command {
-	static override id = 'repo:validate';
+	static override id = "repo:validate";
 
 	static override args = {
 		repoPath: Args.string({
-			description: 'Path to the repository to validate',
+			description: "Path to the repository to validate",
 			required: true,
 		}),
 	};
 
-	static override description = 'Validate a single Maven repository';
+	static override description = "Validate a single Maven repository";
 
 	static override enableJsonFlag = true;
 
 	static override examples = [
-		'<%= config.bin %> <%= command.id %> ./path/to/repo',
-		'<%= config.bin %> <%= command.id %> /repos/owner/repo-name',
-		'<%= config.bin %> <%= command.id %> ./my-maven-project --json',
-		'<%= config.bin %> <%= command.id %> ./my-maven-project --verbose',
+		"<%= config.bin %> <%= command.id %> ./path/to/repo",
+		"<%= config.bin %> <%= command.id %> /repos/owner/repo-name",
+		"<%= config.bin %> <%= command.id %> ./my-maven-project --json",
+		"<%= config.bin %> <%= command.id %> ./my-maven-project --verbose",
 	];
 
 	static override flags = {
 		verbose: Flags.boolean({
-			char: 'v',
-			description: 'Show verbose output during validation',
+			char: "v",
+			description: "Show verbose output during validation",
 			default: false,
 		}),
 	};
@@ -44,7 +44,9 @@ export default class RepoValidate extends Command {
 
 		const validationResult = await validateMavenRepo(
 			repoPath,
-			withDebugLogging(execa_, (message) => this.debug(message)),
+			withDebugLogging(execa_, (message) => {
+				this.debug(message);
+			}),
 			verbose ? this : undefined,
 		);
 
@@ -53,10 +55,10 @@ export default class RepoValidate extends Command {
 				this.log(`├──╯ Repository is valid Maven project`);
 			} else if (validationResult.hasPom) {
 				this.log(
-					`├──╯ Repository has pom.xml but validation failed: ${validationResult.error || 'Unknown error'}`,
+					`├──╯ Repository has pom.xml but validation failed: ${validationResult.error || "Unknown error"}`,
 				);
 			} else {
-				this.log(`├──╯ Repository is not a Maven project: ${validationResult.error || 'No pom.xml found'}`);
+				this.log(`├──╯ Repository is not a Maven project: ${validationResult.error || "No pom.xml found"}`);
 			}
 
 			this.log(`│`);
@@ -64,9 +66,9 @@ export default class RepoValidate extends Command {
 		} else if (validationResult.valid) {
 			this.log(`${repoPath}: valid`);
 		} else if (validationResult.hasPom) {
-			this.log(`${repoPath}: invalid (${validationResult.error || 'validation failed'})`);
+			this.log(`${repoPath}: invalid (${validationResult.error || "validation failed"})`);
 		} else {
-			this.log(`${repoPath}: not a Maven project (${validationResult.error || 'No pom.xml found'})`);
+			this.log(`${repoPath}: not a Maven project (${validationResult.error || "No pom.xml found"})`);
 		}
 
 		if (!validationResult.valid) {

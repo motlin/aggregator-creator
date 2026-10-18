@@ -3,9 +3,9 @@
  */
 export async function readStdin(stream: AsyncIterable<Buffer | string> = process.stdin): Promise<string> {
 	const decoder = new TextDecoder();
-	let input = '';
+	let input = "";
 	for await (const chunk of stream) {
-		input += typeof chunk === 'string' ? chunk : decoder.decode(chunk, {stream: true});
+		input += typeof chunk === "string" ? chunk : decoder.decode(chunk, {stream: true});
 	}
 
 	return input + decoder.decode();

@@ -1,4 +1,4 @@
-import type {execa as execa_} from 'execa';
+import type {execa as execa_} from "execa";
 
 type Execa = typeof execa_;
 
@@ -7,8 +7,9 @@ type Execa = typeof execa_;
  * which oclif prints when DEBUG matches the command's namespace (for example DEBUG=*).
  */
 export function withDebugLogging(execa: Execa, debug: (message: string) => void): Execa {
+	// oxlint-disable-next-line typescript/promise-function-async -- must return execa's subprocess, not a wrapping Promise
 	const wrapped = (file: string | URL, args?: readonly string[], options?: Record<string, unknown>) => {
-		const commandLine = [String(file), ...(Array.isArray(args) ? args : [])].join(' ');
+		const commandLine = [String(file), ...(Array.isArray(args) ? args : [])].join(" ");
 		debug(`Running: ${commandLine}`);
 
 		const subprocess = execa(file, args, options);

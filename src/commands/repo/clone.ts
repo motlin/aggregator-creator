@@ -1,11 +1,11 @@
-import {Command, Flags} from '@oclif/core';
-import chalk from 'chalk';
-import {execa as execa_} from 'execa';
-import {withDebugLogging} from '../../utils/debug-execa.js';
-import {readStdin} from '../../utils/read-stdin.js';
-import {cloneSingleRepo} from '../../utils/clone-single-repo.js';
-import {describeGhError} from '../../utils/gh-errors.js';
-import {z} from 'zod';
+import {Command, Flags} from "@oclif/core";
+import chalk from "chalk";
+import {execa as execa_} from "execa";
+import {withDebugLogging} from "../../utils/debug-execa.js";
+import {readStdin} from "../../utils/read-stdin.js";
+import {cloneSingleRepo} from "../../utils/clone-single-repo.js";
+import {describeGhError} from "../../utils/gh-errors.js";
+import {z} from "zod";
 
 interface CloneResponse {
 	owner: string;
@@ -19,11 +19,11 @@ const githubNameSchema = (kind: string) =>
 	z
 		.string()
 		.regex(/^[\w.-]+$/, `Invalid GitHub ${kind} name`)
-		.refine((value) => value !== '.' && value !== '..', `Invalid GitHub ${kind} name`);
+		.refine((value) => value !== "." && value !== "..", `Invalid GitHub ${kind} name`);
 
 const cloneInputSchema = z.object({
-	name: githubNameSchema('repository'),
-	owner: z.object({login: githubNameSchema('owner')}),
+	name: githubNameSchema("repository"),
+	owner: z.object({login: githubNameSchema("owner")}),
 });
 
 type CloneInput = z.infer<typeof cloneInputSchema>;
@@ -32,43 +32,43 @@ export default class RepoClone extends Command {
 	static override args = {};
 
 	static override description =
-		'Clone a GitHub repository, or every repository in the JSON array output of repo:list piped to stdin';
+		"Clone a GitHub repository, or every repository in the JSON array output of repo:list piped to stdin";
 
 	static override enableJsonFlag = true;
 
 	static override examples = [
-		'<%= config.bin %> <%= command.id %> --output-directory ./repos --owner motlin --name JUnit-Java-8-Runner',
+		"<%= config.bin %> <%= command.id %> --output-directory ./repos --owner motlin --name JUnit-Java-8-Runner",
 		'echo \'{"name": "JUnit-Java-8-Runner", "owner": {"login": "motlin"}}\' | <%= config.bin %> <%= command.id %> --output-directory ./repos',
-		'<%= config.bin %> repo:list --owner motlin --limit 5 --json | <%= config.bin %> <%= command.id %> --output-directory ./repos',
+		"<%= config.bin %> repo:list --owner motlin --limit 5 --json | <%= config.bin %> <%= command.id %> --output-directory ./repos",
 		"<%= config.bin %> repo:list --owner motlin --limit 1 --json | jq -c '.[0]' | <%= config.bin %> <%= command.id %> --output-directory ./repos",
-		'<%= config.bin %> <%= command.id %> --output-directory ./repos --owner motlin --name JUnit-Java-8-Runner --verbose',
+		"<%= config.bin %> <%= command.id %> --output-directory ./repos --owner motlin --name JUnit-Java-8-Runner --verbose",
 	];
 
 	static override flags = {
-		'output-directory': Flags.string({
-			description: 'Directory where the repository will be cloned',
+		"output-directory": Flags.string({
+			description: "Directory where the repository will be cloned",
 			required: true,
 		}),
 		owner: Flags.string({
-			char: 'o',
-			description: 'GitHub username or organization (required when not using stdin)',
+			char: "o",
+			description: "GitHub username or organization (required when not using stdin)",
 			required: false,
 		}),
 		name: Flags.string({
-			char: 'n',
-			description: 'Repository name (required when not using stdin)',
+			char: "n",
+			description: "Repository name (required when not using stdin)",
 			required: false,
 		}),
 		verbose: Flags.boolean({
-			char: 'v',
-			description: 'Show verbose output during cloning',
+			char: "v",
+			description: "Show verbose output during cloning",
 			default: false,
 		}),
 	};
 
 	public async run(): Promise<CloneResponse | CloneResponse[]> {
 		const {flags} = await this.parse(RepoClone);
-		const outputDirectory = flags['output-directory'];
+		const outputDirectory = flags["output-directory"];
 		const {verbose} = flags;
 
 		// Determine input source: stdin or flags
@@ -76,12 +76,12 @@ export default class RepoClone extends Command {
 
 		if (!useStdin) {
 			if (!flags.owner || !flags.name) {
-				this.error('Both --owner and --name flags are required when not reading from stdin', {
+				this.error("Both --owner and --name flags are required when not reading from stdin", {
 					exit: 1,
-					code: 'MISSING_FLAGS',
+					code: "MISSING_FLAGS",
 					suggestions: [
-						'Provide both --owner and --name flags',
-						'Or pipe repository JSON to stdin',
+						"Provide both --owner and --name flags",
+						"Or pipe repository JSON to stdin",
 						`Example: ${this.config.bin} ${this.id} --output-directory ./repos --owner motlin --name JUnit-Java-8-Runner`,
 					],
 				});
@@ -97,12 +97,12 @@ export default class RepoClone extends Command {
 		const fullInput = await readStdin();
 
 		if (!fullInput.trim()) {
-			this.error('No input provided', {
+			this.error("No input provided", {
 				exit: 1,
-				code: 'NO_INPUT',
+				code: "NO_INPUT",
 				suggestions: [
-					'Provide both --owner and --name flags',
-					'Or pipe repository JSON to stdin',
+					"Provide both --owner and --name flags",
+					"Or pipe repository JSON to stdin",
 					`Example: ${this.config.bin} ${this.id} --output-directory ./repos --owner motlin --name JUnit-Java-8-Runner`,
 				],
 			});
@@ -112,12 +112,12 @@ export default class RepoClone extends Command {
 		try {
 			jsonData = JSON.parse(fullInput);
 		} catch {
-			this.error('Invalid JSON input from stdin', {
+			this.error("Invalid JSON input from stdin", {
 				exit: 1,
-				code: 'INVALID_JSON',
+				code: "INVALID_JSON",
 				suggestions: [
-					'Ensure the input is valid JSON',
-					'The input should be a repository object or the JSON array output of repo:list',
+					"Ensure the input is valid JSON",
+					"The input should be a repository object or the JSON array output of repo:list",
 					'Example: {"name": "repo", "owner": {"login": "user"}}',
 				],
 			});
@@ -128,17 +128,17 @@ export default class RepoClone extends Command {
 			const problems = parsed.error.issues
 				.map((issue) => {
 					const location = issue.path
-						.map((segment) => (typeof segment === 'number' ? `[${segment}]` : String(segment)))
-						.join('.')
-						.replaceAll('.[', '[');
+						.map((segment) => (typeof segment === "number" ? `[${segment}]` : String(segment)))
+						.join(".")
+						.replaceAll(".[", "[");
 					return location ? `${location}: ${issue.message}` : issue.message;
 				})
-				.join('; ');
+				.join("; ");
 			this.error(`Invalid repository input from stdin: ${problems}`, {
 				exit: 1,
-				code: 'INVALID_REPOSITORY_INPUT',
+				code: "INVALID_REPOSITORY_INPUT",
 				suggestions: [
-					'The input should be a repository object or the JSON array output of repo:list',
+					"The input should be a repository object or the JSON array output of repo:list",
 					'Example: {"name": "repo", "owner": {"login": "user"}}',
 				],
 			});
@@ -170,7 +170,9 @@ export default class RepoClone extends Command {
 			owner,
 			name,
 			outputDirectory,
-			withDebugLogging(execa_, (message) => this.debug(message)),
+			withDebugLogging(execa_, (message) => {
+				this.debug(message);
+			}),
 			verbose ? this : undefined,
 		);
 
@@ -178,7 +180,7 @@ export default class RepoClone extends Command {
 			const {authenticated, message} = describeGhError(result.error);
 			this.error(`Failed to clone ${owner}/${name}: ${message}`, {
 				exit: 1,
-				code: authenticated ? 'CLONE_FAILED' : 'GH_NOT_AUTHENTICATED',
+				code: authenticated ? "CLONE_FAILED" : "GH_NOT_AUTHENTICATED",
 			});
 		}
 

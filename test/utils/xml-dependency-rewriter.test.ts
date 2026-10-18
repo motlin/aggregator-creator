@@ -1,10 +1,10 @@
-import {describe, it, beforeEach, afterEach} from 'vite-plus/test';
-import {expect} from 'chai';
-import fs from 'fs-extra';
-import path from 'node:path';
-import os from 'node:os';
-import MavenGAVCoords from '../../src/maven-gav.js';
-import {XmlDependencyRewriter} from '../../src/utils/xml-dependency-rewriter.js';
+import {describe, it, beforeEach, afterEach} from "vite-plus/test";
+import {expect} from "chai";
+import fs from "fs-extra";
+import path from "node:path";
+import os from "node:os";
+import MavenGAVCoords from "../../src/maven-gav.js";
+import {XmlDependencyRewriter} from "../../src/utils/xml-dependency-rewriter.js";
 
 const pomTemplate = (artifactId: string, depVersion: string) => `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
@@ -22,18 +22,18 @@ const pomTemplate = (artifactId: string, depVersion: string) => `<?xml version="
     </dependencies>
 </project>`;
 
-describe('XmlDependencyRewriter', () => {
+describe("XmlDependencyRewriter", () => {
 	let tempDir: string;
 
 	beforeEach(async () => {
-		tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'xml-rewriter-test-'));
+		tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "xml-rewriter-test-"));
 	});
 
 	afterEach(async () => {
 		await fs.remove(tempDir);
 	});
 
-	it('updates simple dependency versions', async () => {
+	it("updates simple dependency versions", async () => {
 		const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -55,36 +55,36 @@ describe('XmlDependencyRewriter', () => {
     </dependencies>
 </project>`;
 
-		const modulePath = path.join(tempDir, 'module1');
+		const modulePath = path.join(tempDir, "module1");
 		await fs.ensureDir(modulePath);
-		await fs.writeFile(path.join(modulePath, 'pom.xml'), pomContent);
+		await fs.writeFile(path.join(modulePath, "pom.xml"), pomContent);
 
 		const gavs = [
-			new MavenGAVCoords('com.example', 'library-a', '1.5.0'),
-			new MavenGAVCoords('com.example', 'library-b', '2.1.0'),
+			new MavenGAVCoords("com.example", "library-a", "1.5.0"),
+			new MavenGAVCoords("com.example", "library-b", "2.1.0"),
 		];
 
 		const rewriter = new XmlDependencyRewriter({
 			aggregatorPath: tempDir,
 			gavs,
-			modules: ['module1'],
+			modules: ["module1"],
 			verbose: false,
 		});
 
 		const result = await rewriter.rewriteDependencies();
 
-		expect(result.success).to.be.true;
-		expect(result.rewrittenPoms).to.deep.equal(['module1']);
-		expect(result.errors).to.be.empty;
-		expect(result.mavenFallbacks).to.be.empty;
+		expect(result.success).to.equal(true);
+		expect(result.rewrittenPoms).to.deep.equal(["module1"]);
+		expect(result.errors).to.deep.equal([]);
+		expect(result.mavenFallbacks).to.deep.equal([]);
 
-		const updatedContent = await fs.readFile(path.join(modulePath, 'pom.xml'), 'utf8');
-		expect(updatedContent).to.include('<version>1.5.0</version>');
-		expect(updatedContent).to.include('<version>2.1.0</version>');
-		expect(updatedContent).to.not.include('<version>1.0.0</version>');
+		const updatedContent = await fs.readFile(path.join(modulePath, "pom.xml"), "utf8");
+		expect(updatedContent).to.include("<version>1.5.0</version>");
+		expect(updatedContent).to.include("<version>2.1.0</version>");
+		expect(updatedContent).to.not.include("<version>1.0.0</version>");
 	});
 
-	it('updates dependencies in dependencyManagement section', async () => {
+	it("updates dependencies in dependencyManagement section", async () => {
 		const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -103,29 +103,29 @@ describe('XmlDependencyRewriter', () => {
     </dependencyManagement>
 </project>`;
 
-		const modulePath = path.join(tempDir, 'module1');
+		const modulePath = path.join(tempDir, "module1");
 		await fs.ensureDir(modulePath);
-		await fs.writeFile(path.join(modulePath, 'pom.xml'), pomContent);
+		await fs.writeFile(path.join(modulePath, "pom.xml"), pomContent);
 
-		const gavs = [new MavenGAVCoords('com.example', 'managed-lib', '3.5.0')];
+		const gavs = [new MavenGAVCoords("com.example", "managed-lib", "3.5.0")];
 
 		const rewriter = new XmlDependencyRewriter({
 			aggregatorPath: tempDir,
 			gavs,
-			modules: ['module1'],
+			modules: ["module1"],
 		});
 
 		const result = await rewriter.rewriteDependencies();
 
-		expect(result.success).to.be.true;
-		expect(result.rewrittenPoms).to.deep.equal(['module1']);
+		expect(result.success).to.equal(true);
+		expect(result.rewrittenPoms).to.deep.equal(["module1"]);
 
-		const updatedContent = await fs.readFile(path.join(modulePath, 'pom.xml'), 'utf8');
-		expect(updatedContent).to.include('<version>3.5.0</version>');
-		expect(updatedContent).to.not.include('<version>3.0.0</version>');
+		const updatedContent = await fs.readFile(path.join(modulePath, "pom.xml"), "utf8");
+		expect(updatedContent).to.include("<version>3.5.0</version>");
+		expect(updatedContent).to.not.include("<version>3.0.0</version>");
 	});
 
-	it('updates plugin dependencies', async () => {
+	it("updates plugin dependencies", async () => {
 		const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -151,28 +151,28 @@ describe('XmlDependencyRewriter', () => {
     </build>
 </project>`;
 
-		const modulePath = path.join(tempDir, 'module1');
+		const modulePath = path.join(tempDir, "module1");
 		await fs.ensureDir(modulePath);
-		await fs.writeFile(path.join(modulePath, 'pom.xml'), pomContent);
+		await fs.writeFile(path.join(modulePath, "pom.xml"), pomContent);
 
-		const gavs = [new MavenGAVCoords('com.example', 'plugin-dep', '1.2.0')];
+		const gavs = [new MavenGAVCoords("com.example", "plugin-dep", "1.2.0")];
 
 		const rewriter = new XmlDependencyRewriter({
 			aggregatorPath: tempDir,
 			gavs,
-			modules: ['module1'],
+			modules: ["module1"],
 		});
 
 		const result = await rewriter.rewriteDependencies();
 
-		expect(result.success).to.be.true;
-		expect(result.rewrittenPoms).to.deep.equal(['module1']);
+		expect(result.success).to.equal(true);
+		expect(result.rewrittenPoms).to.deep.equal(["module1"]);
 
-		const updatedContent = await fs.readFile(path.join(modulePath, 'pom.xml'), 'utf8');
-		expect(updatedContent).to.include('<version>1.2.0</version>');
+		const updatedContent = await fs.readFile(path.join(modulePath, "pom.xml"), "utf8");
+		expect(updatedContent).to.include("<version>1.2.0</version>");
 	});
 
-	it('updates profile dependencies', async () => {
+	it("updates profile dependencies", async () => {
 		const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -194,28 +194,28 @@ describe('XmlDependencyRewriter', () => {
     </profiles>
 </project>`;
 
-		const modulePath = path.join(tempDir, 'module1');
+		const modulePath = path.join(tempDir, "module1");
 		await fs.ensureDir(modulePath);
-		await fs.writeFile(path.join(modulePath, 'pom.xml'), pomContent);
+		await fs.writeFile(path.join(modulePath, "pom.xml"), pomContent);
 
-		const gavs = [new MavenGAVCoords('com.example', 'profile-lib', '2.5.0')];
+		const gavs = [new MavenGAVCoords("com.example", "profile-lib", "2.5.0")];
 
 		const rewriter = new XmlDependencyRewriter({
 			aggregatorPath: tempDir,
 			gavs,
-			modules: ['module1'],
+			modules: ["module1"],
 		});
 
 		const result = await rewriter.rewriteDependencies();
 
-		expect(result.success).to.be.true;
-		expect(result.rewrittenPoms).to.deep.equal(['module1']);
+		expect(result.success).to.equal(true);
+		expect(result.rewrittenPoms).to.deep.equal(["module1"]);
 
-		const updatedContent = await fs.readFile(path.join(modulePath, 'pom.xml'), 'utf8');
-		expect(updatedContent).to.include('<version>2.5.0</version>');
+		const updatedContent = await fs.readFile(path.join(modulePath, "pom.xml"), "utf8");
+		expect(updatedContent).to.include("<version>2.5.0</version>");
 	});
 
-	it('replaces property placeholders regardless of property name', async () => {
+	it("replaces property placeholders regardless of property name", async () => {
 		const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -236,31 +236,31 @@ describe('XmlDependencyRewriter', () => {
     </dependencies>
 </project>`;
 
-		const modulePath = path.join(tempDir, 'module1');
+		const modulePath = path.join(tempDir, "module1");
 		await fs.ensureDir(modulePath);
-		await fs.writeFile(path.join(modulePath, 'pom.xml'), pomContent);
+		await fs.writeFile(path.join(modulePath, "pom.xml"), pomContent);
 
-		const gavs = [new MavenGAVCoords('com.example', 'library-a', '1.5.0')];
+		const gavs = [new MavenGAVCoords("com.example", "library-a", "1.5.0")];
 
 		const rewriter = new XmlDependencyRewriter({
 			aggregatorPath: tempDir,
 			gavs,
-			modules: ['module1'],
+			modules: ["module1"],
 		});
 
 		const result = await rewriter.rewriteDependencies();
 
-		expect(result.success).to.be.true;
-		expect(result.rewrittenPoms).to.deep.equal(['module1']);
-		expect(result.mavenFallbacks).to.be.empty;
+		expect(result.success).to.equal(true);
+		expect(result.rewrittenPoms).to.deep.equal(["module1"]);
+		expect(result.mavenFallbacks).to.deep.equal([]);
 
-		const updatedPom = await fs.readFile(path.join(modulePath, 'pom.xml'), 'utf8');
-		expect(updatedPom).to.include('<lib.version>1.0.0</lib.version>');
+		const updatedPom = await fs.readFile(path.join(modulePath, "pom.xml"), "utf8");
+		expect(updatedPom).to.include("<lib.version>1.0.0</lib.version>");
 		expect(updatedPom).to.match(/<artifactId>library-a<\/artifactId>\s*<version>1\.5\.0<\/version>/);
 		expect(updatedPom).not.to.match(/\$\{lib\.version\}/);
 	});
 
-	it('does not modify dependencies not in GAV list', async () => {
+	it("does not modify dependencies not in GAV list", async () => {
 		const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -282,37 +282,37 @@ describe('XmlDependencyRewriter', () => {
     </dependencies>
 </project>`;
 
-		const modulePath = path.join(tempDir, 'module1');
+		const modulePath = path.join(tempDir, "module1");
 		await fs.ensureDir(modulePath);
-		await fs.writeFile(path.join(modulePath, 'pom.xml'), pomContent);
+		await fs.writeFile(path.join(modulePath, "pom.xml"), pomContent);
 
-		const gavs = [new MavenGAVCoords('com.example', 'library-a', '1.5.0')];
+		const gavs = [new MavenGAVCoords("com.example", "library-a", "1.5.0")];
 
 		const rewriter = new XmlDependencyRewriter({
 			aggregatorPath: tempDir,
 			gavs,
-			modules: ['module1'],
+			modules: ["module1"],
 		});
 
 		const result = await rewriter.rewriteDependencies();
 
-		expect(result.success).to.be.true;
-		expect(result.rewrittenPoms).to.deep.equal(['module1']);
+		expect(result.success).to.equal(true);
+		expect(result.rewrittenPoms).to.deep.equal(["module1"]);
 
-		const updatedContent = await fs.readFile(path.join(modulePath, 'pom.xml'), 'utf8');
-		expect(updatedContent).to.include('<version>1.5.0</version>');
-		expect(updatedContent).to.include('<version>2.0.0</version>');
+		const updatedContent = await fs.readFile(path.join(modulePath, "pom.xml"), "utf8");
+		expect(updatedContent).to.include("<version>1.5.0</version>");
+		expect(updatedContent).to.include("<version>2.0.0</version>");
 	});
 
-	it('processes multiple modules in parallel', async () => {
-		const modules = ['module1', 'module2', 'module3'];
+	it("processes multiple modules in parallel", async () => {
+		const modules = ["module1", "module2", "module3"];
 		for (const module of modules) {
 			const modulePath = path.join(tempDir, module);
 			await fs.ensureDir(modulePath);
-			await fs.writeFile(path.join(modulePath, 'pom.xml'), pomTemplate(module, '1.0.0'));
+			await fs.writeFile(path.join(modulePath, "pom.xml"), pomTemplate(module, "1.0.0"));
 		}
 
-		const gavs = [new MavenGAVCoords('com.example', 'shared-lib', '1.5.0')];
+		const gavs = [new MavenGAVCoords("com.example", "shared-lib", "1.5.0")];
 
 		const rewriter = new XmlDependencyRewriter({
 			aggregatorPath: tempDir,
@@ -322,74 +322,74 @@ describe('XmlDependencyRewriter', () => {
 
 		const result = await rewriter.rewriteDependencies();
 
-		expect(result.success).to.be.true;
+		expect(result.success).to.equal(true);
 		expect(result.rewrittenPoms).to.have.members(modules);
-		expect(result.errors).to.be.empty;
+		expect(result.errors).to.deep.equal([]);
 
 		for (const module of modules) {
-			const updatedContent = await fs.readFile(path.join(tempDir, module, 'pom.xml'), 'utf8');
-			expect(updatedContent).to.include('<version>1.5.0</version>');
+			const updatedContent = await fs.readFile(path.join(tempDir, module, "pom.xml"), "utf8");
+			expect(updatedContent).to.include("<version>1.5.0</version>");
 		}
 	});
 
-	it('reports errors for invalid POMs', async () => {
-		const invalidPomContent = 'This is not valid XML';
+	it("reports errors for invalid POMs", async () => {
+		const invalidPomContent = "This is not valid XML";
 
-		const modulePath = path.join(tempDir, 'module1');
+		const modulePath = path.join(tempDir, "module1");
 		await fs.ensureDir(modulePath);
-		await fs.writeFile(path.join(modulePath, 'pom.xml'), invalidPomContent);
+		await fs.writeFile(path.join(modulePath, "pom.xml"), invalidPomContent);
 
-		const gavs = [new MavenGAVCoords('com.example', 'library-a', '1.5.0')];
+		const gavs = [new MavenGAVCoords("com.example", "library-a", "1.5.0")];
 
 		const rewriter = new XmlDependencyRewriter({
 			aggregatorPath: tempDir,
 			gavs,
-			modules: ['module1'],
+			modules: ["module1"],
 		});
 
 		const result = await rewriter.rewriteDependencies();
 
-		expect(result.success).to.be.false;
+		expect(result.success).to.equal(false);
 		expect(result.errors).to.have.lengthOf(1);
-		expect(result.errors[0].pom).to.equal('module1');
+		expect(result.errors[0].pom).to.equal("module1");
 	});
 
-	it('skips modules without pom.xml', async () => {
-		const modulePath = path.join(tempDir, 'module1');
+	it("skips modules without pom.xml", async () => {
+		const modulePath = path.join(tempDir, "module1");
 		await fs.ensureDir(modulePath);
 
-		const gavs = [new MavenGAVCoords('com.example', 'library-a', '1.5.0')];
+		const gavs = [new MavenGAVCoords("com.example", "library-a", "1.5.0")];
 
 		const logs: string[] = [];
 		const rewriter = new XmlDependencyRewriter({
 			aggregatorPath: tempDir,
 			gavs,
-			modules: ['module1'],
+			modules: ["module1"],
 			log: (message) => logs.push(message),
 		});
 
 		const result = await rewriter.rewriteDependencies();
 
-		expect(result.rewrittenPoms).to.be.empty;
-		expect(logs.some((log) => log.includes('pom.xml not found'))).to.be.true;
+		expect(result.rewrittenPoms).to.deep.equal([]);
+		expect(logs.some((log) => log.includes("pom.xml not found"))).to.equal(true);
 	});
 
-	it('returns early when no GAVs provided', async () => {
+	it("returns early when no GAVs provided", async () => {
 		const rewriter = new XmlDependencyRewriter({
 			aggregatorPath: tempDir,
 			gavs: [],
-			modules: ['module1'],
+			modules: ["module1"],
 		});
 
 		const result = await rewriter.rewriteDependencies();
 
-		expect(result.success).to.be.true;
-		expect(result.rewrittenPoms).to.be.empty;
-		expect(result.errors).to.be.empty;
-		expect(result.mavenFallbacks).to.be.empty;
+		expect(result.success).to.equal(true);
+		expect(result.rewrittenPoms).to.deep.equal([]);
+		expect(result.errors).to.deep.equal([]);
+		expect(result.mavenFallbacks).to.deep.equal([]);
 	});
 
-	it('does not update when version matches', async () => {
+	it("does not update when version matches", async () => {
 		const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -406,25 +406,25 @@ describe('XmlDependencyRewriter', () => {
     </dependencies>
 </project>`;
 
-		const modulePath = path.join(tempDir, 'module1');
+		const modulePath = path.join(tempDir, "module1");
 		await fs.ensureDir(modulePath);
-		await fs.writeFile(path.join(modulePath, 'pom.xml'), pomContent);
+		await fs.writeFile(path.join(modulePath, "pom.xml"), pomContent);
 
-		const gavs = [new MavenGAVCoords('com.example', 'library-a', '1.5.0')];
+		const gavs = [new MavenGAVCoords("com.example", "library-a", "1.5.0")];
 
 		const rewriter = new XmlDependencyRewriter({
 			aggregatorPath: tempDir,
 			gavs,
-			modules: ['module1'],
+			modules: ["module1"],
 		});
 
 		const result = await rewriter.rewriteDependencies();
 
-		expect(result.success).to.be.true;
-		expect(result.rewrittenPoms).to.be.empty;
+		expect(result.success).to.equal(true);
+		expect(result.rewrittenPoms).to.deep.equal([]);
 	});
 
-	it('updates parent version', async () => {
+	it("updates parent version", async () => {
 		const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -438,29 +438,29 @@ describe('XmlDependencyRewriter', () => {
     <version>1.0.0</version>
 </project>`;
 
-		const modulePath = path.join(tempDir, 'module1');
+		const modulePath = path.join(tempDir, "module1");
 		await fs.ensureDir(modulePath);
-		await fs.writeFile(path.join(modulePath, 'pom.xml'), pomContent);
+		await fs.writeFile(path.join(modulePath, "pom.xml"), pomContent);
 
-		const gavs = [new MavenGAVCoords('io.liftwizard', 'liftwizard-profile-parent', '2.1.34-SNAPSHOT')];
+		const gavs = [new MavenGAVCoords("io.liftwizard", "liftwizard-profile-parent", "2.1.34-SNAPSHOT")];
 
 		const rewriter = new XmlDependencyRewriter({
 			aggregatorPath: tempDir,
 			gavs,
-			modules: ['module1'],
+			modules: ["module1"],
 		});
 
 		const result = await rewriter.rewriteDependencies();
 
-		expect(result.success).to.be.true;
-		expect(result.rewrittenPoms).to.deep.equal(['module1']);
+		expect(result.success).to.equal(true);
+		expect(result.rewrittenPoms).to.deep.equal(["module1"]);
 
-		const updatedPom = await fs.readFile(path.join(modulePath, 'pom.xml'), 'utf8');
-		expect(updatedPom).to.include('<version>2.1.34-SNAPSHOT</version>');
-		expect(updatedPom).not.to.include('<version>2.1.33</version>');
+		const updatedPom = await fs.readFile(path.join(modulePath, "pom.xml"), "utf8");
+		expect(updatedPom).to.include("<version>2.1.34-SNAPSHOT</version>");
+		expect(updatedPom).not.to.include("<version>2.1.33</version>");
 	});
 
-	it('replaces property placeholders with actual versions', async () => {
+	it("replaces property placeholders with actual versions", async () => {
 		const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -485,32 +485,32 @@ describe('XmlDependencyRewriter', () => {
     </dependencyManagement>
 </project>`;
 
-		const modulePath = path.join(tempDir, 'module1');
+		const modulePath = path.join(tempDir, "module1");
 		await fs.ensureDir(modulePath);
-		await fs.writeFile(path.join(modulePath, 'pom.xml'), pomContent);
+		await fs.writeFile(path.join(modulePath, "pom.xml"), pomContent);
 
-		const gavs = [new MavenGAVCoords('io.liftwizard', 'liftwizard-dependencies', '2.1.34-SNAPSHOT')];
+		const gavs = [new MavenGAVCoords("io.liftwizard", "liftwizard-dependencies", "2.1.34-SNAPSHOT")];
 
 		const rewriter = new XmlDependencyRewriter({
 			aggregatorPath: tempDir,
 			gavs,
-			modules: ['module1'],
+			modules: ["module1"],
 		});
 
 		const result = await rewriter.rewriteDependencies();
 
-		expect(result.success).to.be.true;
-		expect(result.rewrittenPoms).to.deep.equal(['module1']);
+		expect(result.success).to.equal(true);
+		expect(result.rewrittenPoms).to.deep.equal(["module1"]);
 
-		const updatedPom = await fs.readFile(path.join(modulePath, 'pom.xml'), 'utf8');
-		expect(updatedPom).to.include('<liftwizard.version>2.1.33</liftwizard.version>');
+		const updatedPom = await fs.readFile(path.join(modulePath, "pom.xml"), "utf8");
+		expect(updatedPom).to.include("<liftwizard.version>2.1.33</liftwizard.version>");
 		expect(updatedPom).to.match(
 			/<artifactId>liftwizard-dependencies<\/artifactId>\s*<version>2\.1\.34-SNAPSHOT<\/version>/,
 		);
 		expect(updatedPom).not.to.match(/\$\{liftwizard\.version\}/);
 	});
 
-	it('updates parent and replaces property placeholders in dependencies', async () => {
+	it("updates parent and replaces property placeholders in dependencies", async () => {
 		const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -547,30 +547,30 @@ describe('XmlDependencyRewriter', () => {
     </dependencyManagement>
 </project>`;
 
-		const modulePath = path.join(tempDir, 'module1');
+		const modulePath = path.join(tempDir, "module1");
 		await fs.ensureDir(modulePath);
-		await fs.writeFile(path.join(modulePath, 'pom.xml'), pomContent);
+		await fs.writeFile(path.join(modulePath, "pom.xml"), pomContent);
 
 		const gavs = [
-			new MavenGAVCoords('io.liftwizard', 'liftwizard-profile-parent', '2.1.34-SNAPSHOT'),
-			new MavenGAVCoords('io.liftwizard', 'liftwizard-dependencies', '2.1.34-SNAPSHOT'),
-			new MavenGAVCoords('io.liftwizard', 'liftwizard-bom', '2.1.34-SNAPSHOT'),
+			new MavenGAVCoords("io.liftwizard", "liftwizard-profile-parent", "2.1.34-SNAPSHOT"),
+			new MavenGAVCoords("io.liftwizard", "liftwizard-dependencies", "2.1.34-SNAPSHOT"),
+			new MavenGAVCoords("io.liftwizard", "liftwizard-bom", "2.1.34-SNAPSHOT"),
 		];
 
 		const rewriter = new XmlDependencyRewriter({
 			aggregatorPath: tempDir,
 			gavs,
-			modules: ['module1'],
+			modules: ["module1"],
 		});
 
 		const result = await rewriter.rewriteDependencies();
 
-		expect(result.success).to.be.true;
-		expect(result.rewrittenPoms).to.deep.equal(['module1']);
-		expect(result.mavenFallbacks).to.be.empty;
+		expect(result.success).to.equal(true);
+		expect(result.rewrittenPoms).to.deep.equal(["module1"]);
+		expect(result.mavenFallbacks).to.deep.equal([]);
 
-		const updatedPom = await fs.readFile(path.join(modulePath, 'pom.xml'), 'utf8');
-		expect(updatedPom).to.include('<liftwizard.version>2.1.33</liftwizard.version>');
+		const updatedPom = await fs.readFile(path.join(modulePath, "pom.xml"), "utf8");
+		expect(updatedPom).to.include("<liftwizard.version>2.1.33</liftwizard.version>");
 		expect(updatedPom).to.match(/<parent>[\s\S]*<version>2.1.34-SNAPSHOT<\/version>/);
 		expect(updatedPom).not.to.match(/<parent>[\s\S]*<version>2.1.33<\/version>/);
 		expect(updatedPom).not.to.match(/\$\{liftwizard\.version\}/);

@@ -1,14 +1,14 @@
-import type {Result} from 'execa';
+import type {Result} from "execa";
 
 export function createMockResult(override: Partial<Result> = {}): Result {
 	const mockResult = {
-		command: 'mock-command',
-		escapedCommand: 'mock-command',
+		command: "mock-command",
+		escapedCommand: "mock-command",
 		exitCode: 0,
-		stdout: '',
-		stderr: '',
+		stdout: "",
+		stderr: "",
 		all: undefined,
-		stdio: [undefined, '', ''],
+		stdio: [undefined, "", ""],
 		ipcOutput: [],
 		pipedFrom: [],
 		cwd: process.cwd(),

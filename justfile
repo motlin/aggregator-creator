@@ -23,17 +23,11 @@ lint: install
 eslint-ci: install-ci
     pnpm run oxlint:ci
 
-# `biome format --write . && pnpm run fmt`
+# `pnpm run fmt`
 [group('dev')]
 format: install
     pre-commit run just-fmt --all-files
-    pnpm exec biome format --write .
     pnpm run fmt
-
-# `biome format`
-[group('ci')]
-biome-ci: install-ci
-    pnpm exec biome format
 
 # `pnpm run fmt:ci`
 [group('ci')]
@@ -45,10 +39,10 @@ prettier-ci: install-ci
 test: install
     CHAI_TRUNCATE_THRESHOLD=0 pnpm test
 
-# `pnpm run test:run`
+# `pnpm exec vp run test:run`
 [group('ci')]
 test-ci: install-ci
-    CHAI_TRUNCATE_THRESHOLD=0 pnpm run test:run
+    CHAI_TRUNCATE_THRESHOLD=0 pnpm exec vp run test:run
 
 # `pnpm run typecheck`
 [group('dev')]

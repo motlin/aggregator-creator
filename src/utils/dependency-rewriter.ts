@@ -1,8 +1,8 @@
-import {execa as _execa} from 'execa';
-import path from 'node:path';
-import fs from 'fs-extra';
-import chalk from 'chalk';
-import MavenGAVCoords from '../maven-gav.js';
+import {execa as _execa} from "execa";
+import path from "node:path";
+import fs from "fs-extra";
+import chalk from "chalk";
+import MavenGAVCoords from "../maven-gav.js";
 
 export interface DependencyRewriteOptions {
 	aggregatorPath: string;
@@ -44,7 +44,7 @@ export class DependencyRewriter {
 		this.log(`│  ├──╮ 🔧 Rewriting child pom dependencies to use versions from dependencyManagement...`);
 
 		for (const module of this.options.modules) {
-			const pomPath = path.join(this.options.aggregatorPath, module, 'pom.xml');
+			const pomPath = path.join(this.options.aggregatorPath, module, "pom.xml");
 
 			if (!(await fs.pathExists(pomPath))) {
 				this.log(`│  │  │ ⚠️ Skipping ${chalk.yellow(module)}: pom.xml not found`);
@@ -81,15 +81,15 @@ export class DependencyRewriter {
 		for (const gav of this.options.gavs) {
 			try {
 				const result = await this.execa(
-					'mvn',
+					"mvn",
 					[
-						'-f',
+						"-f",
 						modulePath,
-						'versions:use-dep-version',
+						"versions:use-dep-version",
 						`-Dincludes=${gav.getGroupId()}:${gav.getArtifactId()}`,
 						`-DdepVersion=${gav.getVersion()}`,
-						'-DgenerateBackupPoms=false',
-						'--quiet',
+						"-DgenerateBackupPoms=false",
+						"--quiet",
 					],
 					{
 						cwd: this.options.aggregatorPath,
@@ -108,7 +108,7 @@ export class DependencyRewriter {
 				if (this.options.verbose) {
 					const errorObj = error as Error & {stderr?: string};
 					const errorMessage = errorObj.stderr || errorObj.message;
-					if (!errorMessage.includes('No matching dependencies found')) {
+					if (!errorMessage.includes("No matching dependencies found")) {
 						this.log(
 							`│  │  │   ⚠️ Could not update ${chalk.yellow(gav.getGroupId())}:${chalk.yellow(gav.getArtifactId())}: ${errorMessage}`,
 						);
@@ -124,12 +124,12 @@ export class DependencyRewriter {
 		this.log(`│  │ 🧹 Cleaning up backup pom files...`);
 
 		for (const module of this.options.modules) {
-			const backupPomPath = path.join(this.options.aggregatorPath, module, 'pom.xml.versionsBackup');
+			const backupPomPath = path.join(this.options.aggregatorPath, module, "pom.xml.versionsBackup");
 
 			if (await fs.pathExists(backupPomPath)) {
 				await fs.remove(backupPomPath);
 				if (this.options.verbose) {
-					this.log(`│  │   → Removed ${chalk.yellow(path.join(module, 'pom.xml.versionsBackup'))}`);
+					this.log(`│  │   → Removed ${chalk.yellow(path.join(module, "pom.xml.versionsBackup"))}`);
 				}
 			}
 		}

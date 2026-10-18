@@ -1,6 +1,6 @@
-import {execa as execa_} from 'execa';
-import fs from 'fs-extra';
-import path from 'node:path';
+import {execa as execa_} from "execa";
+import fs from "fs-extra";
+import path from "node:path";
 
 export interface CloneResult {
 	owner: string;
@@ -36,7 +36,7 @@ export async function cloneSingleRepo(
 		const dirContents = await fs.readdir(repoDir);
 		if (dirContents.length > 0) {
 			if (logger) {
-				logger.log('Skipped: Directory already exists and is not empty');
+				logger.log("Skipped: Directory already exists and is not empty");
 			}
 			result.skipped = true;
 			return result;
@@ -46,7 +46,7 @@ export async function cloneSingleRepo(
 	}
 
 	try {
-		await execa('gh', ['repo', 'clone', repoFullName, repoDir]);
+		await execa("gh", ["repo", "clone", repoFullName, repoDir]);
 		result.cloned = true;
 		return result;
 	} catch (error: unknown) {

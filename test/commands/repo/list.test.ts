@@ -1,165 +1,163 @@
-import {describe, it} from 'vite-plus/test';
-import {runCommand} from '@oclif/test';
-import {expect} from 'chai';
-import path from 'node:path';
-import {fileURLToPath} from 'node:url';
-import {useUnauthenticatedGh} from '../../helpers/unauthenticated-gh.js';
+import {describe, it} from "vite-plus/test";
+import {runCommand} from "@oclif/test";
+import {expect} from "chai";
+import path from "node:path";
+import {useUnauthenticatedGh} from "../../helpers/unauthenticated-gh.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const root = path.join(__dirname, '../../..');
+const root = path.join(import.meta.dirname, "../../..");
 
 // Skip GitHub API tests in CI to avoid rate limiting issues
-const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+const isCI = process.env.CI === "true" || process.env.GITHUB_ACTIONS === "true";
 
-describe('repo:list', () => {
-	it('should verify GitHub CLI is authenticated', async () => {
-		const {execa} = await import('execa');
+describe("repo:list", () => {
+	it("should verify GitHub CLI is authenticated", async () => {
+		const {execa} = await import("execa");
 		try {
-			const {stdout} = await execa('gh', ['auth', 'status']);
-			console.log('GitHub auth status:', stdout);
+			const {stdout} = await execa("gh", ["auth", "status"]);
+			console.log("GitHub auth status:", stdout);
 		} catch (error) {
-			console.error('GitHub auth check failed:', error instanceof Error ? error.message : error);
-			if (error && typeof error === 'object' && 'stdout' in error) console.log('stdout:', error.stdout);
-			if (error && typeof error === 'object' && 'stderr' in error) console.log('stderr:', error.stderr);
+			console.error("GitHub auth check failed:", error instanceof Error ? error.message : error);
+			if (error && typeof error === "object" && "stdout" in error) console.log("stdout:", error.stdout);
+			if (error && typeof error === "object" && "stderr" in error) console.log("stderr:", error.stderr);
 			throw error;
 		}
 	});
 
-	it.skipIf(isCI)('should fetch octocat HTML repos via direct API call', async () => {
-		const {execa} = await import('execa');
+	it.skipIf(isCI)("should fetch octocat HTML repos via direct API call", async () => {
+		const {execa} = await import("execa");
 		try {
-			const query = 'user:octocat language:HTML fork:false archived:false';
-			const {stdout} = await execa('gh', [
-				'api',
-				'-X',
-				'GET',
-				'search/repositories',
-				'-f',
+			const query = "user:octocat language:HTML fork:false archived:false";
+			const {stdout} = await execa("gh", [
+				"api",
+				"-X",
+				"GET",
+				"search/repositories",
+				"-f",
 				`q=${query}`,
-				'-f',
-				'per_page=1',
-				'-f',
-				'sort=created',
-				'-f',
-				'order=asc',
-				'--jq',
-				'.items',
+				"-f",
+				"per_page=1",
+				"-f",
+				"sort=created",
+				"-f",
+				"order=asc",
+				"--jq",
+				".items",
 			]);
 			const repos = JSON.parse(stdout);
-			console.log('Direct API response:', JSON.stringify(repos, null, 2));
+			console.log("Direct API response:", JSON.stringify(repos, null, 2));
 			expect(repos).to.have.length(1);
-			expect(repos[0].name).to.equal('Spoon-Knife');
+			expect(repos[0].name).to.equal("Spoon-Knife");
 		} catch (error) {
-			console.error('Direct API call failed:', error instanceof Error ? error.message : error);
-			if (error && typeof error === 'object' && 'stdout' in error) console.log('stdout:', error.stdout);
-			if (error && typeof error === 'object' && 'stderr' in error) console.log('stderr:', error.stderr);
+			console.error("Direct API call failed:", error instanceof Error ? error.message : error);
+			if (error && typeof error === "object" && "stdout" in error) console.log("stdout:", error.stdout);
+			if (error && typeof error === "object" && "stderr" in error) console.log("stderr:", error.stderr);
 			throw error;
 		}
 	});
 
-	it.skipIf(isCI)('should fetch repositories with specific search criteria', async () => {
+	it.skipIf(isCI)("should fetch repositories with specific search criteria", async () => {
 		const result = await runCommand(
-			['repo:list', '--owner', 'torvalds', '--language', 'C', '--json', '--limit', '2'],
+			["repo:list", "--owner", "torvalds", "--language", "C", "--json", "--limit", "2"],
 			root,
 		);
 
-		if ('error' in result) {
-			throw new Error(`Command failed: ${result.error?.message || 'Unknown error'}`);
+		if ("error" in result) {
+			throw new Error(`Command failed: ${result.error?.message || "Unknown error"}`);
 		}
 
 		const {stdout} = result;
 		expect(JSON.parse(stdout)).to.deep.equal([
 			{
-				name: 'linux',
-				owner: {login: 'torvalds', type: 'User'},
-				language: 'C',
+				name: "linux",
+				owner: {login: "torvalds", type: "User"},
+				language: "C",
 				topics: [],
 				fork: false,
 				archived: false,
 				disabled: false,
 				is_template: false,
 				private: false,
-				visibility: 'public',
+				visibility: "public",
 			},
 			{
-				name: 'AudioNoise',
-				owner: {login: 'torvalds', type: 'User'},
-				language: 'C',
+				name: "AudioNoise",
+				owner: {login: "torvalds", type: "User"},
+				language: "C",
 				topics: [],
 				fork: false,
 				archived: false,
 				disabled: false,
 				is_template: false,
 				private: false,
-				visibility: 'public',
+				visibility: "public",
 			},
 		]);
 	});
 
-	it.skipIf(isCI)('should fetch repositories for specified user', async () => {
+	it.skipIf(isCI)("should fetch repositories for specified user", async () => {
 		const expected = [
 			{
-				name: 'claude-code-plugins',
-				owner: {login: 'motlin', type: 'User'},
-				language: 'Shell',
+				name: "claude-code-plugins",
+				owner: {login: "motlin", type: "User"},
+				language: "Shell",
 				topics: [],
 				fork: false,
 				archived: false,
 				disabled: false,
 				is_template: false,
 				private: false,
-				visibility: 'public',
+				visibility: "public",
 			},
 		];
 
-		const result = await runCommand(['repo:list', '--owner', 'motlin', '--json', '--limit', '1'], root);
+		const result = await runCommand(["repo:list", "--owner", "motlin", "--json", "--limit", "1"], root);
 
-		if ('error' in result) {
-			throw new Error(`Command failed: ${result.error?.message || 'Unknown error'}`);
+		if ("error" in result) {
+			throw new Error(`Command failed: ${result.error?.message || "Unknown error"}`);
 		}
 
 		const {stdout} = result;
 		expect(JSON.parse(stdout)).to.deep.equal(expected);
 	});
 
-	it.skipIf(isCI)('should fetch repositories for freeCodeCamp user', async () => {
-		const result = await runCommand(['repo:list', '--owner', 'freeCodeCamp', '--json', '--limit', '1'], root);
+	it.skipIf(isCI)("should fetch repositories for freeCodeCamp user", async () => {
+		const result = await runCommand(["repo:list", "--owner", "freeCodeCamp", "--json", "--limit", "1"], root);
 
-		if ('error' in result) {
-			throw new Error(`Command failed: ${result.error?.message || 'Unknown error'}`);
+		if ("error" in result) {
+			throw new Error(`Command failed: ${result.error?.message || "Unknown error"}`);
 		}
 
 		const {stdout} = result;
 		const repos = JSON.parse(stdout);
 		expect(repos).to.have.lengthOf(1);
-		expect(repos[0].name).to.equal('freeCodeCamp');
-		expect(repos[0].owner).to.deep.equal({login: 'freeCodeCamp', type: 'Organization'});
-		expect(repos[0].language).to.equal('TypeScript');
+		expect(repos[0].name).to.equal("freeCodeCamp");
+		expect(repos[0].owner).to.deep.equal({login: "freeCodeCamp", type: "Organization"});
+		expect(repos[0].language).to.equal("TypeScript");
 		expect(repos[0].topics).to.include.members([
-			'careers',
-			'certification',
-			'community',
-			'curriculum',
-			'education',
-			'freecodecamp',
-			'javascript',
+			"careers",
+			"certification",
+			"community",
+			"curriculum",
+			"education",
+			"freecodecamp",
+			"javascript",
 		]);
 		expect(repos[0].fork).to.equal(false);
 		expect(repos[0].archived).to.equal(false);
 		expect(repos[0].disabled).to.equal(false);
 		expect(repos[0].is_template).to.equal(false);
 		expect(repos[0].private).to.equal(false);
-		expect(repos[0].visibility).to.equal('public');
+		expect(repos[0].visibility).to.equal("public");
 	});
 
-	it.skipIf(isCI)('should support multiple language filters', async () => {
+	it.skipIf(isCI)("should support multiple language filters", async () => {
 		const result = await runCommand(
-			['repo:list', '--owner', 'motlin', '--language', 'Java', '--language', 'TypeScript', '--json'],
+			["repo:list", "--owner", "motlin", "--language", "Java", "--language", "TypeScript", "--json"],
 			root,
 		);
 
-		if ('error' in result) {
-			throw new Error(`Command failed: ${result.error?.message || 'Unknown error'}`);
+		if ("error" in result) {
+			throw new Error(`Command failed: ${result.error?.message || "Unknown error"}`);
 		}
 
 		const {stdout} = result;
@@ -168,118 +166,118 @@ describe('repo:list', () => {
 		expect(repos.length).to.be.greaterThan(0);
 
 		const languages = new Set(repos.map((repo: {language: string}) => repo.language));
-		expect(languages.has('Java') || languages.has('TypeScript')).to.be.true;
+		expect(languages.has("Java") || languages.has("TypeScript")).to.equal(true);
 
 		for (const repo of repos) {
-			expect(repo.owner.login).to.equal('motlin');
-			expect(['Java', 'TypeScript']).to.include(repo.language);
-			expect(repo).to.have.property('name');
-			expect(repo).to.have.property('topics');
+			expect(repo.owner.login).to.equal("motlin");
+			expect(["Java", "TypeScript"]).to.include(repo.language);
+			expect(repo).to.have.property("name");
+			expect(repo).to.have.property("topics");
 			expect(repo.fork).to.equal(false);
 			expect(repo.archived).to.equal(false);
 		}
 	});
 
-	it.skipIf(isCI)('should include forked repositories when --include-forks flag is provided', async () => {
+	it.skipIf(isCI)("should include forked repositories when --include-forks flag is provided", async () => {
 		const result = await runCommand(
-			['repo:list', '--owner', 'octocat', '--language', 'HTML', '--include-forks', '--json', '--limit', '1'],
+			["repo:list", "--owner", "octocat", "--language", "HTML", "--include-forks", "--json", "--limit", "1"],
 			root,
 		);
 
-		if ('error' in result) {
-			throw new Error(`Command failed: ${result.error?.message || 'Unknown error'}`);
+		if ("error" in result) {
+			throw new Error(`Command failed: ${result.error?.message || "Unknown error"}`);
 		}
 
 		const {stdout} = result;
 		expect(JSON.parse(stdout)).to.deep.equal([
 			{
-				name: 'Spoon-Knife',
-				owner: {login: 'octocat', type: 'User'},
-				language: 'HTML',
+				name: "Spoon-Knife",
+				owner: {login: "octocat", type: "User"},
+				language: "HTML",
 				topics: [],
 				fork: false,
 				archived: false,
 				disabled: false,
 				is_template: false,
 				private: false,
-				visibility: 'public',
+				visibility: "public",
 			},
 		]);
 	});
 
-	it.skipIf(isCI)('should include archived repositories when --include-archived flag is provided', async () => {
+	it.skipIf(isCI)("should include archived repositories when --include-archived flag is provided", async () => {
 		const result = await runCommand(
-			['repo:list', '--owner', 'octocat', '--language', 'HTML', '--include-archived', '--json', '--limit', '1'],
+			["repo:list", "--owner", "octocat", "--language", "HTML", "--include-archived", "--json", "--limit", "1"],
 			root,
 		);
 
-		if ('error' in result) {
-			throw new Error(`Command failed: ${result.error?.message || 'Unknown error'}`);
+		if ("error" in result) {
+			throw new Error(`Command failed: ${result.error?.message || "Unknown error"}`);
 		}
 
 		const {stdout} = result;
 		expect(JSON.parse(stdout)).to.deep.equal([
 			{
-				name: 'Spoon-Knife',
-				owner: {login: 'octocat', type: 'User'},
-				language: 'HTML',
+				name: "Spoon-Knife",
+				owner: {login: "octocat", type: "User"},
+				language: "HTML",
 				topics: [],
 				fork: false,
 				archived: false,
 				disabled: false,
 				is_template: false,
 				private: false,
-				visibility: 'public',
+				visibility: "public",
 			},
 		]);
 	});
 
-	it.skipIf(isCI)('should support combining include flags', async () => {
+	it.skipIf(isCI)("should support combining include flags", async () => {
 		const result = await runCommand(
 			[
-				'repo:list',
-				'--owner',
-				'octocat',
-				'--language',
-				'HTML',
-				'--include-forks',
-				'--include-archived',
-				'--json',
-				'--limit',
-				'1',
+				"repo:list",
+				"--owner",
+				"octocat",
+				"--language",
+				"HTML",
+				"--include-forks",
+				"--include-archived",
+				"--json",
+				"--limit",
+				"1",
 			],
 			root,
 		);
 
-		if ('error' in result) {
-			throw new Error(`Command failed: ${result.error?.message || 'Unknown error'}`);
+		if ("error" in result) {
+			throw new Error(`Command failed: ${result.error?.message || "Unknown error"}`);
 		}
 
 		const {stdout} = result;
 		expect(JSON.parse(stdout)).to.deep.equal([
 			{
-				name: 'Spoon-Knife',
-				owner: {login: 'octocat', type: 'User'},
-				language: 'HTML',
+				name: "Spoon-Knife",
+				owner: {login: "octocat", type: "User"},
+				language: "HTML",
 				topics: [],
 				fork: false,
 				archived: false,
 				disabled: false,
 				is_template: false,
 				private: false,
-				visibility: 'public',
+				visibility: "public",
 			},
 		]);
 	});
 
-	it.skipIf(isCI)('should filter repositories with maven topic but exclude oclif topic', async () => {
+	it.skipIf(isCI)("should filter repositories with maven topic but exclude oclif topic", async () => {
 		const result = await runCommand(
-			['repo:list', '--owner', 'motlin', '--topic', 'maven', '--exclude-topic', 'oclif', '--json'],
+			["repo:list", "--owner", "motlin", "--topic", "maven", "--exclude-topic", "oclif", "--json"],
 			root,
 		);
 
-		if ('error' in result) {
-			throw new Error(`Command failed: ${result.error?.message || 'Unknown error'}`);
+		if ("error" in result) {
+			throw new Error(`Command failed: ${result.error?.message || "Unknown error"}`);
 		}
 
 		const {stdout} = result;
@@ -287,63 +285,63 @@ describe('repo:list', () => {
 
 		expect(repos).to.deep.equal([
 			{
-				name: 'JUnit-Java-8-Runner',
-				owner: {login: 'motlin', type: 'User'},
-				language: 'Java',
-				topics: ['maven'],
+				name: "JUnit-Java-8-Runner",
+				owner: {login: "motlin", type: "User"},
+				language: "Java",
+				topics: ["maven"],
 				fork: false,
 				archived: false,
 				disabled: false,
 				is_template: false,
 				private: false,
-				visibility: 'public',
+				visibility: "public",
 			},
 		]);
 	});
 
-	it.skipIf(isCI)('should support multiple exclude-topic filters', async () => {
+	it.skipIf(isCI)("should support multiple exclude-topic filters", async () => {
 		const result = await runCommand(
-			['repo:list', '--owner', 'motlin', '--exclude-topic', 'oclif', '--exclude-topic', 'game', '--json'],
+			["repo:list", "--owner", "motlin", "--exclude-topic", "oclif", "--exclude-topic", "game", "--json"],
 			root,
 		);
 
-		if ('error' in result) {
-			throw new Error(`Command failed: ${result.error?.message || 'Unknown error'}`);
+		if ("error" in result) {
+			throw new Error(`Command failed: ${result.error?.message || "Unknown error"}`);
 		}
 
 		const {stdout} = result;
 		const repos = JSON.parse(stdout);
 
 		for (const repo of repos) {
-			expect(repo.topics).to.not.include('oclif');
-			expect(repo.topics).to.not.include('game');
+			expect(repo.topics).to.not.include("oclif");
+			expect(repo.topics).to.not.include("game");
 		}
 	});
 	for (const [limit, expectation] of [
-		['0', 'greater than or equal to 1'],
-		['-1', 'greater than or equal to 1'],
-		['101', 'less than or equal to 100'],
+		["0", "greater than or equal to 1"],
+		["-1", "greater than or equal to 1"],
+		["101", "less than or equal to 100"],
 	]) {
 		it(`should reject --limit ${limit} because GitHub search returns 1 to 100 results per page`, async () => {
-			const result = await runCommand(['repo:list', '--owner', 'motlin', '--limit', limit], root);
+			const result = await runCommand(["repo:list", "--owner", "motlin", "--limit", limit], root);
 			expect(result.error?.message).to.equal(
 				`Parsing --limit \n\tExpected an integer ${expectation} but received: ${limit}\nSee more help with --help`,
 			);
 		});
 	}
-	it('should explain once that gh is not authenticated', async () => {
+	it("should explain once that gh is not authenticated", async () => {
 		const restore = await useUnauthenticatedGh();
 		try {
-			const {error} = await runCommand(['repo:list', '--owner', 'motlin', '--limit', '1'], root);
+			const {error} = await runCommand(["repo:list", "--owner", "motlin", "--limit", "1"], root);
 			expect({
 				message: error?.message,
 				code: (error as {code?: string} | undefined)?.code,
 				suggestions: (error as {suggestions?: string[]} | undefined)?.suggestions,
 			}).to.deep.equal({
 				message:
-					'Failed to fetch repositories: GitHub CLI is not authenticated. Run `gh auth login` or set the GH_TOKEN environment variable.',
-				code: 'GH_NOT_AUTHENTICATED',
-				suggestions: ['Check your GitHub authentication with: gh auth status'],
+					"Failed to fetch repositories: GitHub CLI is not authenticated. Run `gh auth login` or set the GH_TOKEN environment variable.",
+				code: "GH_NOT_AUTHENTICATED",
+				suggestions: ["Check your GitHub authentication with: gh auth status"],
 			});
 		} finally {
 			await restore();

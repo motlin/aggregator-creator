@@ -1,49 +1,49 @@
-import {Command, Flags} from '@oclif/core';
-import {execa as execa_} from 'execa';
-import {withDebugLogging} from '../../utils/debug-execa.js';
-import {readStdin} from '../../utils/read-stdin.js';
-import {topicSingleRepository} from '../../utils/topic-single-repo.js';
-import {repositorySchema} from '../../types/repository.js';
-import type {Repository} from '../../types/repository.js';
+import {Command, Flags} from "@oclif/core";
+import {execa as execa_} from "execa";
+import {withDebugLogging} from "../../utils/debug-execa.js";
+import {readStdin} from "../../utils/read-stdin.js";
+import {topicSingleRepository} from "../../utils/topic-single-repo.js";
+import {repositorySchema} from "../../types/repository.js";
+import type {Repository} from "../../types/repository.js";
 
 export default class RepoTopic extends Command {
 	static override args = {};
 
-	static override description = 'Add a github topic to a single GitHub repository';
+	static override description = "Add a github topic to a single GitHub repository";
 
 	static override enableJsonFlag = true;
 
 	static override examples = [
-		'<%= config.bin %> <%= command.id %> --owner motlin --name JUnit-Java-8-Runner --topic maven',
-		'<%= config.bin %> <%= command.id %> --owner motlin --name JUnit-Java-8-Runner --topic maven --dryRun',
+		"<%= config.bin %> <%= command.id %> --owner motlin --name JUnit-Java-8-Runner --topic maven",
+		"<%= config.bin %> <%= command.id %> --owner motlin --name JUnit-Java-8-Runner --topic maven --dryRun",
 		'echo \'{"name": "JUnit-Java-8-Runner", "owner": {"login": "motlin"}}\' | <%= config.bin %> <%= command.id %> --topic maven',
 		"<%= config.bin %> repo:list --owner motlin --limit 1 --json | jq -c '.[0]' | <%= config.bin %> <%= command.id %> --topic maven",
 	];
 
 	static override flags = {
 		owner: Flags.string({
-			char: 'o',
-			description: 'GitHub username or organization (required when not using stdin)',
+			char: "o",
+			description: "GitHub username or organization (required when not using stdin)",
 			required: false,
 		}),
 		name: Flags.string({
-			char: 'n',
-			description: 'Repository name (required when not using stdin)',
+			char: "n",
+			description: "Repository name (required when not using stdin)",
 			required: false,
 		}),
 		topic: Flags.string({
-			char: 't',
-			description: 'Github topic to add to the repository',
+			char: "t",
+			description: "Github topic to add to the repository",
 			required: true,
 		}),
 		dryRun: Flags.boolean({
-			char: 'd',
-			description: 'Show what would be done without making changes',
+			char: "d",
+			description: "Show what would be done without making changes",
 			default: false,
 		}),
 		verbose: Flags.boolean({
-			char: 'v',
-			description: 'Show verbose output during topic addition',
+			char: "v",
+			description: "Show verbose output during topic addition",
 			default: false,
 		}),
 	};
@@ -70,12 +70,12 @@ export default class RepoTopic extends Command {
 			const fullInput = await readStdin();
 
 			if (!fullInput.trim()) {
-				this.error('No input provided', {
+				this.error("No input provided", {
 					exit: 1,
-					code: 'NO_INPUT',
+					code: "NO_INPUT",
 					suggestions: [
-						'Provide both --owner and --name flags',
-						'Or pipe repository JSON to stdin',
+						"Provide both --owner and --name flags",
+						"Or pipe repository JSON to stdin",
 						`Example: ${this.config.bin} ${this.id} --owner motlin --name JUnit-Java-8-Runner --topic maven`,
 					],
 				});
@@ -85,11 +85,11 @@ export default class RepoTopic extends Command {
 				const jsonData = JSON.parse(fullInput);
 				repository = repositorySchema.parse(jsonData);
 			} catch {
-				this.error('Invalid JSON input from stdin', {
+				this.error("Invalid JSON input from stdin", {
 					exit: 1,
-					code: 'INVALID_JSON',
+					code: "INVALID_JSON",
 					suggestions: [
-						'Ensure the input is valid JSON',
+						"Ensure the input is valid JSON",
 						'The input should contain "name" and "owner.login" fields',
 						'Example: {"name": "repo", "owner": {"login": "user"}}',
 					],
@@ -98,12 +98,12 @@ export default class RepoTopic extends Command {
 		} else {
 			// Use flags
 			if (!flags.owner || !flags.name) {
-				this.error('Both --owner and --name flags are required when not reading from stdin', {
+				this.error("Both --owner and --name flags are required when not reading from stdin", {
 					exit: 1,
-					code: 'MISSING_FLAGS',
+					code: "MISSING_FLAGS",
 					suggestions: [
-						'Provide both --owner and --name flags',
-						'Or pipe repository JSON to stdin',
+						"Provide both --owner and --name flags",
+						"Or pipe repository JSON to stdin",
 						`Example: ${this.config.bin} ${this.id} --owner motlin --name JUnit-Java-8-Runner --topic maven`,
 					],
 				});
@@ -113,7 +113,7 @@ export default class RepoTopic extends Command {
 				name: flags.name,
 				owner: {
 					login: flags.owner,
-					type: 'User', // Default type, not critical for topic operations
+					type: "User", // Default type, not critical for topic operations
 				},
 				language: null,
 				topics: [],
@@ -122,7 +122,7 @@ export default class RepoTopic extends Command {
 				disabled: false,
 				is_template: false,
 				private: false,
-				visibility: 'public',
+				visibility: "public",
 			};
 		}
 
@@ -132,7 +132,9 @@ export default class RepoTopic extends Command {
 		}
 
 		const logger = {
-			log: (message: string) => this.log(message),
+			log: (message: string) => {
+				this.log(message);
+			},
 			warn: (message: string) => this.warn(message),
 			error: (message: string, options?: {exit?: boolean}) => {
 				if (options?.exit === false) {
@@ -149,7 +151,9 @@ export default class RepoTopic extends Command {
 			topic: flags.topic,
 			dryRun: flags.dryRun,
 			verbose,
-			execa: withDebugLogging(execa_, (message) => this.debug(message)),
+			execa: withDebugLogging(execa_, (message) => {
+				this.debug(message);
+			}),
 			logger,
 		});
 
@@ -172,9 +176,9 @@ export default class RepoTopic extends Command {
 				this.log(`${repository.owner.login}/${repository.name}: added topic '${flags.topic}'`);
 			}
 		} else if (verbose) {
-			this.log(`├──╯ Failed to add github topic to repository: ${result.error || 'Unknown error'}`);
+			this.log(`├──╯ Failed to add github topic to repository: ${result.error || "Unknown error"}`);
 		} else {
-			this.log(`${repository.owner.login}/${repository.name}: failed (${result.error || 'Unknown error'})`);
+			this.log(`${repository.owner.login}/${repository.name}: failed (${result.error || "Unknown error"})`);
 		}
 
 		if (verbose) {

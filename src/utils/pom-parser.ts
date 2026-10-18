@@ -1,6 +1,6 @@
-import fs from 'fs-extra';
-import {type OptionsV2, parseString} from 'xml2js';
-import {promisify} from 'node:util';
+import fs from "fs-extra";
+import {type OptionsV2, parseString} from "xml2js";
+import {promisify} from "node:util";
 
 export interface PomGAV {
 	groupId?: string;
@@ -46,7 +46,7 @@ const parseXML = promisify<string, OptionsV2, ParsedPomData>(parseString);
  */
 export async function parsePomForGAV(pomPath: string): Promise<ParsePomResult> {
 	try {
-		const pomContent = await fs.readFile(pomPath, 'utf8');
+		const pomContent = await fs.readFile(pomPath, "utf8");
 
 		const pomData = await parseXML(pomContent, {
 			explicitArray: false,
@@ -58,7 +58,7 @@ export async function parsePomForGAV(pomPath: string): Promise<ParsePomResult> {
 			return {
 				gav: {},
 				needsMavenFallback: true,
-				reason: 'No project element found in POM',
+				reason: "No project element found in POM",
 			};
 		}
 
@@ -85,19 +85,19 @@ export async function parsePomForGAV(pomPath: string): Promise<ParsePomResult> {
 			return {
 				gav,
 				needsMavenFallback: true,
-				reason: `Missing coordinates: ${gav.groupId ? '' : 'groupId '}${gav.artifactId ? '' : 'artifactId '}${gav.version ? '' : 'version'}`.trim(),
+				reason: `Missing coordinates: ${gav.groupId ? "" : "groupId "}${gav.artifactId ? "" : "artifactId "}${gav.version ? "" : "version"}`.trim(),
 			};
 		}
 
 		const hasPlaceholders = [gav.groupId, gav.artifactId, gav.version].some(
-			(coord) => coord && coord.includes('${'),
+			(coord) => coord && coord.includes("${"),
 		);
 
 		if (hasPlaceholders) {
 			return {
 				gav,
 				needsMavenFallback: true,
-				reason: 'Contains property placeholders that need Maven resolution',
+				reason: "Contains property placeholders that need Maven resolution",
 			};
 		}
 
@@ -120,7 +120,7 @@ export async function parsePomForGAV(pomPath: string): Promise<ParsePomResult> {
  */
 export async function parsePomForModules(pomPath: string): Promise<ParseModulesResult> {
 	try {
-		const pomContent = await fs.readFile(pomPath, 'utf8');
+		const pomContent = await fs.readFile(pomPath, "utf8");
 
 		const pomData = await parseXML(pomContent, {
 			explicitArray: false,
@@ -148,7 +148,7 @@ export async function parsePomForModules(pomPath: string): Promise<ParseModulesR
 		const modules = Array.isArray(moduleData) ? moduleData : [moduleData];
 
 		return {
-			modules: modules.filter((m): m is string => typeof m === 'string' && m.length > 0),
+			modules: modules.filter((m): m is string => typeof m === "string" && m.length > 0),
 			success: true,
 		};
 	} catch (error) {
@@ -165,7 +165,7 @@ export async function parsePomForModules(pomPath: string): Promise<ParseModulesR
  */
 export async function parsePomForPackaging(pomPath: string): Promise<string> {
 	try {
-		const pomContent = await fs.readFile(pomPath, 'utf8');
+		const pomContent = await fs.readFile(pomPath, "utf8");
 
 		const pomData = await parseXML(pomContent, {
 			explicitArray: false,
@@ -174,11 +174,11 @@ export async function parsePomForPackaging(pomPath: string): Promise<string> {
 		});
 
 		if (!pomData?.project) {
-			return 'jar';
+			return "jar";
 		}
 
-		return pomData.project.packaging || 'jar';
+		return pomData.project.packaging || "jar";
 	} catch {
-		return 'jar';
+		return "jar";
 	}
 }

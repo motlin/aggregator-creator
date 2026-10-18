@@ -1,15 +1,15 @@
-import {Args, Command, Flags} from '@oclif/core';
-import chalk from 'chalk';
-import {execa as execa_} from 'execa';
-import {withDebugLogging} from '../../utils/debug-execa.js';
-import {readStdin} from '../../utils/read-stdin.js';
-import {type Repository, repositorySchema} from '../../types/repository.js';
-import {cloneSingleRepo} from '../../utils/clone-single-repo.js';
-import {type MavenValidationResult, validateMavenRepo} from '../../utils/maven-validation.js';
-import {type TopicSingleRepoResult, topicSingleRepository} from '../../utils/topic-single-repo.js';
+import {Args, Command, Flags} from "@oclif/core";
+import chalk from "chalk";
+import {execa as execa_} from "execa";
+import {withDebugLogging} from "../../utils/debug-execa.js";
+import {readStdin} from "../../utils/read-stdin.js";
+import {type Repository, repositorySchema} from "../../types/repository.js";
+import {cloneSingleRepo} from "../../utils/clone-single-repo.js";
+import {type MavenValidationResult, validateMavenRepo} from "../../utils/maven-validation.js";
+import {type TopicSingleRepoResult, topicSingleRepository} from "../../utils/topic-single-repo.js";
 
 /** A repository from flags (name and owner only) or from stdin (the full repo:list shape). */
-type RepoInfo = Partial<Omit<Repository, 'name' | 'owner'>> & {
+type RepoInfo = Partial<Omit<Repository, "name" | "owner">> & {
 	name: string;
 	owner: {login: string; type?: string};
 };
@@ -24,19 +24,19 @@ interface ProcessResult extends RepoInfo {
 
 export default class RepoProcess extends Command {
 	static override args = {
-		'output-directory': Args.string({
-			description: 'Directory where the repository will be cloned',
+		"output-directory": Args.string({
+			description: "Directory where the repository will be cloned",
 			required: true,
 		}),
 	};
 
-	static override description = 'Process a single repository: clone, validate, and add github topic if valid';
+	static override description = "Process a single repository: clone, validate, and add github topic if valid";
 
 	static override enableJsonFlag = true;
 
 	static override examples = [
-		'<%= config.bin %> <%= command.id %> ./repos --owner motlin --name JUnit-Java-8-Runner --topic maven',
-		'<%= config.bin %> <%= command.id %> ./repos --owner motlin --name example-repo --topic maven --dryRun --json',
+		"<%= config.bin %> <%= command.id %> ./repos --owner motlin --name JUnit-Java-8-Runner --topic maven",
+		"<%= config.bin %> <%= command.id %> ./repos --owner motlin --name example-repo --topic maven --dryRun --json",
 		'echo \'{"name": "repo", "owner": {"login": "user"}}\' | <%= config.bin %> <%= command.id %> ./repos --topic maven --json',
 		`<%= config.bin %> repo:list --owner motlin --json | jq -c '.[]' | while read repo; do
   echo "$repo" | <%= config.bin %> <%= command.id %> ./repos --topic maven --json
@@ -45,41 +45,43 @@ done`,
 
 	static override flags = {
 		owner: Flags.string({
-			char: 'o',
-			description: 'GitHub username or organization',
+			char: "o",
+			description: "GitHub username or organization",
 			required: false,
 		}),
 		name: Flags.string({
-			char: 'n',
-			description: 'Repository name',
+			char: "n",
+			description: "Repository name",
 			required: false,
 		}),
 		topic: Flags.string({
-			char: 't',
-			description: 'GitHub topic to add to validated Maven repositories',
+			char: "t",
+			description: "GitHub topic to add to validated Maven repositories",
 			required: true,
 		}),
 		dryRun: Flags.boolean({
-			char: 'd',
-			description: 'Show what would be done without making actual changes',
+			char: "d",
+			description: "Show what would be done without making actual changes",
 			default: false,
 		}),
 		verbose: Flags.boolean({
-			char: 'v',
-			description: 'Show verbose output during operation',
+			char: "v",
+			description: "Show verbose output during operation",
 			default: false,
 		}),
 	};
 
 	public async run(): Promise<ProcessResult> {
 		const {args, flags} = await this.parse(RepoProcess);
-		const outputDir = args['output-directory'];
+		const outputDir = args["output-directory"];
 		const {topic, dryRun, verbose} = flags;
 
 		// Get repository info from flags or stdin
 		const repoInfo = await this.getRepoInfo(flags);
 		const repoName = `${repoInfo.owner.login}/${repoInfo.name}`;
-		const execa = withDebugLogging(execa_, (message) => this.debug(message));
+		const execa = withDebugLogging(execa_, (message) => {
+			this.debug(message);
+		});
 
 		try {
 			if (verbose) {
@@ -105,7 +107,7 @@ done`,
 					this.log(`│`);
 					this.log(`╰─── Processing failed`);
 				} else {
-					this.log(`${repoName}: clone failed (${cloneResult.error || 'Unknown error'})`);
+					this.log(`${repoName}: clone failed (${cloneResult.error || "Unknown error"})`);
 				}
 
 				const result = {
@@ -153,7 +155,7 @@ done`,
 					cloned: true,
 					valid: false,
 					topicAdded: false,
-					error: 'Not a valid Maven repository',
+					error: "Not a valid Maven repository",
 				};
 
 				return result;
@@ -188,13 +190,13 @@ done`,
 			if (!topicSingleResult.success) {
 				if (verbose) {
 					this.log(
-						`├──╯ Failed to add github topic to repository: ${topicSingleResult.error || 'Unknown error'}`,
+						`├──╯ Failed to add github topic to repository: ${topicSingleResult.error || "Unknown error"}`,
 					);
 					this.log(`├──╯`);
 					this.log(`│`);
 					this.log(`╰─── Processing failed`);
 				} else {
-					this.log(`${repoName}: topic add failed (${topicSingleResult.error || 'Unknown error'})`);
+					this.log(`${repoName}: topic add failed (${topicSingleResult.error || "Unknown error"})`);
 				}
 
 				const result = {
@@ -203,7 +205,7 @@ done`,
 					cloned: true,
 					valid: true,
 					topicAdded: false,
-					error: `Failed to add github topic to repository: ${topicSingleResult.error || 'Unknown error'}`,
+					error: `Failed to add github topic to repository: ${topicSingleResult.error || "Unknown error"}`,
 				};
 
 				return result;
@@ -248,7 +250,7 @@ done`,
 
 			return result;
 		} catch (error) {
-			const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+			const errorMessage = error instanceof Error ? error.message : "Unknown error";
 			this.error(`Failed to process repository: ${errorMessage}`, {exit: 1});
 		}
 	}
@@ -272,11 +274,11 @@ done`,
 					const validatedRepo = repositorySchema.parse(jsonData);
 					return validatedRepo;
 				} catch {
-					this.error('Invalid JSON input from stdin', {
+					this.error("Invalid JSON input from stdin", {
 						exit: 1,
-						code: 'INVALID_JSON',
+						code: "INVALID_JSON",
 						suggestions: [
-							'Ensure the input is valid JSON',
+							"Ensure the input is valid JSON",
 							'The input should contain "name" and "owner.login" fields',
 							'Example: echo \'{"name": "repo", "owner": {"login": "user"}}\' | aggregator repo:process ./output --topic maven',
 						],
@@ -286,13 +288,13 @@ done`,
 		}
 
 		// No input provided
-		this.error('No input provided. Provide --owner and --name flags or pipe JSON data from stdin.', {
+		this.error("No input provided. Provide --owner and --name flags or pipe JSON data from stdin.", {
 			exit: 1,
-			code: 'NO_INPUT',
+			code: "NO_INPUT",
 			suggestions: [
-				'Provide --owner and --name flags',
-				'Or pipe repository JSON from stdin',
-				'Example: aggregator repo:process ./output --owner motlin --name JUnit-Java-8-Runner --topic maven',
+				"Provide --owner and --name flags",
+				"Or pipe repository JSON from stdin",
+				"Example: aggregator repo:process ./output --owner motlin --name JUnit-Java-8-Runner --topic maven",
 			],
 		});
 	}

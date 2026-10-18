@@ -47,23 +47,10 @@ repos:
         language: system
         pass_filenames: false
         types: [file]
-      - id: biome
-        name: biome
-        entry: pnpm exec biome format --write --no-errors-on-unmatched
-        language: system
-        types: [file]
-        files: \.(js|jsx|ts|tsx|mjs|cjs|json|json5)$
-        exclude: "package\\.json"
       - id: oxfmt
         name: vp fmt
         entry: pnpm exec vp fmt --no-error-on-unmatched-pattern
         language: system
-      - id: oxlint
-        name: oxlint
-        entry: pnpm exec vp lint --fix
-        language: system
-        files: \.(js|jsx|ts|tsx|mjs|cjs)$
-        types: [file]
       - id: markdownlint-cli2
         name: markdownlint-cli2
         entry: pnpm exec vp exec markdownlint-cli2

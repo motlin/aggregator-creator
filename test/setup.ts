@@ -1,4 +1,4 @@
-import {config} from 'chai';
+import {config} from "chai";
 
 // Show full objects in test failures without truncation
 config.truncateThreshold = 0;

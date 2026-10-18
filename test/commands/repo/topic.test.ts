@@ -1,9 +1,8 @@
-import {describe, it, beforeEach, afterEach} from 'vite-plus/test';
-import {runCommand} from '@oclif/test';
-import {expect} from 'chai';
-import {fileURLToPath} from 'node:url';
-import path from 'node:path';
-import {createSandbox} from 'sinon';
+import {describe, it, beforeEach, afterEach} from "vite-plus/test";
+import {runCommand} from "@oclif/test";
+import {expect} from "chai";
+import path from "node:path";
+import {createSandbox} from "sinon";
 
 interface ExtendedError extends Error {
 	code?: string;
@@ -14,60 +13,59 @@ interface ExtendedError extends Error {
 	parse?: unknown;
 }
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const root = path.join(__dirname, '../../..');
+const root = path.join(import.meta.dirname, "../../..");
 
-describe('repo:topic', () => {
+describe("repo:topic", () => {
 	const sandbox = createSandbox();
 
 	beforeEach(() => {
 		// Define the property first since it doesn't exist by default
-		Object.defineProperty(process.stdin, 'isTTY', {
+		Object.defineProperty(process.stdin, "isTTY", {
 			value: undefined,
 			writable: true,
 			configurable: true,
 		});
 		// Now stub it
-		sandbox.stub(process.stdin, 'isTTY').value(true);
+		sandbox.stub(process.stdin, "isTTY").value(true);
 	});
 
 	afterEach(() => {
 		sandbox.restore();
 	});
 
-	describe('with flags', () => {
-		it('should error when missing required flags', async () => {
-			const result = await runCommand(['repo:topic', '--topic', 'maven', '--json'], root);
+	describe("with flags", () => {
+		it("should error when missing required flags", async () => {
+			const result = await runCommand(["repo:topic", "--topic", "maven", "--json"], root);
 			expect(result).to.deep.equal({
 				result: undefined,
 				stdout:
 					JSON.stringify(
 						{
 							error: {
-								code: 'MISSING_FLAGS',
+								code: "MISSING_FLAGS",
 								oclif: {
 									exit: 1,
 								},
 								suggestions: [
-									'Provide both --owner and --name flags',
-									'Or pipe repository JSON to stdin',
-									'Example: aggregator repo:topic --owner motlin --name JUnit-Java-8-Runner --topic maven',
+									"Provide both --owner and --name flags",
+									"Or pipe repository JSON to stdin",
+									"Example: aggregator repo:topic --owner motlin --name JUnit-Java-8-Runner --topic maven",
 								],
 							},
 						},
 						null,
 						2,
-					) + '\n',
-				stderr: '',
+					) + "\n",
+				stderr: "",
 			});
 		});
 
-		it('should error when missing topic flag', async () => {
-			const result = await runCommand(['repo:topic', '--owner', 'motlin', '--name', 'test-repo'], root);
+		it("should error when missing topic flag", async () => {
+			const result = await runCommand(["repo:topic", "--owner", "motlin", "--name", "test-repo"], root);
 			// Missing required flags causes oclif to exit without JSON output
 			// Create expected error matching actual error structure
 			const expectedError = new Error(
-				'The following error occurred:\n  Missing required flag topic\nSee more help with --help',
+				"The following error occurred:\n  Missing required flag topic\nSee more help with --help",
 			) as ExtendedError;
 			expectedError.code = undefined;
 			expectedError.oclif = {exit: 2};
@@ -77,24 +75,24 @@ describe('repo:topic', () => {
 			expectedError.parse = (result.error as ExtendedError)?.parse; // Copy the circular reference
 
 			expect(result).to.deep.equal({
-				stdout: '',
-				stderr: '',
+				stdout: "",
+				stderr: "",
 				error: expectedError,
 			});
 		});
 
-		it('should handle GitHub API errors gracefully', async () => {
+		it("should handle GitHub API errors gracefully", async () => {
 			// Use a non-existent repository to trigger an API error
 			const {stdout} = await runCommand(
 				[
-					'repo:topic',
-					'--owner',
-					'non-existent-user-12345',
-					'--name',
-					'non-existent-repo-67890',
-					'--topic',
-					'maven',
-					'--json',
+					"repo:topic",
+					"--owner",
+					"non-existent-user-12345",
+					"--name",
+					"non-existent-repo-67890",
+					"--topic",
+					"maven",
+					"--json",
 				],
 				root,
 			);
@@ -103,7 +101,7 @@ describe('repo:topic', () => {
 			// The command exits with an error
 			expect(jsonOutput).to.deep.equal({
 				error: {
-					code: 'EEXIT',
+					code: "EEXIT",
 					oclif: {
 						exit: 1,
 					},
@@ -111,29 +109,29 @@ describe('repo:topic', () => {
 			});
 		});
 
-		it('should handle dry run mode', async () => {
+		it("should handle dry run mode", async () => {
 			// Note: This will still try to fetch topics but won't update them
 			const result = await runCommand(
-				['repo:topic', '--owner', 'octocat', '--name', 'Hello-World', '--topic', 'maven', '--dryRun'],
+				["repo:topic", "--owner", "octocat", "--name", "Hello-World", "--topic", "maven", "--dryRun"],
 				root,
 			);
 
 			// In dry run mode, it should fetch existing topics and show what would be done
 			expect(result).to.deep.equal({
 				stdout: "octocat/Hello-World: would add topic 'maven'\n",
-				stderr: '',
+				stderr: "",
 				result: {
-					owner: 'octocat',
-					name: 'Hello-World',
-					topics: ['maven'],
+					owner: "octocat",
+					name: "Hello-World",
+					topics: ["maven"],
 					topicAdded: false,
 				},
 			});
 		});
 
-		it('should return JSON output with --json flag on error', async () => {
+		it("should return JSON output with --json flag on error", async () => {
 			const {stdout} = await runCommand(
-				['repo:topic', '--owner', 'octocat', '--name', 'Hello-World', '--topic', 'maven', '--json'],
+				["repo:topic", "--owner", "octocat", "--name", "Hello-World", "--topic", "maven", "--json"],
 				root,
 			);
 
@@ -141,7 +139,7 @@ describe('repo:topic', () => {
 			// The command exits with an error
 			expect(jsonOutput).to.deep.equal({
 				error: {
-					code: 'EEXIT',
+					code: "EEXIT",
 					oclif: {
 						exit: 1,
 					},

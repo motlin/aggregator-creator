@@ -1,6 +1,6 @@
-import {execa as execa_} from 'execa';
-import {githubTopicsResponseSchema} from '../types/repository.js';
-import {describeGhError} from './gh-errors.js';
+import {execa as execa_} from "execa";
+import {githubTopicsResponseSchema} from "../types/repository.js";
+import {describeGhError} from "./gh-errors.js";
 
 export interface TopicSingleRepoOptions {
 	owner: string;
@@ -32,7 +32,7 @@ export async function topicSingleRepository(options: TopicSingleRepoOptions): Pr
 
 	try {
 		// Get current topics
-		const result = await execa('gh', ['api', `repos/${owner}/${name}/topics`, '--method', 'GET'], {
+		const result = await execa("gh", ["api", `repos/${owner}/${name}/topics`, "--method", "GET"], {
 			reject: false,
 		});
 
@@ -102,12 +102,12 @@ export async function topicSingleRepository(options: TopicSingleRepoOptions): Pr
 
 		// Update topics
 		topics.push(topic);
-		const args = ['api', `repos/${owner}/${name}/topics`, '--method', 'PUT'];
+		const args = ["api", `repos/${owner}/${name}/topics`, "--method", "PUT"];
 		for (const t of topics) {
-			args.push('-f', `names[]=${t}`);
+			args.push("-f", `names[]=${t}`);
 		}
 
-		const updateResult = await execa('gh', args, {reject: false});
+		const updateResult = await execa("gh", args, {reject: false});
 
 		if (updateResult.exitCode !== 0) {
 			const error = `Failed to update topics: ${describeGhError(updateResult.stderr).message}`;

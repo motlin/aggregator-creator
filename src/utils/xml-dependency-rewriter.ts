@@ -1,9 +1,9 @@
-import fs from 'fs-extra';
-import {Builder, parseString} from 'xml2js';
-import {promisify} from 'node:util';
-import path from 'node:path';
-import chalk from 'chalk';
-import MavenGAVCoords from '../maven-gav.js';
+import fs from "fs-extra";
+import {Builder, parseString} from "xml2js";
+import {promisify} from "node:util";
+import path from "node:path";
+import chalk from "chalk";
+import MavenGAVCoords from "../maven-gav.js";
 
 // oxlint-disable-next-line @typescript-eslint/no-explicit-any
 const parseXML = promisify<string, any, PomData>(parseString);
@@ -102,7 +102,7 @@ export class XmlDependencyRewriter {
 		this.log(`│  ├──╮ 🔧 Rewriting child pom dependencies using direct XML editing...`);
 
 		const processPromises = this.options.modules.map(async (module) => {
-			const pomPath = path.join(this.options.aggregatorPath, module, 'pom.xml');
+			const pomPath = path.join(this.options.aggregatorPath, module, "pom.xml");
 
 			if (!(await fs.pathExists(pomPath))) {
 				this.log(`│  │  │ ⚠️ Skipping ${chalk.yellow(module)}: pom.xml not found`);
@@ -141,15 +141,15 @@ export class XmlDependencyRewriter {
 	}
 
 	private async updatePomDependencies(pomPath: string): Promise<{updated: boolean; fallbackNeeded: boolean}> {
-		const pomContent = await fs.readFile(pomPath, 'utf8');
+		const pomContent = await fs.readFile(pomPath, "utf8");
 
-		const pomData = (await parseXML(pomContent, {
+		const pomData = await parseXML(pomContent, {
 			preserveChildrenOrder: true,
 			explicitArray: true,
 			normalizeTags: false,
-			attrkey: '$',
-			charkey: '_',
-		})) as PomData;
+			attrkey: "$",
+			charkey: "_",
+		});
 
 		if (this.options.verbose) {
 			this.log(`│  │  │   → Parsed POM structure`);
@@ -159,7 +159,7 @@ export class XmlDependencyRewriter {
 		}
 
 		if (!pomData.project) {
-			throw new Error('Invalid POM: no project element found');
+			throw new Error("Invalid POM: no project element found");
 		}
 
 		let updated = false;
@@ -195,11 +195,11 @@ export class XmlDependencyRewriter {
 
 		if (updated) {
 			const xmlBuilder = new Builder({
-				xmldec: {version: '1.0', encoding: 'utf8'},
-				renderOpts: {pretty: true, indent: '    '},
+				xmldec: {version: "1.0", encoding: "utf8"},
+				renderOpts: {pretty: true, indent: "    "},
 				headless: false,
-				attrkey: '$',
-				charkey: '_',
+				attrkey: "$",
+				charkey: "_",
 			});
 			const newXml = xmlBuilder.buildObject(pomData);
 			await fs.writeFile(pomPath, newXml);
@@ -269,7 +269,7 @@ export class XmlDependencyRewriter {
 					this.log(
 						`│  │  │   → Checking ${chalk.yellow(key)}: current=${chalk.yellow(
 							currentVersion,
-						)}, new=${chalk.yellow(newVersion || 'not found')}`,
+						)}, new=${chalk.yellow(newVersion || "not found")}`,
 					);
 				}
 

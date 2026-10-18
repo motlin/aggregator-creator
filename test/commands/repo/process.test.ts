@@ -1,10 +1,9 @@
-import {describe, it, beforeEach, afterEach} from 'vite-plus/test';
-import {runCommand} from '@oclif/test';
-import {expect} from 'chai';
-import {createSandbox} from 'sinon';
-import fs from 'fs-extra';
-import path from 'node:path';
-import {fileURLToPath} from 'node:url';
+import {describe, it, beforeEach, afterEach} from "vite-plus/test";
+import {runCommand} from "@oclif/test";
+import {expect} from "chai";
+import {createSandbox} from "sinon";
+import fs from "fs-extra";
+import path from "node:path";
 
 interface ExtendedError extends Error {
 	code?: string;
@@ -26,17 +25,16 @@ interface RepoProcessResult {
 	error: string;
 }
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const root = path.join(__dirname, '../../..');
+const root = path.join(import.meta.dirname, "../../..");
 
 function expectedCloneFailure(actual: unknown, expectedPath: string): RepoProcessResult {
 	const actualResult = actual as Partial<RepoProcessResult> | undefined;
-	const error = actualResult?.error ?? '';
+	const error = actualResult?.error ?? "";
 	expect(error).to.include(`Command failed with exit code 1: gh repo clone test-user/test-repo ${expectedPath}`);
 
 	return {
-		name: 'test-repo',
-		owner: {login: 'test-user'},
+		name: "test-repo",
+		owner: {login: "test-user"},
 		path: expectedPath,
 		cloned: false,
 		valid: false,
@@ -45,21 +43,21 @@ function expectedCloneFailure(actual: unknown, expectedPath: string): RepoProces
 	};
 }
 
-describe('repo:process', () => {
+describe("repo:process", () => {
 	const sandbox = createSandbox();
 	let outputDir: string;
 
 	beforeEach(async () => {
 		// Define the property first since it doesn't exist by default
-		Object.defineProperty(process.stdin, 'isTTY', {
+		Object.defineProperty(process.stdin, "isTTY", {
 			value: undefined,
 			writable: true,
 			configurable: true,
 		});
 		// Now stub it
-		sandbox.stub(process.stdin, 'isTTY').value(true);
+		sandbox.stub(process.stdin, "isTTY").value(true);
 
-		outputDir = path.join(__dirname, '../../temp', `test-output-${Date.now()}`);
+		outputDir = path.join(import.meta.dirname, "../../temp", `test-output-${Date.now()}`);
 		await fs.ensureDir(outputDir);
 	});
 
@@ -68,38 +66,38 @@ describe('repo:process', () => {
 		await fs.remove(outputDir);
 	});
 
-	it('should error when no input is provided', async () => {
-		const result = await runCommand(['repo:process', outputDir, '--topic', 'maven', '--json'], root);
+	it("should error when no input is provided", async () => {
+		const result = await runCommand(["repo:process", outputDir, "--topic", "maven", "--json"], root);
 		expect(result).to.deep.equal({
 			result: undefined,
 			stdout:
 				JSON.stringify(
 					{
 						error: {
-							code: 'NO_INPUT',
+							code: "NO_INPUT",
 							oclif: {
 								exit: 1,
 							},
 							suggestions: [
-								'Provide --owner and --name flags',
-								'Or pipe repository JSON from stdin',
-								'Example: aggregator repo:process ./output --owner motlin --name JUnit-Java-8-Runner --topic maven',
+								"Provide --owner and --name flags",
+								"Or pipe repository JSON from stdin",
+								"Example: aggregator repo:process ./output --owner motlin --name JUnit-Java-8-Runner --topic maven",
 							],
 						},
 					},
 					null,
 					2,
-				) + '\n',
-			stderr: '',
+				) + "\n",
+			stderr: "",
 		});
 	});
 
-	it('should error when missing required topic flag', async () => {
-		const result = await runCommand(['repo:process', outputDir, '--owner', 'test', '--name', 'repo'], root);
+	it("should error when missing required topic flag", async () => {
+		const result = await runCommand(["repo:process", outputDir, "--owner", "test", "--name", "repo"], root);
 		// Missing required flags causes oclif to exit without JSON output
 		// Create expected error matching actual error structure
 		const expectedError = new Error(
-			'The following error occurred:\n  Missing required flag topic\nSee more help with --help',
+			"The following error occurred:\n  Missing required flag topic\nSee more help with --help",
 		) as ExtendedError;
 		expectedError.code = undefined;
 		expectedError.oclif = {exit: 2};
@@ -109,21 +107,21 @@ describe('repo:process', () => {
 		expectedError.parse = (result.error as ExtendedError)?.parse; // Copy the circular reference
 
 		expect(result).to.deep.equal({
-			stdout: '',
-			stderr: '',
+			stdout: "",
+			stderr: "",
 			error: expectedError,
 		});
 	});
 
-	it('should error when missing output directory', async () => {
+	it("should error when missing output directory", async () => {
 		const result = await runCommand(
-			['repo:process', '--topic', 'maven', '--owner', 'test', '--name', 'repo'],
+			["repo:process", "--topic", "maven", "--owner", "test", "--name", "repo"],
 			root,
 		);
 		// Missing required arguments causes oclif to exit without JSON output
 		// Create expected error matching actual error structure
 		const expectedError = new Error(
-			'Missing 1 required arg:\noutput-directory  Directory where the repository will be cloned\nSee more help with --help',
+			"Missing 1 required arg:\noutput-directory  Directory where the repository will be cloned\nSee more help with --help",
 		) as ExtendedError;
 		expectedError.code = undefined;
 		expectedError.oclif = {exit: 2};
@@ -134,92 +132,92 @@ describe('repo:process', () => {
 		expectedError.args = (result.error as ExtendedError)?.args; // Copy the args property
 
 		expect(result).to.deep.equal({
-			stdout: '',
-			stderr: '',
+			stdout: "",
+			stderr: "",
 			error: expectedError,
 		});
 	});
 
-	it('should accept flags for repository info', async () => {
+	it("should accept flags for repository info", async () => {
 		// Note: This will fail at the clone step since we're not mocking git
 		const result = await runCommand(
-			['repo:process', outputDir, '--owner', 'test-user', '--name', 'test-repo', '--topic', 'maven', '--json'],
+			["repo:process", outputDir, "--owner", "test-user", "--name", "test-repo", "--topic", "maven", "--json"],
 			root,
 		);
 
-		const expectedPath = path.join(outputDir, 'test-user', 'test-repo');
+		const expectedPath = path.join(outputDir, "test-user", "test-repo");
 		const expectedResult = expectedCloneFailure(result.result, expectedPath);
 
 		expect(result).to.deep.equal({
 			result: expectedResult,
-			stderr: '',
-			stdout: JSON.stringify(expectedResult, null, 2) + '\n',
+			stderr: "",
+			stdout: JSON.stringify(expectedResult, null, 2) + "\n",
 		});
 	});
 
-	it('should show non-JSON output when --json flag is not provided', async () => {
+	it("should show non-JSON output when --json flag is not provided", async () => {
 		const result = await runCommand(
-			['repo:process', outputDir, '--owner', 'test-user', '--name', 'test-repo', '--topic', 'maven'],
+			["repo:process", outputDir, "--owner", "test-user", "--name", "test-repo", "--topic", "maven"],
 			root,
 		);
 
-		const expectedPath = path.join(outputDir, 'test-user', 'test-repo');
+		const expectedPath = path.join(outputDir, "test-user", "test-repo");
 		const expectedResult = expectedCloneFailure(result.result, expectedPath);
 
 		expect(result).to.deep.equal({
 			result: expectedResult,
-			stderr: '',
+			stderr: "",
 			stdout: `test-user/test-repo: clone failed (${expectedResult.error})\n`,
 		});
 	});
 
-	it('should handle dry run flag', async () => {
+	it("should handle dry run flag", async () => {
 		// The dry run flag would be passed to the topic command
 		// This test validates that the flag is accepted
 		const result = await runCommand(
 			[
-				'repo:process',
+				"repo:process",
 				outputDir,
-				'--owner',
-				'test-user',
-				'--name',
-				'test-repo',
-				'--topic',
-				'maven',
-				'--dryRun',
-				'--json',
+				"--owner",
+				"test-user",
+				"--name",
+				"test-repo",
+				"--topic",
+				"maven",
+				"--dryRun",
+				"--json",
 			],
 			root,
 		);
 
-		const expectedPath = path.join(outputDir, 'test-user', 'test-repo');
+		const expectedPath = path.join(outputDir, "test-user", "test-repo");
 		const expectedResult = expectedCloneFailure(result.result, expectedPath);
 
 		expect(result).to.deep.equal({
 			result: expectedResult,
-			stderr: '',
-			stdout: JSON.stringify(expectedResult, null, 2) + '\n',
+			stderr: "",
+			stdout: JSON.stringify(expectedResult, null, 2) + "\n",
 		});
 	});
 
-	it('should not report topicAdded on a dry run against a valid repository without the topic', async () => {
-		const repoDir = path.join(outputDir, 'test-user', 'test-repo');
+	it("should not report topicAdded on a dry run against a valid repository without the topic", async () => {
+		const repoDir = path.join(outputDir, "test-user", "test-repo");
 		await fs.outputFile(
-			path.join(repoDir, 'pom.xml'),
-			'<project><modelVersion>4.0.0</modelVersion><groupId>g</groupId><artifactId>a</artifactId><version>1</version></project>\n',
+			path.join(repoDir, "pom.xml"),
+			"<project><modelVersion>4.0.0</modelVersion><groupId>g</groupId><artifactId>a</artifactId><version>1</version></project>\n",
 		);
 
-		const fakeBin = path.join(outputDir, 'fake-bin');
-		const putLog = path.join(outputDir, 'gh-put.log');
+		const fakeBin = path.join(outputDir, "fake-bin");
+		const putLog = path.join(outputDir, "gh-put.log");
 		await fs.outputFile(
-			path.join(fakeBin, 'gh'),
+			path.join(fakeBin, "gh"),
 			`#!/bin/sh\ncase "$*" in\n  *"--method GET"*) echo '{"names":[]}' ;;\n  *) echo "$*" >> '${putLog}'; exit 1 ;;\nesac\n`,
 			{mode: 0o755},
 		);
-		sandbox.stub(process.env, 'PATH').value(`${fakeBin}${path.delimiter}${process.env.PATH}`);
+		sandbox.stub(process.env, "PATH").value(`${fakeBin}${path.delimiter}${process.env.PATH}`);
 
 		const result = await runCommand(
-			['repo:process', outputDir, '--owner', 'test-user', '--name', 'test-repo', '--topic', 'maven', '--dryRun'],
+			["repo:process", outputDir, "--owner", "test-user", "--name", "test-repo", "--topic", "maven", "--dryRun"],
 			root,
 		);
 
@@ -229,46 +227,46 @@ describe('repo:process', () => {
 			putCalled: await fs.pathExists(putLog),
 		}).to.deep.equal({
 			result: {
-				name: 'test-repo',
-				owner: {login: 'test-user'},
+				name: "test-repo",
+				owner: {login: "test-user"},
 				path: repoDir,
 				cloned: true,
 				valid: true,
 				topicAdded: false,
-				topics: ['maven'],
+				topics: ["maven"],
 				error: null,
 			},
-			stdout: 'test-user/test-repo: processed, would add topic\n',
+			stdout: "test-user/test-repo: processed, would add topic\n",
 			putCalled: false,
 		});
 	});
 
-	it('should handle verbose flag', async () => {
+	it("should handle verbose flag", async () => {
 		// The verbose flag would affect output verbosity
 		// This test validates that the flag is accepted
 		const result = await runCommand(
 			[
-				'repo:process',
+				"repo:process",
 				outputDir,
-				'--owner',
-				'test-user',
-				'--name',
-				'test-repo',
-				'--topic',
-				'maven',
-				'--verbose',
-				'--json',
+				"--owner",
+				"test-user",
+				"--name",
+				"test-repo",
+				"--topic",
+				"maven",
+				"--verbose",
+				"--json",
 			],
 			root,
 		);
 
-		const expectedPath = path.join(outputDir, 'test-user', 'test-repo');
+		const expectedPath = path.join(outputDir, "test-user", "test-repo");
 		const expectedResult = expectedCloneFailure(result.result, expectedPath);
 
 		expect(result).to.deep.equal({
 			result: expectedResult,
-			stderr: '',
-			stdout: JSON.stringify(expectedResult, null, 2) + '\n',
+			stderr: "",
+			stdout: JSON.stringify(expectedResult, null, 2) + "\n",
 		});
 	});
 });
