@@ -31,7 +31,7 @@ repos:
             types: [file]
           - id: biome
             name: biome
-            entry: npx biome format --write
+            entry: npx biome format --write --no-errors-on-unmatched
             language: system
             types: [file]
             files: \.(js|jsx|ts|tsx|mjs|cjs|json|json5)$
