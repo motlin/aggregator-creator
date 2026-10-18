@@ -9,7 +9,7 @@
 		"moduleResolution": "node16",
 		"composite": true,
 		"esModuleInterop": true,
-		"types": ["mocha", "node"]
+		"types": ["node"]
 	},
 	"include": ["./**/*"],
 	"references": [{ "path": "../src" }]

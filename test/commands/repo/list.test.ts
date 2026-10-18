@@ -1,3 +1,4 @@
+import {describe, it} from 'vite-plus/test';
 import {runCommand} from '@oclif/test';
 import {expect} from 'chai';
 import path from 'node:path';
@@ -10,9 +11,7 @@ const root = path.join(__dirname, '../../..');
 // Skip GitHub API tests in CI to avoid rate limiting issues
 const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 
-describe('repo:list', function () {
-	this.timeout(10_000);
-
+describe('repo:list', () => {
 	it('should verify GitHub CLI is authenticated', async () => {
 		const {execa} = await import('execa');
 		try {
@@ -26,10 +25,7 @@ describe('repo:list', function () {
 		}
 	});
 
-	it('should fetch octocat HTML repos via direct API call', async function () {
-		if (isCI) {
-			this.skip();
-		}
+	it.skipIf(isCI)('should fetch octocat HTML repos via direct API call', async () => {
 		const {execa} = await import('execa');
 		try {
 			const query = 'user:octocat language:HTML fork:false archived:false';
@@ -61,10 +57,7 @@ describe('repo:list', function () {
 		}
 	});
 
-	it('should fetch repositories with specific search criteria', async function () {
-		if (isCI) {
-			this.skip();
-		}
+	it.skipIf(isCI)('should fetch repositories with specific search criteria', async () => {
 		const result = await runCommand(
 			['repo:list', '--owner', 'torvalds', '--language', 'C', '--json', '--limit', '2'],
 			root,
@@ -103,10 +96,7 @@ describe('repo:list', function () {
 		]);
 	});
 
-	it('should fetch repositories for specified user', async function () {
-		if (isCI) {
-			this.skip();
-		}
+	it.skipIf(isCI)('should fetch repositories for specified user', async () => {
 		const expected = [
 			{
 				name: 'claude-code-plugins',
@@ -132,10 +122,7 @@ describe('repo:list', function () {
 		expect(JSON.parse(stdout)).to.deep.equal(expected);
 	});
 
-	it('should fetch repositories for freeCodeCamp user', async function () {
-		if (isCI) {
-			this.skip();
-		}
+	it.skipIf(isCI)('should fetch repositories for freeCodeCamp user', async () => {
 		const result = await runCommand(['repo:list', '--owner', 'freeCodeCamp', '--json', '--limit', '1'], root);
 
 		if ('error' in result) {
@@ -165,10 +152,7 @@ describe('repo:list', function () {
 		expect(repos[0].visibility).to.equal('public');
 	});
 
-	it('should support multiple language filters', async function () {
-		if (isCI) {
-			this.skip();
-		}
+	it.skipIf(isCI)('should support multiple language filters', async () => {
 		const result = await runCommand(
 			['repo:list', '--owner', 'motlin', '--language', 'Java', '--language', 'TypeScript', '--json'],
 			root,
@@ -196,10 +180,7 @@ describe('repo:list', function () {
 		}
 	});
 
-	it('should include forked repositories when --include-forks flag is provided', async function () {
-		if (isCI) {
-			this.skip();
-		}
+	it.skipIf(isCI)('should include forked repositories when --include-forks flag is provided', async () => {
 		const result = await runCommand(
 			['repo:list', '--owner', 'octocat', '--language', 'HTML', '--include-forks', '--json', '--limit', '1'],
 			root,
@@ -226,10 +207,7 @@ describe('repo:list', function () {
 		]);
 	});
 
-	it('should include archived repositories when --include-archived flag is provided', async function () {
-		if (isCI) {
-			this.skip();
-		}
+	it.skipIf(isCI)('should include archived repositories when --include-archived flag is provided', async () => {
 		const result = await runCommand(
 			['repo:list', '--owner', 'octocat', '--language', 'HTML', '--include-archived', '--json', '--limit', '1'],
 			root,
@@ -256,10 +234,7 @@ describe('repo:list', function () {
 		]);
 	});
 
-	it('should support combining include flags', async function () {
-		if (isCI) {
-			this.skip();
-		}
+	it.skipIf(isCI)('should support combining include flags', async () => {
 		const result = await runCommand(
 			[
 				'repo:list',
@@ -297,10 +272,7 @@ describe('repo:list', function () {
 		]);
 	});
 
-	it('should filter repositories with maven topic but exclude oclif topic', async function () {
-		if (isCI) {
-			this.skip();
-		}
+	it.skipIf(isCI)('should filter repositories with maven topic but exclude oclif topic', async () => {
 		const result = await runCommand(
 			['repo:list', '--owner', 'motlin', '--topic', 'maven', '--exclude-topic', 'oclif', '--json'],
 			root,
@@ -329,10 +301,7 @@ describe('repo:list', function () {
 		]);
 	});
 
-	it('should support multiple exclude-topic filters', async function () {
-		if (isCI) {
-			this.skip();
-		}
+	it.skipIf(isCI)('should support multiple exclude-topic filters', async () => {
 		const result = await runCommand(
 			['repo:list', '--owner', 'motlin', '--exclude-topic', 'oclif', '--exclude-topic', 'game', '--json'],
 			root,

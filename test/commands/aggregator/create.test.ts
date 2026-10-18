@@ -1,3 +1,4 @@
+import {describe, it, beforeEach, afterEach} from 'vite-plus/test';
 import {runCommand} from '@oclif/test';
 import {expect} from 'chai';
 import fs from 'fs-extra';
@@ -98,8 +99,7 @@ describe('aggregator:create', () => {
 		});
 	});
 
-	it('creates an aggregator POM with default values', async function () {
-		this.timeout(30_000);
+	it('creates an aggregator POM with default values', async () => {
 		const mockResponse = {
 			statusCode: 200,
 			on(event: string, callback: (data?: string) => void) {
@@ -201,8 +201,7 @@ describe('aggregator:create', () => {
 		expect(depMgmtMatches2).to.not.be.null;
 	});
 
-	it('creates an aggregator POM with custom values', async function () {
-		this.timeout(30_000);
+	it('creates an aggregator POM with custom values', async () => {
 		const mockResponse = {
 			statusCode: 200,
 			on(event: string, callback: (data?: string) => void) {
@@ -297,8 +296,7 @@ describe('aggregator:create', () => {
 		expect(pomContent).to.include('<version>2.0.0</version>');
 	});
 
-	it('outputs in json format when --json flag is provided', async function () {
-		this.timeout(30_000);
+	it('outputs in json format when --json flag is provided', async () => {
 		const mockResponse = {
 			statusCode: 200,
 			on(event: string, callback: (data?: string) => void) {
@@ -364,8 +362,7 @@ describe('aggregator:create', () => {
 		});
 	});
 
-	it('returns a structured error when no Maven repositories are found with --json flag', async function () {
-		this.timeout(30_000);
+	it('returns a structured error when no Maven repositories are found with --json flag', async () => {
 		const mockResponse = {
 			statusCode: 200,
 			on(event: string, callback: (data?: string) => void) {
@@ -445,8 +442,7 @@ describe('aggregator:create', () => {
 		});
 	});
 
-	it('skips repositories with a malformed pom.xml and reports why', async function () {
-		this.timeout(30_000);
+	it('skips repositories with a malformed pom.xml and reports why', async () => {
 		const malformedRepo = path.join(tempDir, 'owner', 'malformed-repo');
 		await fs.ensureDir(malformedRepo);
 		await fs.writeFile(path.join(malformedRepo, 'pom.xml'), '<project><groupId>broken</groupId');

@@ -1,21 +1,21 @@
 name: Just formatting
 
 on:
-  pull_request:
-  merge_group:
-  push:
+    pull_request:
+    merge_group:
+    push:
 
 permissions:
-  contents: read
+    contents: read
 
 jobs:
-  just-format:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8 # v5.1.2
-        with:
-          install_args: just pre-commit
-      - run: pre-commit run just-fmt --all-files
+    just-format:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - uses: jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8 # v5.1.2
+              with:
+                  install_args: just pre-commit
+            - run: pre-commit run just-fmt --all-files

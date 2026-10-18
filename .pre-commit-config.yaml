@@ -37,15 +37,15 @@ repos:
             files: \.(js|jsx|ts|tsx|mjs|cjs|json|json5)$
             exclude: "package(-lock)?\\.json"
 
-          - id: prettier
-            name: prettier
-            entry: npx prettier --write
+          - id: oxfmt
+            name: oxfmt
+            entry: pnpm exec vp fmt --no-error-on-unmatched-pattern
             language: system
             types_or: [yaml, markdown, html]
 
-          - id: eslint
-            name: eslint
-            entry: npx eslint --fix
+          - id: oxlint
+            name: oxlint
+            entry: pnpm exec vp lint --fix
             language: system
             files: \.(js|jsx|ts|tsx|mjs|cjs)$
             types: [file]

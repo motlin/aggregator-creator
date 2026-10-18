@@ -1,3 +1,4 @@
+import {describe, it} from 'vite-plus/test';
 import {expect} from 'chai';
 import {execa} from 'execa';
 import {withDebugLogging} from '../../src/utils/debug-execa.js';

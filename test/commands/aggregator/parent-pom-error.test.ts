@@ -1,3 +1,4 @@
+import {describe, it, beforeEach, afterEach} from 'vite-plus/test';
 import {runCommand} from '@oclif/test';
 import {expect} from 'chai';
 import fs from 'fs-extra';
@@ -59,9 +60,7 @@ describe('aggregator:create with parent POM resolution errors', () => {
 		sandbox.restore();
 	});
 
-	it('should continue processing when Maven parent POM resolution errors occur', async function () {
-		this.timeout(30_000);
-
+	it('should continue processing when Maven parent POM resolution errors occur', async () => {
 		const mockResponse = {
 			statusCode: 200,
 			on(event: string, callback: (data?: string) => void) {

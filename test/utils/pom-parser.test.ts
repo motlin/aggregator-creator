@@ -1,3 +1,4 @@
+import {describe, it, beforeAll, afterAll} from 'vite-plus/test';
 import {expect} from 'chai';
 import fs from 'fs-extra';
 import path from 'node:path';
@@ -6,11 +7,11 @@ import {parsePomForGAV} from '../../src/utils/pom-parser.js';
 describe('pom-parser', () => {
 	const testDir = path.join(process.cwd(), 'test', 'temp', 'pom-parser');
 
-	before(async () => {
+	beforeAll(async () => {
 		await fs.ensureDir(testDir);
 	});
 
-	after(async () => {
+	afterAll(async () => {
 		await fs.remove(testDir);
 	});
 
@@ -36,7 +37,7 @@ describe('pom-parser', () => {
 		});
 
 		it('should indicate Maven fallback needed for property placeholders', async () => {
-			// eslint-disable-next-line no-template-curly-in-string
+			// oxlint-disable-next-line no-template-curly-in-string
 			const versionPlaceholder = '${project.version}';
 			const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">

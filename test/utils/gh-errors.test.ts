@@ -1,3 +1,4 @@
+import {describe, it} from 'vite-plus/test';
 import {expect} from 'chai';
 import {describeGhError} from '../../src/utils/gh-errors.js';
 

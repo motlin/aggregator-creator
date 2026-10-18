@@ -1,3 +1,4 @@
+import {describe, it, beforeEach, afterEach} from 'vite-plus/test';
 import {expect} from 'chai';
 import fs from 'fs-extra';
 import os from 'node:os';

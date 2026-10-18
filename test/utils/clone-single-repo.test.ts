@@ -1,3 +1,4 @@
+import {describe, it, beforeEach, afterEach} from 'vite-plus/test';
 import {expect} from 'chai';
 import fs from 'fs-extra';
 import os from 'node:os';
@@ -90,7 +91,7 @@ describe('cloneSingleRepo', () => {
 	});
 
 	it('stringifies non-Error rejections', async () => {
-		// eslint-disable-next-line prefer-promise-reject-errors -- exercising a non-Error rejection
+		// oxlint-disable-next-line prefer-promise-reject-errors -- exercising a non-Error rejection
 		execaStub.callsFake(() => Promise.reject('plain failure'));
 
 		const result = await cloneSingleRepo('octo', 'widget', tempDir, execaStub as unknown as ExecaParam);

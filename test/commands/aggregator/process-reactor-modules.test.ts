@@ -1,3 +1,4 @@
+import {describe, it, beforeEach, afterEach} from 'vite-plus/test';
 import {runCommand} from '@oclif/test';
 import {expect} from 'chai';
 import fs from 'fs-extra';
@@ -19,9 +20,7 @@ describe('aggregator:create processAllReactorModules', () => {
 		await fs.remove(tempDir);
 	});
 
-	it('collects modules from single-module repository', async function () {
-		this.timeout(10_000);
-
+	it('collects modules from single-module repository', async () => {
 		const repo1 = path.join(tempDir, 'repo1');
 		await fs.ensureDir(repo1);
 
@@ -54,9 +53,7 @@ describe('aggregator:create processAllReactorModules', () => {
 		expect(depMatch).to.not.be.null;
 	});
 
-	it('collects modules from multi-module repository', async function () {
-		this.timeout(10_000);
-
+	it('collects modules from multi-module repository', async () => {
 		const repo1 = path.join(tempDir, 'multi-repo');
 		await fs.ensureDir(repo1);
 
@@ -132,9 +129,7 @@ describe('aggregator:create processAllReactorModules', () => {
 		expect(moduleBMatch).to.not.be.null;
 	});
 
-	it('collects modules from multiple repositories', async function () {
-		this.timeout(10_000);
-
+	it('collects modules from multiple repositories', async () => {
 		const repo1 = path.join(tempDir, 'repo1');
 		const repo2 = path.join(tempDir, 'repo2');
 		await fs.ensureDir(repo1);
@@ -184,9 +179,7 @@ describe('aggregator:create processAllReactorModules', () => {
 		expect(repo2Match).to.not.be.null;
 	});
 
-	it('handles nested modules', async function () {
-		this.timeout(10_000);
-
+	it('handles nested modules', async () => {
 		const repo1 = path.join(tempDir, 'nested-repo');
 		await fs.ensureDir(repo1);
 
@@ -259,9 +252,7 @@ describe('aggregator:create processAllReactorModules', () => {
 		expect(childMatch).to.not.be.null;
 	});
 
-	it('handles repositories with only pom packaging', async function () {
-		this.timeout(10_000);
-
+	it('handles repositories with only pom packaging', async () => {
 		const repo1 = path.join(tempDir, 'pom-only');
 		await fs.ensureDir(repo1);
 
@@ -294,9 +285,7 @@ describe('aggregator:create processAllReactorModules', () => {
 		expect(pomOnlyMatch).to.not.be.null;
 	});
 
-	it('skips modules that fail to parse', async function () {
-		this.timeout(10_000);
-
+	it('skips modules that fail to parse', async () => {
 		const repo1 = path.join(tempDir, 'mixed-repo');
 		await fs.ensureDir(repo1);
 
@@ -331,9 +320,7 @@ describe('aggregator:create processAllReactorModules', () => {
 		expect(pomContent).to.not.include('broken-repo');
 	});
 
-	it('processes with --parallel flag', async function () {
-		this.timeout(10_000);
-
+	it('processes with --parallel flag', async () => {
 		const repo1 = path.join(tempDir, 'repo1');
 		const repo2 = path.join(tempDir, 'repo2');
 		await fs.ensureDir(repo1);

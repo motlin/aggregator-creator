@@ -1,3 +1,4 @@
+import {describe, it} from 'vite-plus/test';
 import {Readable} from 'node:stream';
 import {expect} from 'chai';
 import {readStdin} from '../../src/utils/read-stdin.js';

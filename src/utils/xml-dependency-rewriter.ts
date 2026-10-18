@@ -5,7 +5,7 @@ import path from 'node:path';
 import chalk from 'chalk';
 import MavenGAVCoords from '../maven-gav.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// oxlint-disable-next-line @typescript-eslint/no-explicit-any
 const parseXML = promisify<string, any, PomData>(parseString);
 
 export interface XmlDependencyRewriteOptions {

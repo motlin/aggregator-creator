@@ -1,3 +1,4 @@
+import {describe, it, beforeEach, afterEach} from 'vite-plus/test';
 import {expect} from 'chai';
 import {restore, spy, stub} from 'sinon';
 import {topicSingleRepository} from '../../src/utils/topic-single-repo.js';
