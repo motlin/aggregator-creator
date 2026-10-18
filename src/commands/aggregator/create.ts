@@ -8,6 +8,7 @@ import inquirer from 'inquirer';
 import {create} from 'xmlbuilder2';
 import MavenGAVCoords from '../../maven-gav.js';
 import {validatedRepositoriesSchema, type ValidatedRepository} from '../../types/repository.js';
+import {withDebugLogging} from '../../utils/debug-execa.js';
 import {DependencyRewriter} from '../../utils/dependency-rewriter.js';
 import {parsePomForGAV, parsePomForModules, parsePomForPackaging} from '../../utils/pom-parser.js';
 import {XmlDependencyRewriter} from '../../utils/xml-dependency-rewriter.js';
@@ -630,7 +631,7 @@ export default class AggregatorCreate extends Command {
 			version: string;
 		};
 	}> {
-		const execa = _execa;
+		const execa = withDebugLogging(_execa, (message) => this.debug(message));
 
 		const {args, flags} = await this.parse(AggregatorCreate);
 		this._verbose = flags.verbose;

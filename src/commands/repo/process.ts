@@ -1,6 +1,7 @@
 import {Args, Command, Flags} from '@oclif/core';
 import chalk from 'chalk';
 import {execa as execa_} from 'execa';
+import {withDebugLogging} from '../../utils/debug-execa.js';
 import {repositorySchema} from '../../types/repository.js';
 import {cloneSingleRepo} from '../../utils/clone-single-repo.js';
 import {type MavenValidationResult, validateMavenRepo} from '../../utils/maven-validation.js';
@@ -79,6 +80,7 @@ done`,
 		// Get repository info from flags or stdin
 		const repoInfo = await this.getRepoInfo(flags);
 		const repoName = `${repoInfo.owner.login}/${repoInfo.name}`;
+		const execa = withDebugLogging(execa_, (message) => this.debug(message));
 
 		try {
 			if (verbose) {
@@ -93,7 +95,7 @@ done`,
 				repoInfo.owner.login,
 				repoInfo.name,
 				outputDir,
-				execa_,
+				execa,
 				verbose ? this : undefined,
 			);
 
@@ -104,7 +106,7 @@ done`,
 					this.log(`│`);
 					this.log(`╰─── Processing failed`);
 				} else {
-					this.log(`${repoName}: clone failed`);
+					this.log(`${repoName}: clone failed (${cloneResult.error || 'Unknown error'})`);
 				}
 
 				const result = {
@@ -132,7 +134,7 @@ done`,
 
 			const validateResult: MavenValidationResult = await validateMavenRepo(
 				cloneResult.path,
-				execa_,
+				execa,
 				verbose ? this : undefined,
 			);
 
@@ -170,7 +172,7 @@ done`,
 				topic,
 				dryRun,
 				verbose,
-				execa: execa_,
+				execa,
 				logger: {
 					log: this.log.bind(this),
 					warn: this.warn.bind(this),

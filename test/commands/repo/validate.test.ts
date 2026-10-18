@@ -43,6 +43,17 @@ describe('repo:validate', () => {
 		});
 	});
 
+	it('should explain why a non-existent directory is not a Maven project', async () => {
+		const nonExistentPath = path.join(tempDir, 'non-existent');
+
+		const result = await runCommand(['repo:validate', nonExistentPath], root);
+		expect({stdout: result.stdout, stderr: result.stderr, exit: result.error?.oclif?.exit}).to.deep.equal({
+			stdout: `${nonExistentPath}: not a Maven project (Path does not exist)\n`,
+			stderr: '',
+			exit: 1,
+		});
+	});
+
 	it('should fail when no pom.xml exists', async () => {
 		await fs.ensureDir(tempDir);
 
@@ -63,6 +74,17 @@ describe('repo:validate', () => {
 					null,
 					2,
 				) + '\n',
+		});
+	});
+
+	it('should explain that a directory without pom.xml is not a Maven project', async () => {
+		await fs.ensureDir(tempDir);
+
+		const result = await runCommand(['repo:validate', tempDir], root);
+		expect({stdout: result.stdout, stderr: result.stderr, exit: result.error?.oclif?.exit}).to.deep.equal({
+			stdout: `${tempDir}: not a Maven project (No pom.xml found)\n`,
+			stderr: '',
+			exit: 1,
 		});
 	});
 

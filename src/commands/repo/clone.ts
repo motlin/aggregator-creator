@@ -1,6 +1,7 @@
 import {Command, Flags} from '@oclif/core';
 import chalk from 'chalk';
 import {execa as execa_} from 'execa';
+import {withDebugLogging} from '../../utils/debug-execa.js';
 import {cloneSingleRepo} from '../../utils/clone-single-repo.js';
 import {repositoriesSchema, repositorySchema} from '../../types/repository.js';
 import type {Repository} from '../../types/repository.js';
@@ -133,7 +134,13 @@ export default class RepoClone extends Command {
 		verbose: boolean,
 	): Promise<CloneResponse> {
 		try {
-			const result = await cloneSingleRepo(owner, name, outputDirectory, execa_, verbose ? this : undefined);
+			const result = await cloneSingleRepo(
+				owner,
+				name,
+				outputDirectory,
+				withDebugLogging(execa_, (message) => this.debug(message)),
+				verbose ? this : undefined,
+			);
 
 			if (result.error) {
 				this.error(`Failed to clone repository: ${result.error}`, {exit: 1});

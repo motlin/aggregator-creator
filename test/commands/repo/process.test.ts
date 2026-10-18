@@ -168,7 +168,7 @@ describe('repo:process', () => {
 		expect(result).to.deep.equal({
 			result: expectedResult,
 			stderr: '',
-			stdout: 'test-user/test-repo: clone failed\n',
+			stdout: `test-user/test-repo: clone failed (${expectedResult.error})\n`,
 		});
 	});
 

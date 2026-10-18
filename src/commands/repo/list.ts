@@ -1,5 +1,6 @@
 import {Command, Flags} from '@oclif/core';
 import {execa as execa_} from 'execa';
+import {withDebugLogging} from '../../utils/debug-execa.js';
 
 import chalk from 'chalk';
 import {z} from 'zod';
@@ -153,7 +154,7 @@ export default class RepoList extends Command {
 		const {flags} = await this.parse(RepoList);
 		const {verbose} = flags;
 
-		const execa = execa_;
+		const execa = withDebugLogging(execa_, (message) => this.debug(message));
 
 		if (verbose) {
 			this.log(`╭─── Listing GitHub repositories...`);

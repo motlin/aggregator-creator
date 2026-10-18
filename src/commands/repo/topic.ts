@@ -1,5 +1,6 @@
 import {Command, Flags} from '@oclif/core';
 import {execa as execa_} from 'execa';
+import {withDebugLogging} from '../../utils/debug-execa.js';
 import {topicSingleRepository} from '../../utils/topic-single-repo.js';
 import {repositorySchema} from '../../types/repository.js';
 import type {Repository} from '../../types/repository.js';
@@ -150,7 +151,7 @@ export default class RepoTopic extends Command {
 			topic: flags.topic,
 			dryRun: flags.dryRun,
 			verbose,
-			execa: execa_,
+			execa: withDebugLogging(execa_, (message) => this.debug(message)),
 			logger,
 		});
 

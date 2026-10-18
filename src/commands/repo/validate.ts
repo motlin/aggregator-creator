@@ -1,5 +1,6 @@
 import {Args, Command, Flags} from '@oclif/core';
 import {execa as execa_} from 'execa';
+import {withDebugLogging} from '../../utils/debug-execa.js';
 import {type MavenValidationResult, validateMavenRepo} from '../../utils/maven-validation.js';
 
 export default class RepoValidate extends Command {
@@ -41,7 +42,11 @@ export default class RepoValidate extends Command {
 			this.log(`│`);
 		}
 
-		const validationResult = await validateMavenRepo(repoPath, execa_, verbose ? this : undefined);
+		const validationResult = await validateMavenRepo(
+			repoPath,
+			withDebugLogging(execa_, (message) => this.debug(message)),
+			verbose ? this : undefined,
+		);
 
 		if (verbose) {
 			if (validationResult.valid) {
@@ -61,7 +66,7 @@ export default class RepoValidate extends Command {
 		} else if (validationResult.hasPom) {
 			this.log(`${repoPath}: invalid (${validationResult.error || 'validation failed'})`);
 		} else {
-			this.log(`${repoPath}: not a Maven project`);
+			this.log(`${repoPath}: not a Maven project (${validationResult.error || 'No pom.xml found'})`);
 		}
 
 		if (!validationResult.valid) {
