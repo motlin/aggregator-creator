@@ -7,6 +7,7 @@ CLI tool that creates Maven aggregator POMs from a set of repositories. Maven ag
 <!-- toc -->
 * [aggregator-creator](#aggregator-creator)
 * [Overview](#overview)
+* [Installation](#installation)
 * [Environment Setup](#environment-setup)
 * [Usage](#usage)
 * [Complete Workflow](#complete-workflow)
@@ -39,6 +40,35 @@ The aggregator-creator CLI tool helps you manage Maven repositories and create M
 5. Create a Maven aggregator POM that combines multiple repositories
 
 This tool is especially useful for organizations with modular projects that need to be built together.
+
+# Installation
+
+The npm package is `aggregator-creator` and it installs a CLI named `aggregator`.
+
+Requirements:
+
+- Node.js 18 or later
+- [GitHub CLI](https://cli.github.com/) (`gh`), authenticated with `gh auth login`, for `repo:list`, `repo:clone`, `repo:topic`, and `repo:process`
+- Maven (`mvn`) on the `PATH` for `repo:validate`, `repo:process`, and `aggregator:create`
+
+Install globally from npm:
+
+```sh
+npm install --global aggregator-creator
+aggregator --help
+```
+
+Or run from a clone of this repository:
+
+```sh
+git clone https://github.com/motlin/aggregator-creator.git
+cd aggregator-creator
+npm install
+npm run build
+./bin/run.js --help
+```
+
+During development, `./bin/dev.js` runs the TypeScript sources directly without a build step. The examples below use `./bin/run.js`; substitute `aggregator` when the CLI is installed globally.
 
 # Environment Setup
 
