@@ -1,8 +1,10 @@
 catalog:
     vite-plus: 1.1.0
     vite: npm:@voidzero-dev/vite-plus-core@1.1.0
+    vitest: 5.0.3
 allowBuilds:
     esbuild: true
+    fallow: true
     unrs-resolver: true
 overrides:
     vite@*: 'catalog:'

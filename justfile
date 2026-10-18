@@ -13,31 +13,32 @@ install:
 install-ci:
     pnpm install --frozen-lockfile
 
-# `pnpm run lint`
+# `pnpm run oxlint`
 [group('dev')]
 lint: install
-    pnpm run lint
+    pnpm run oxlint
 
-# `pnpm run ci:eslint`
+# `pnpm run oxlint:ci`
 [group('ci')]
 eslint-ci: install-ci
-    pnpm run ci:eslint
+    pnpm run oxlint:ci
 
-# `pnpm run format`
+# `biome format --write . && pnpm run fmt`
 [group('dev')]
 format: install
     pre-commit run just-fmt --all-files
-    pnpm run format
+    pnpm exec biome format --write .
+    pnpm run fmt
 
-# `pnpm run ci:biome`
+# `biome format`
 [group('ci')]
 biome-ci: install-ci
-    pnpm run ci:biome
+    pnpm exec biome format
 
-# `pnpm run ci:prettier`
+# `pnpm run fmt:ci`
 [group('ci')]
 prettier-ci: install-ci
-    pnpm run ci:prettier
+    pnpm run fmt:ci
 
 # `pnpm run test:run`
 [group('dev')]
