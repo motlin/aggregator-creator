@@ -3,76 +3,76 @@
 default:
     @just --list --unsorted
 
-# `npm install`
+# `pnpm install`
 [group('dev')]
 install:
-    npm install
+    pnpm install
 
-# `npm ci`
+# `pnpm install --frozen-lockfile`
 [group('ci')]
 install-ci:
-    npm ci
+    pnpm install --frozen-lockfile
 
-# `npm run lint`
+# `pnpm run lint`
 [group('dev')]
 lint: install
-    npm run lint
+    pnpm run lint
 
-# `npm run ci:eslint`
+# `pnpm run ci:eslint`
 [group('ci')]
 eslint-ci: install-ci
-    npm run ci:eslint
+    pnpm run ci:eslint
 
-# `npm run format`
+# `pnpm run format`
 [group('dev')]
 format: install
     pre-commit run just-fmt --all-files
-    npm run format
+    pnpm run format
 
-# `npm run ci:biome`
+# `pnpm run ci:biome`
 [group('ci')]
 biome-ci: install-ci
-    npm run ci:biome
+    pnpm run ci:biome
 
-# `npm run ci:prettier`
+# `pnpm run ci:prettier`
 [group('ci')]
 prettier-ci: install-ci
-    npm run ci:prettier
+    pnpm run ci:prettier
 
-# `npm run test:run`
+# `pnpm run test:run`
 [group('dev')]
 test: install
-    CHAI_TRUNCATE_THRESHOLD=0 npm test
+    CHAI_TRUNCATE_THRESHOLD=0 pnpm test
 
-# `npm run test:run`
+# `pnpm run test:run`
 [group('ci')]
 test-ci: install-ci
-    CHAI_TRUNCATE_THRESHOLD=0 npm run test:run
+    CHAI_TRUNCATE_THRESHOLD=0 pnpm run test:run
 
-# `npm run typecheck`
+# `pnpm run typecheck`
 [group('dev')]
 typecheck: install
-    npm run typecheck
+    pnpm run typecheck
 
-# `npm run typecheck`
+# `pnpm run typecheck`
 [group('ci')]
 typecheck-ci: install-ci
-    npm run typecheck
+    pnpm run typecheck
 
-# `npm run build`
+# `pnpm run build`
 [group('dev')]
 build: install
-    npm run build
+    pnpm run build
 
-# `npm run build`
+# `pnpm run build`
 [group('ci')]
 build-ci: install-ci
-    npm run build
+    pnpm run build
 
-# `npm run prepack`
+# `pnpm run prepack`
 [group('dev')]
 manifest: install
-    npm run prepack
+    pnpm run prepack
 
 # Run repo:list command to list GitHub repositories
 # Examples:

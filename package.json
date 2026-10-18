@@ -42,7 +42,8 @@
 		"sinon": "22.0.0",
 		"ts-node": "10.9.2",
 		"tsx": "4.23.0",
-		"typescript": "6.0.3"
+		"typescript": "6.0.3",
+		"vite-plus": "catalog:"
 	},
 	"engines": {
 		"node": ">=18.0.0"
@@ -94,14 +95,15 @@
 		"ci:biome": "biome format",
 		"ci:typecheck": "tsc --noEmit",
 		"postpack": "shx rm -f oclif.manifest.json",
-		"posttest": "npm run lint",
+		"posttest": "pnpm run lint",
 		"prepack": "oclif manifest && oclif readme",
 		"test": "CHAI_TRUNCATE_THRESHOLD=0 mocha --forbid-only \"test/**/*.test.ts\"",
 		"version": "oclif readme && git add README.md",
-		"prepublishOnly": "npm run build && npm test && npm run lint",
+		"prepublishOnly": "pnpm run build && pnpm test && pnpm run lint",
 		"release:patch": "npm version patch && npm publish",
 		"release:minor": "npm version minor && npm publish",
 		"release:major": "npm version major && npm publish"
 	},
-	"types": "dist/index.d.ts"
+	"types": "dist/index.d.ts",
+	"packageManager": "pnpm@12.11.2"
 }
