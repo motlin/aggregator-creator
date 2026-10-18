@@ -12,4 +12,13 @@ oclif.manifest.json
 yarn.lock
 
 tsconfig.tsbuildinfo
-**/.claude/settings.local.json
+JUSTFILE_BRANCH
+
+.envrc
+
+# Local documentation and context
+.llm/
+/.claude/*
+!/.claude/commands/
+!/.claude/includes/
+/.claude/settings.local.json
