@@ -1,4 +1,4 @@
-export const GH_NOT_AUTHENTICATED_MESSAGE =
+const GH_NOT_AUTHENTICATED_MESSAGE =
 	'GitHub CLI is not authenticated. Run `gh auth login` or set the GH_TOKEN environment variable.';
 
 export interface GhErrorDescription {

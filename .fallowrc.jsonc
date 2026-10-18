@@ -1,0 +1,11 @@
+{
+	"$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+	// oclif discovers commands from src/commands at runtime, and bin/*.js are the CLI launchers.
+	"entry": ["src/index.ts", "src/commands/**/*.ts", "bin/*.js"],
+	// Used without an import: oclif loads @oclif/plugin-help from package.json's
+	// oclif.plugins, and the markdownlint-cli2 pre-commit hook runs the binary.
+	"ignoreDependencies": ["@oclif/plugin-help", "markdownlint-cli2"],
+	"rules": {
+		"unused-dependencies": "error",
+	},
+}
