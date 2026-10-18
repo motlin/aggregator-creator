@@ -540,7 +540,7 @@ USAGE
 
 FLAGS
   -g, --language=<value>...       Language filter
-  -l, --limit=<value>             Max repositories
+  -l, --limit=<value>             Max repositories (GitHub search returns at most 100)
   -o, --owner=<value>...          GitHub username/org to filter by
   -t, --topic=<value>...          Topic filter
   -v, --verbose                   Show verbose output during listing

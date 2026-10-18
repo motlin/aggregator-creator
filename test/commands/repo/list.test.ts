@@ -349,4 +349,16 @@ describe('repo:list', function () {
 			expect(repo.topics).to.not.include('game');
 		}
 	});
+	for (const [limit, expectation] of [
+		['0', 'greater than or equal to 1'],
+		['-1', 'greater than or equal to 1'],
+		['101', 'less than or equal to 100'],
+	]) {
+		it(`should reject --limit ${limit} because GitHub search returns 1 to 100 results per page`, async () => {
+			const result = await runCommand(['repo:list', '--owner', 'motlin', '--limit', limit], root);
+			expect(result.error?.message).to.equal(
+				`Parsing --limit \n\tExpected an integer ${expectation} but received: ${limit}\nSee more help with --help`,
+			);
+		});
+	}
 });

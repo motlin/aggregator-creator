@@ -34,7 +34,12 @@ export default class RepoList extends Command {
 			options: ['public', 'private', 'all'],
 			default: 'public',
 		}),
-		limit: Flags.integer({char: 'l', description: 'Max repositories'}),
+		limit: Flags.integer({
+			char: 'l',
+			description: 'Max repositories (GitHub search returns at most 100)',
+			min: 1,
+			max: 100,
+		}),
 		verbose: Flags.boolean({
 			char: 'v',
 			description: 'Show verbose output during listing',
