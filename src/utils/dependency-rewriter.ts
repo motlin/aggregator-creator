@@ -131,21 +131,4 @@ export class DependencyRewriter {
 
 		return hasUpdates;
 	}
-
-	async cleanupBackupPoms(): Promise<void> {
-		this.log(`│  │ 🧹 Cleaning up backup pom files...`);
-
-		for (const module of this.options.modules) {
-			const backupPomPath = path.join(this.options.aggregatorPath, module, "pom.xml.versionsBackup");
-
-			// oxlint-disable-next-line no-await-in-loop -- modules are cleaned one at a time so verbose log lines follow module order
-			if (await fs.pathExists(backupPomPath)) {
-				// oxlint-disable-next-line no-await-in-loop -- see above
-				await fs.remove(backupPomPath);
-				if (this.options.verbose) {
-					this.log(`│  │   → Removed ${chalk.yellow(path.join(module, "pom.xml.versionsBackup"))}`);
-				}
-			}
-		}
-	}
 }

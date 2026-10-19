@@ -36,6 +36,11 @@ export default defineConfig({
 			check: {
 				command: "vp check",
 			},
+			// PROJECT-SPECIFIC: declares dist/** so a cache hit restores the compiled CLI; a package.json script's cache replays only its log.
+			build: {
+				command: "shx rm -rf dist && tsc -b",
+				cache: {output: ["dist/**"]},
+			},
 			"test:run": {
 				command: "node node_modules/vitest/dist/cli.js run",
 				cache: {

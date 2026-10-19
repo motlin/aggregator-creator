@@ -19,7 +19,6 @@ export const repositorySchema = z.object({
 export const repositoriesSchema = z.array(repositorySchema);
 
 export type Repository = z.infer<typeof repositorySchema>;
-export type Repositories = z.infer<typeof repositoriesSchema>;
 
 const validatedRepositorySchema = repositorySchema.extend({
 	path: z.string(),
@@ -30,11 +29,8 @@ const validatedRepositorySchema = repositorySchema.extend({
 export const validatedRepositoriesSchema = z.array(validatedRepositorySchema);
 
 export type ValidatedRepository = z.infer<typeof validatedRepositorySchema>;
-export type ValidatedRepositories = z.infer<typeof validatedRepositoriesSchema>;
 
 // GitHub API response schemas
 export const githubTopicsResponseSchema = z.object({
 	names: z.array(z.string()),
 });
-
-export type GithubTopicsResponse = z.infer<typeof githubTopicsResponseSchema>;

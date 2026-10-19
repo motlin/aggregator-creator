@@ -3,95 +3,81 @@
 default:
     @just --list --unsorted
 
-# `pnpm install`
-[group('dev')]
+ci := env("CI", "")
+
+export PATH := justfile_directory() / "node_modules/.bin" + ":" + env("PATH")
+
+# Install dependencies
+[group('setup')]
 install:
     pnpm install
 
-# `pnpm install --frozen-lockfile`
-[group('ci')]
-install-ci:
-    pnpm install --frozen-lockfile
-
-# `pnpm run oxlint`
-[group('dev')]
+# Run linter
 lint: install
-    pnpm run oxlint
+    vp lint {{ if ci != "" { "--format github" } else { "--fix" } }}
 
-# `pnpm run oxlint:ci`
-[group('ci')]
-eslint-ci: install-ci
-    pnpm run oxlint:ci
-
-# `pnpm run fmt`
-[group('dev')]
+# Run formatter
 format: install
     pre-commit run just-fmt --all-files
-    pnpm run fmt
+    vp fmt {{ if ci != "" { "--check" } else { "" } }}
 
-# `pnpm run fmt:ci`
-[group('ci')]
-prettier-ci: install-ci
-    pnpm run fmt:ci
+# Run checks (format + lint + typecheck)
+check *args: install
+    vp run --cache check {{ if ci != "" { "" } else { "--fix" } }} {{ args }}
 
-# `pnpm run test:run`
-[group('dev')]
-test: install
-    CHAI_TRUNCATE_THRESHOLD=0 pnpm test
+# Run tests
+test *args: install
+    vp run --cache test:run {{ args }}
 
-# `pnpm exec vp run test:run`
-[group('ci')]
-test-ci: install-ci
-    CHAI_TRUNCATE_THRESHOLD=0 pnpm exec vp run test:run
-
-# `pnpm run typecheck`
-[group('dev')]
+# Type-check the project
 typecheck: install
-    pnpm run typecheck
+    vp run typecheck
 
-# `pnpm run typecheck`
-[group('ci')]
-typecheck-ci: install-ci
-    pnpm run typecheck
-
-# `pnpm run build`
-[group('dev')]
+# Build the project
 build: install
-    pnpm run build
+    vp run --cache build
 
-# `pnpm run build`
-[group('ci')]
-build-ci: install-ci
-    pnpm run build
-
-# `pnpm run prepack`
-[group('dev')]
+# Generate the oclif manifest and README
 manifest: install
-    pnpm run prepack
+    vp run prepack
 
-# Run repo:list command to list GitHub repositories
+# Apply safe Fallow fixes locally, then reject remaining dead code
+fallow: install
+    {{ if ci == "" { "vp run fallow" } else { "true" } }}
+    vp run fallow:ci
+
+# vp run fallow:ci
+fallow-check: install
+    vp run fallow:ci
+
+# Run pre-commit hooks on all files (same as CI's pre-commit job)
+pre-commit: install
+    pre-commit run --all-files
+
 # Examples:
-#   just repo-list motlin
-#   just repo-list motlin --limit 100
-#   just repo-list motlin --language Java
-#   just repo-list motlin --topic maven
-#   just repo-list motlin --language Java --limit 100
-#   just repo-list motlin --visibility public --type org
-#   just repo-list motlin --visibility all --type all
+#   just repo-list --owner motlin
+#   just repo-list --owner motlin -- --limit 100
+#   just repo-list --owner motlin -- --language Java
+#   just repo-list --owner motlin -- --topic maven
+#   just repo-list --owner motlin -- --language Java --limit 100
+#   just repo-list --owner motlin -- --visibility public --type org
+#   just repo-list --owner motlin -- --visibility all --type all
 #
-# Short flag alternatives:
+# Short flag alternatives (after --):
 #   -l = --limit
 #   -g = --language
 #   -t = --topic
-# -o = --owner
+# Run repo:list command to list GitHub repositories
+[arg("owner", long, help="GitHub user or organization")]
 [group('integration-test')]
-repo-list OWNER *FLAGS="": build
-    @echo "🔍 Listing GitHub repositories for {{ OWNER }}..."
-    ./bin/run.js repo:list --owner {{ OWNER }} {{ FLAGS }}
+repo-list owner *flags="": build
+    @echo "🔍 Listing GitHub repositories for {{ owner }}..."
+    ./bin/run.js repo:list --owner {{ owner }} {{ flags }}
 
 # Find and validate Maven repositories, then topic them
+[arg("clean", long="no-clean", value="false", help="Keep the test directory")]
 [group('integration-test')]
-find-validate-repos CLEAN="true": build
+find-validate-repos clean="true": build
     #!/usr/bin/env bash
     set -e
 
@@ -205,7 +191,7 @@ find-validate-repos CLEAN="true": build
     echo "✅ Find and validate workflow completed!"
 
     # Clean up or preserve test directory based on parameter
-    if [ "{{ CLEAN }}" = "true" ]; then
+    if [ "{{ clean }}" = "true" ]; then
         echo "🧹 Cleaning up test directory..."
         rm -rf "${TEST_DIR}"
     else
@@ -216,8 +202,9 @@ find-validate-repos CLEAN="true": build
     fi
 
 # Create aggregator from repositories already topiced with 'maven' topic
+[arg("clean", long="no-clean", value="false", help="Keep the test directory")]
 [group('integration-test')]
-create-aggregator-from-topiced CLEAN="true": build
+create-aggregator-from-topiced clean="true": build
     #!/usr/bin/env bash
     set -e
 
@@ -311,7 +298,7 @@ create-aggregator-from-topiced CLEAN="true": build
     echo "✅ Create aggregator workflow completed!"
 
     # Clean up or preserve test directory based on parameter
-    if [ "{{ CLEAN }}" = "true" ]; then
+    if [ "{{ clean }}" = "true" ]; then
         echo "🧹 Cleaning up test directory..."
         rm -rf "${TEST_DIR}"
     else
@@ -322,8 +309,9 @@ create-aggregator-from-topiced CLEAN="true": build
     fi
 
 # Run a complete workflow test demonstrating the full process
+[arg("clean", long="no-clean", value="false", help="Keep the test directories")]
 [group('integration-test')]
-workflow-test CLEAN="true": build
+workflow-test clean="true": build
     #!/usr/bin/env bash
     set -e
 
@@ -338,18 +326,23 @@ workflow-test CLEAN="true": build
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "Running: just find-validate-repos"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    just find-validate-repos "{{ CLEAN }}"
+    just find-validate-repos {{ if clean == "true" { "" } else { "--no-clean" } }}
 
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "Running: just create-aggregator-from-topiced"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    just create-aggregator-from-topiced "{{ CLEAN }}"
+    just create-aggregator-from-topiced {{ if clean == "true" { "" } else { "--no-clean" } }}
 
     echo ""
     echo "🎉 Complete workflow test finished!"
 
 # Run all pre-commit checks
-[group('dev')]
-precommit: format lint typecheck build test manifest
-    @echo "✅ All pre-commit checks passed!"
+[arg("quick", long, value="true", help="Skip tests")]
+verify quick="": check build fallow pre-commit
+    {{ if quick != "true" { "just test" } else { "true" } }}
+    @echo "All pre-commit checks passed!"
+
+# Deprecated alias for `verify`
+[arg("quick", long, value="true", help="Skip tests")]
+precommit quick="": (verify quick)

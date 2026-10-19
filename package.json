@@ -30,7 +30,6 @@
 	},
 	"scripts": {
 		"preinstall": "npx only-allow pnpm",
-		"build": "shx rm -rf dist && tsc -b",
 		"oxlint": "vp lint . --fix",
 		"oxlint:ci": "vp lint . --format github",
 		"fmt": "vp fmt",
@@ -43,7 +42,7 @@
 		"postpack": "shx rm -f oclif.manifest.json",
 		"prepack": "oclif manifest && oclif readme",
 		"version": "oclif readme && git add README.md",
-		"prepublishOnly": "pnpm run build && vp run test:run && pnpm run oxlint:ci",
+		"prepublishOnly": "vp run build && vp run test:run && pnpm run oxlint:ci",
 		"release:patch": "npm version patch && npm publish",
 		"release:minor": "npm version minor && npm publish",
 		"release:major": "npm version major && npm publish"
