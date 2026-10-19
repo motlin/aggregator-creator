@@ -4,32 +4,16 @@ CLI tool that creates Maven aggregator POMs from a set of repositories. Maven ag
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-24292e.svg)](https://github.com/motlin/aggregator-creator)
 
-<!-- toc -->
-* [aggregator-creator](#aggregator-creator)
 * [Overview](#overview)
 * [Installation](#installation)
 * [Environment Setup](#environment-setup)
 * [Usage](#usage)
 * [Complete Workflow](#complete-workflow)
-* [Process repositories individually](#process-repositories-individually)
-* [Then create the aggregator](#then-create-the-aggregator)
-* [Run the workflow test](#run-the-workflow-test)
-* [Run workflow test and keep temporary files](#run-workflow-test-and-keep-temporary-files)
-* [JSON output structure](#json-output-structure)
-* [Clone a single repository](#clone-a-single-repository)
-* [Only process Java repositories](#only-process-java-repositories)
-* [Skip archived repositories](#skip-archived-repositories)
-* [Process repositories and collect results](#process-repositories-and-collect-results)
-* [Preview what would be done without making changes](#preview-what-would-be-done-without-making-changes)
-* [Clone only non-forked Java repos and create aggregator](#clone-only-non-forked-java-repos-and-create-aggregator)
-* [Create aggregator from cloned repos](#create-aggregator-from-cloned-repos)
-* [Process repos and handle errors gracefully](#process-repos-and-handle-errors-gracefully)
 * [Directory Structure](#directory-structure)
 * [License](#license)
 * [Commands](#commands)
-<!-- tocstop -->
 
-# Overview
+## Overview
 
 The aggregator-creator CLI tool helps you manage Maven repositories and create Maven aggregator POMs:
 
@@ -41,15 +25,15 @@ The aggregator-creator CLI tool helps you manage Maven repositories and create M
 
 This tool is especially useful for organizations with modular projects that need to be built together.
 
-# Installation
+## Installation
 
 The npm package is `aggregator-creator` and it installs a CLI named `aggregator`.
 
 Requirements:
 
-- Node.js 18 or later
-- [GitHub CLI](https://cli.github.com/) (`gh`), authenticated with `gh auth login`, for `repo:list`, `repo:clone`, `repo:topic`, and `repo:process`
-- Maven (`mvn`) on the `PATH` for `repo:validate`, `repo:process`, and `aggregator:create`
+* Node.js 18 or later
+* [GitHub CLI](https://cli.github.com/) (`gh`), authenticated with `gh auth login`, for `repo:list`, `repo:clone`, `repo:topic`, and `repo:process`
+* Maven (`mvn`) on the `PATH` for `repo:validate`, `repo:process`, and `aggregator:create`
 
 Install globally from npm:
 
@@ -70,11 +54,11 @@ npm run build
 
 During development, `./bin/dev.js` runs the TypeScript sources directly without a build step. The examples below use `./bin/run.js`; substitute `aggregator` when the CLI is installed globally.
 
-# Environment Setup
+## Environment Setup
 
 The project uses [mise](https://mise.jdx.dev/) to manage development dependencies. All required tools are installed automatically when you run commands through the project's justfile.
 
-# Usage
+## Usage
 
 The aggregator-creator CLI provides commands for managing repositories and creating aggregator POMs. All commands follow the pattern:
 
@@ -86,26 +70,26 @@ The main command groups include:
 
 **Single Repository Commands:**
 
-- `repo:clone` - Clone a GitHub repository, or every repository piped from `repo:list --json`
-- `repo:validate` - Validate a single Maven repository
-- `repo:topic` - Topic a single GitHub repository with a topic
-- `repo:process` - Process a single repository (clone, validate, and topic)
+* `repo:clone` - Clone a GitHub repository, or every repository piped from `repo:list --json`
+* `repo:validate` - Validate a single Maven repository
+* `repo:topic` - Topic a single GitHub repository with a topic
+* `repo:process` - Process a single repository (clone, validate, and topic)
 
 **Multiple Repository Commands:**
 
-- `repo:list` - Find GitHub repositories matching specific criteria
+* `repo:list` - Find GitHub repositories matching specific criteria
 
 **Aggregator Commands:**
 
-- `aggregator:create` - Generate a Maven aggregator POM from a directory of repositories
+* `aggregator:create` - Generate a Maven aggregator POM from a directory of repositories
 
 For detailed usage information on each command, see the [Commands](#commands) section below.
 
-# Complete Workflow
+## Complete Workflow
 
 There are two approaches to process repositories:
 
-## Processing Repositories
+### Processing Repositories
 
 Use `repo:process` to handle each repository individually:
 
@@ -135,11 +119,11 @@ just workflow-test
 just workflow-test false
 ```
 
-## Command Output Reference
+### Command Output Reference
 
 Each command returns structured output that can be used for chaining and automation. All commands support a `--json` flag for machine-readable output.
 
-### repo:list Output
+#### repo:list Output
 
 Lists repositories with metadata that can be filtered and piped to other commands:
 
@@ -162,7 +146,7 @@ Lists repositories with metadata that can be filtered and piped to other command
 ]
 ```
 
-### repo:clone Output
+#### repo:clone Output
 
 Returns the clone status and path to the cloned repository:
 
@@ -192,7 +176,7 @@ When the repository already exists:
 }
 ```
 
-### repo:validate Output
+#### repo:validate Output
 
 Checks if a directory contains a valid Maven project:
 
@@ -220,7 +204,7 @@ When validation fails:
 }
 ```
 
-### repo:topic Output
+#### repo:topic Output
 
 Adds a GitHub topic to a repository:
 
@@ -248,7 +232,7 @@ When the topic already exists:
 }
 ```
 
-### repo:process Output
+#### repo:process Output
 
 Combines clone, validate, and topic operations with comprehensive results:
 
@@ -284,9 +268,10 @@ When processing fails:
 }
 ```
 
-### aggregator:create Output
+#### aggregator:create Output
 
 Returns details about the created aggregator POM:
+
 ```bash
 ./bin/run.js aggregator:create ./maven-repos --groupId com.example --json
 ```
@@ -312,11 +297,11 @@ Returns details about the created aggregator POM:
 }
 ```
 
-## Command Composition Examples
+### Command Composition Examples
 
 The JSON outputs enable powerful command composition using tools like `jq`:
 
-### Filter and Process by Language
+#### Filter and Process by Language
 
 ```bash
 # Only process Java repositories
@@ -327,7 +312,8 @@ The JSON outputs enable powerful command composition using tools like `jq`:
   done
 ```
 
-### Process Only Non-Archived Repositories
+#### Process Only Non-Archived Repositories
+
 ```bash
 # Skip archived repositories
 ./bin/run.js repo:list --owner motlin --include-archived --json | \
@@ -337,7 +323,7 @@ The JSON outputs enable powerful command composition using tools like `jq`:
   done
 ```
 
-### Collect Processing Results
+#### Collect Processing Results
 
 ```bash
 # Process repositories and collect results
@@ -353,7 +339,8 @@ The JSON outputs enable powerful command composition using tools like `jq`:
 }'
 ```
 
-### Dry Run Analysis
+#### Dry Run Analysis
+
 ```bash
 # Preview what would be done without making changes
 ./bin/run.js repo:list --owner motlin --topic java --json | jq -c '.[]' | \
@@ -366,7 +353,7 @@ The JSON outputs enable powerful command composition using tools like `jq`:
   }'
 ```
 
-### Create Aggregator from Filtered Repos
+#### Create Aggregator from Filtered Repos
 
 ```bash
 # Clone only non-forked Java repos and create aggregator
@@ -386,7 +373,7 @@ The JSON outputs enable powerful command composition using tools like `jq`:
   }'
 ```
 
-### Pipeline with Error Handling
+#### Pipeline with Error Handling
 
 ```bash
 # Process repos and handle errors gracefully
@@ -406,13 +393,13 @@ The JSON outputs enable powerful command composition using tools like `jq`:
   }'
 ```
 
-# Directory Structure
+## Directory Structure
 
 The aggregator-creator CLI expects and creates specific directory structures for different operations:
 
-- **For cloning repositories:** Creates an `owner/repo` directory structure
+* **For cloning repositories:** Creates an `owner/repo` directory structure
 
-    ```
+    ```text
     target-directory/
     ├── owner1/
     │   ├── repo1/
@@ -421,9 +408,9 @@ The aggregator-creator CLI expects and creates specific directory structures for
         └── repo3/
     ```
 
-- **For validating repositories:** Expects either a single repository or an `owner/repo` structure
+* **For validating repositories:** Expects either a single repository or an `owner/repo` structure
 
-    ```
+    ```text
     repos-directory/
     ├── owner1/
     │   ├── repo1/  # Must contain pom.xml to be valid
@@ -432,8 +419,9 @@ The aggregator-creator CLI expects and creates specific directory structures for
         └── repo3/
     ```
 
-- **For creating an aggregator:** Creates a pom.xml in the specified directory
-    ```
+* **For creating an aggregator:** Creates a pom.xml in the specified directory
+
+    ```text
     maven-repos/
     ├── pom.xml  # Created aggregator POM
     ├── owner1/
@@ -443,12 +431,13 @@ The aggregator-creator CLI expects and creates specific directory structures for
         └── repo3/
     ```
 
-# License
+## License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
-# Commands
+## Commands
 
+<!-- markdownlint-disable MD040 -- oclif readme generates fences without a language -->
 <!-- commands -->
 * [`aggregator aggregator create [DIRECTORY]`](#aggregator-aggregator-create-directory)
 * [`aggregator help [COMMAND]`](#aggregator-help-command)
@@ -711,3 +700,4 @@ EXAMPLES
 
 _See code: [src/commands/repo/validate.ts](https://github.com/motlin/aggregator-creator/blob/v0.0.0/src/commands/repo/validate.ts)_
 <!-- commandsstop -->
+<!-- markdownlint-enable MD040 -->
