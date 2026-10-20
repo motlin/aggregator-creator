@@ -41,8 +41,10 @@ export default defineConfig({
 				command: "shx rm -rf dist && tsc -b",
 				cache: {output: ["dist/**"]},
 			},
+			// PROJECT-SPECIFIC: oclif loads commands from dist/commands, so tests need a fresh build.
 			"test:run": {
 				command: "node node_modules/vitest/dist/cli.js run",
+				dependsOn: ["build"],
 				cache: {
 					input: [{auto: true}, "!node_modules/.vitest-cache/**"],
 					output: [],
