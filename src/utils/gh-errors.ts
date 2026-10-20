@@ -8,10 +8,11 @@ export interface GhErrorDescription {
 
 /**
  * Turn the message of a failed gh invocation into a short explanation, collapsing gh's multi-line
- * "please run gh auth login" hint into one sentence so callers can report it once.
+ * "please run gh auth login" hint (or, inside GitHub Actions, its "set the GH_TOKEN environment variable"
+ * hint) into one sentence so callers can report it once.
  */
 export function describeGhError(message: string): GhErrorDescription {
-	if (message.includes("gh auth login")) {
+	if (message.includes("gh auth login") || message.includes("set the GH_TOKEN environment variable")) {
 		return {authenticated: false, message: GH_NOT_AUTHENTICATED_MESSAGE};
 	}
 
