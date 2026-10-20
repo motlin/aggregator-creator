@@ -73,7 +73,10 @@ jobs:
         with:
           path: ~/.local/share/pnpm/store
           key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+      # PROJECT-SPECIFIC: repo command tests call the real gh CLI.
       - run: just test
+        env:
+          GH_TOKEN: ${{ secrets.CI_GITHUB_PAT_FOR_TESTS || github.token }}
 
   markdownlint:
     runs-on: ubuntu-latest
