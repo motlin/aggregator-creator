@@ -190,8 +190,8 @@ importers:
         specifier: 9.6.1
         version: 9.6.1
       fs-extra:
-        specifier: 11.3.6
-        version: 11.3.6
+        specifier: 11.4.1
+        version: 11.4.1
       inquirer:
         specifier: 14.2.3
         version: 14.2.3(@types/node@26.6.5)
@@ -2199,8 +2199,8 @@ packages:
     resolution: {integrity: sha512-yDYSgNMraqvnxiEXO4hi88+YZxaHC6QKzb5N84iRCTDeRO7ZALpir/lVmf/uXUhnwUr2O4HU8s/n6x+yNjQkHw==}
     engines: {node: '>= 14.17'}
 
-  fs-extra@11.3.6:
-    resolution: {integrity: sha512-w8ZNZr2mKIc7qeNaQ9AVPT1+iFaI+Avd4xudVOvdDJ8VytREi1Ft5Ih7hd9jjehod8vAM5GMsfQ/TpPf4EyoEA==}
+  fs-extra@11.4.1:
+    resolution: {integrity: sha512-KYAb4c9BJQI6QqGKthV68OHe0badztdXJWKo0WtBA9IuCFPTKvE5ZdUBglP833aMjhaSPNO4A5j/EkzZtGlKjA==}
     engines: {node: '>=14.14'}
 
   fs-extra@8.1.0:
@@ -5013,7 +5013,7 @@ snapshots:
 
   form-data-encoder@2.1.4: {}
 
-  fs-extra@11.3.6:
+  fs-extra@11.4.1:
     dependencies:
       graceful-fs: 4.2.11
       jsonfile: 6.1.0
