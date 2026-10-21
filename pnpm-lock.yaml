@@ -206,8 +206,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@oclif/test':
-        specifier: 4.1.20
-        version: 4.1.20(@oclif/core@4.11.6)(supports-color@8.1.1)
+        specifier: 4.2.0
+        version: 4.2.0(@oclif/core@4.11.6)(supports-color@8.1.1)
       '@types/chai':
         specifier: 5.2.3
         version: 5.2.3
@@ -940,8 +940,8 @@ packages:
     resolution: {integrity: sha512-M11GUdHKOoSAguv7eBBgtgUVuvaH5nlIlZA1kvOmSIpjrDQEvZwWBjKcyXb0icNnxdGbpaItILAOkKqVHz/ptw==}
     engines: {node: '>=22.0.0'}
 
-  '@oclif/test@4.1.20':
-    resolution: {integrity: sha512-gvamjt80ZPDeYQlwdeXDce/zTrSDkcw5LdTqTuM1L2cyQ0bu9R7DbB4stNLBjtAX+CG0JCuJzpLbPi+Ui769uQ==}
+  '@oclif/test@4.2.0':
+    resolution: {integrity: sha512-CPNWjgtRnvLs9R2lKggIWg3wZM7TcV5LEymgnF6y9N7NkgiTF/YLo9sZR+FeIsn7b/6iffHcsdwuue0g1CGebQ==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       '@oclif/core': '>= 3.0.0'
@@ -4064,7 +4064,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@oclif/test@4.1.20(@oclif/core@4.11.6)(supports-color@8.1.1)':
+  '@oclif/test@4.2.0(@oclif/core@4.11.6)(supports-color@8.1.1)':
     dependencies:
       '@oclif/core': 4.11.6
       ansis: 3.17.0
