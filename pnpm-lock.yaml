@@ -178,8 +178,8 @@ importers:
   .:
     dependencies:
       '@oclif/core':
-        specifier: 4.11.6
-        version: 4.11.6
+        specifier: 5.1.8
+        version: 5.1.8
       '@oclif/plugin-help':
         specifier: 7.0.4
         version: 7.0.4
@@ -207,7 +207,7 @@ importers:
     devDependencies:
       '@oclif/test':
         specifier: 4.2.0
-        version: 4.2.0(@oclif/core@4.11.6)(supports-color@8.1.1)
+        version: 4.2.0(@oclif/core@5.1.8)(supports-color@8.1.1)
       '@types/chai':
         specifier: 5.2.3
         version: 5.2.3
@@ -915,10 +915,6 @@ packages:
   '@nodelib/fs.walk@1.2.8':
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
-
-  '@oclif/core@4.11.6':
-    resolution: {integrity: sha512-8OTkBkWA0HJz2bSIQI0AoiIeL7ok4bZhUaJNEzfLu+iAn3liAyj4KmXRdXAUZBCjPEfdBTpyxKDAg1l/BDJKVg==}
-    engines: {node: '>=18.0.0'}
 
   '@oclif/core@5.1.8':
     resolution: {integrity: sha512-K1b3zdmbwANV9Jk+QN8aFvnXY/IhfWRnmhWn/V57h7alzbtck2je2DVVf0EkA01FokreF7Tpe+7hiGS87q30SA==}
@@ -2344,11 +2340,6 @@ packages:
   is-decimal@2.0.1:
     resolution: {integrity: sha512-AAB9hiomQs5DXWcRB1rqsxGUstbRroFOPPVAomNk/3XHR5JyEZChOyTWe2oayKnsSsr/kcGqF+z6yuH6HHpN0A==}
 
-  is-docker@2.2.1:
-    resolution: {integrity: sha512-F+i2BKsFrH66iaUFc0woD8sLy8getkwTwtOBjvs56Cx4CgJDeKQeqfz8wAYiSb8JOprWhHH5p77PbmYCvvUuXQ==}
-    engines: {node: '>=8'}
-    hasBin: true
-
   is-docker@3.0.0:
     resolution: {integrity: sha512-eljcgEDlEns/7AXFosB5K/2nCM4P7FQPkGc/DWLy5rmFEWvZayGrik1d9/QIY5nJ4f9YsVvBkA6kJpHn9rISdQ==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
@@ -2405,10 +2396,6 @@ packages:
   is-unicode-supported@2.1.0:
     resolution: {integrity: sha512-mE00Gnza5EEB3Ds0HfMyllZzbBrmLOX3vfWoj9A9PEnTfratQ/BcaJOuMhnkhjXvb2+FkY3VuHqtAGpTPmglFQ==}
     engines: {node: '>=18'}
-
-  is-wsl@2.2.0:
-    resolution: {integrity: sha512-fKzAra0rGJUUBwGBgNkHZuToZcn+TtXHpeCgmkMJMMYx1sQDYaCSyjJBSCa2nH1DGm7s3n1oBnohoVTBaN7Lww==}
-    engines: {node: '>=8'}
 
   is-wsl@3.1.1:
     resolution: {integrity: sha512-e6rvdUCiQCAuumZslxRJWR/Doq4VpPR82kqclvcS0efgt430SlGIk05vdCN58+VrzgtIcfNODjozVielycD4Sw==}
@@ -4009,27 +3996,6 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.19.1
 
-  '@oclif/core@4.11.6':
-    dependencies:
-      ansi-escapes: 4.3.2
-      ansis: 3.17.0
-      clean-stack: 3.0.1
-      cli-spinners: 2.9.2
-      debug: 4.4.3(supports-color@8.1.1)
-      ejs: 3.1.10
-      get-package-type: 0.1.0
-      indent-string: 4.0.0
-      is-wsl: 2.2.0
-      lilconfig: 3.1.3
-      minimatch: 10.2.5
-      semver: 7.8.5
-      string-width: 4.2.3
-      supports-color: 8.1.1
-      tinyglobby: 0.2.17
-      widest-line: 3.1.0
-      wordwrap: 1.0.0
-      wrap-ansi: 7.0.0
-
   '@oclif/core@5.1.8':
     dependencies:
       ansi-escapes: 4.3.2
@@ -4075,9 +4041,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@oclif/test@4.2.0(@oclif/core@4.11.6)(supports-color@8.1.1)':
+  '@oclif/test@4.2.0(@oclif/core@5.1.8)(supports-color@8.1.1)':
     dependencies:
-      '@oclif/core': 4.11.6
+      '@oclif/core': 5.1.8
       ansis: 3.17.0
       debug: 4.4.3(supports-color@8.1.1)
     transitivePeerDependencies:
@@ -5182,8 +5148,6 @@ snapshots:
 
   is-decimal@2.0.1: {}
 
-  is-docker@2.2.1: {}
-
   is-docker@3.0.0: {}
 
   is-extglob@2.1.1: {}
@@ -5215,10 +5179,6 @@ snapshots:
   is-stream@4.0.1: {}
 
   is-unicode-supported@2.1.0: {}
-
-  is-wsl@2.2.0:
-    dependencies:
-      is-docker: 2.2.1
 
   is-wsl@3.1.1:
     dependencies:
