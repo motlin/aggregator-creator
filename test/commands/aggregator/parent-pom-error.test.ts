@@ -86,7 +86,7 @@ describe("aggregator:create with parent POM resolution errors", () => {
 			if (typeof options === "function") {
 				callback = options;
 			}
-			callback!(mockResponse as Parameters<typeof https.get>[2] extends (res: infer R) => void ? R : never);
+			callback!(mockResponse);
 			return {
 				on() {
 					return this;
