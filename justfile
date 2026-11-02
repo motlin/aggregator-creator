@@ -19,9 +19,9 @@ lint: install
 # Run formatter
 format: install
     pre-commit run just-fmt --all-files
-    vp fmt {{ if ci != "" { "--check" } else { "" } }}
+    oxfmt-next-line {{ if ci != "" { "--check" } else { "" } }}
 
-# Run checks (format + lint + typecheck)
+# Run checks (lint + typecheck; formatting is `just format`)
 check *args: install
     vp run --cache check {{ if ci != "" { "" } else { "--fix" } }} {{ args }}
 
