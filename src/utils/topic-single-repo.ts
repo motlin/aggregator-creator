@@ -2,21 +2,30 @@ import {execa as execa_} from "execa";
 import {githubTopicsResponseSchema} from "../types/repository.js";
 import {describeGhError} from "./gh-errors.js";
 
-export interface TopicSingleRepoOptions {
+export interface TopicSingleRepoOptions
+{
 	owner: string;
 	name: string;
 	topic: string;
 	dryRun?: boolean;
 	verbose?: boolean;
 	execa?: typeof execa_;
-	logger?: {
+	logger?:
+	{
 		log: (message: string) => void;
 		warn: (message: string) => void;
-		error: (message: string, options?: {exit?: boolean}) => void;
+		error: (
+			message: string,
+			options?:
+			{
+				exit?: boolean;
+			},
+		) => void;
 	};
 }
 
-export interface TopicSingleRepoResult {
+export interface TopicSingleRepoResult
+{
 	success: boolean;
 	owner: string;
 	name: string;
@@ -26,19 +35,27 @@ export interface TopicSingleRepoResult {
 	error?: string;
 }
 
-export async function topicSingleRepository(options: TopicSingleRepoOptions): Promise<TopicSingleRepoResult> {
+export async function topicSingleRepository(options: TopicSingleRepoOptions): Promise<TopicSingleRepoResult>
+{
 	const {owner, name, topic, dryRun = false, verbose = false, execa = execa_, logger} = options;
 	const verboseLogger = verbose ? logger : undefined;
 
-	try {
+	try
+	{
 		// Get current topics
-		const result = await execa("gh", ["api", `repos/${owner}/${name}/topics`, "--method", "GET"], {
-			reject: false,
-		});
+		const result = await execa(
+			"gh",
+			["api", `repos/${owner}/${name}/topics`, "--method", "GET"],
+			{
+				reject: false,
+			},
+		);
 
-		if (result.exitCode !== 0) {
+		if (result.exitCode !== 0)
+		{
 			const error = `Failed to get topics: ${describeGhError(result.stderr).message}`;
-			if (logger) {
+			if (logger)
+			{
 				logger.warn(error);
 			}
 			return {
@@ -52,13 +69,22 @@ export async function topicSingleRepository(options: TopicSingleRepoOptions): Pr
 
 		// Parse topics
 		let topics: string[];
-		try {
+		try
+		{
 			const topicsData = githubTopicsResponseSchema.parse(JSON.parse(result.stdout));
 			topics = topicsData.names;
-		} catch (parseError) {
+		}
+		catch (parseError)
+		{
 			const error = `Error parsing topics: ${String(parseError)}`;
-			if (logger) {
-				logger.error(error, {exit: false});
+			if (logger)
+			{
+				logger.error(
+					error,
+					{
+						exit: false,
+					},
+				);
 			}
 			return {
 				success: false,
@@ -70,8 +96,10 @@ export async function topicSingleRepository(options: TopicSingleRepoOptions): Pr
 		}
 
 		// Check if topic already exists
-		if (topics.includes(topic)) {
-			if (verboseLogger) {
+		if (topics.includes(topic))
+		{
+			if (verboseLogger)
+			{
 				verboseLogger.log(`Topic ${topic} already exists on ${owner}/${name}`);
 			}
 			return {
@@ -85,9 +113,11 @@ export async function topicSingleRepository(options: TopicSingleRepoOptions): Pr
 		}
 
 		// Add new topic
-		if (dryRun) {
+		if (dryRun)
+		{
 			topics.push(topic);
-			if (verboseLogger) {
+			if (verboseLogger)
+			{
 				verboseLogger.log(`[DRY RUN] Would add topic ${topic} to ${owner}/${name}`);
 			}
 			return {
@@ -103,16 +133,30 @@ export async function topicSingleRepository(options: TopicSingleRepoOptions): Pr
 		// Update topics
 		topics.push(topic);
 		const args = ["api", `repos/${owner}/${name}/topics`, "--method", "PUT"];
-		for (const t of topics) {
+		for (const t of topics)
+		{
 			args.push("-f", `names[]=${t}`);
 		}
 
-		const updateResult = await execa("gh", args, {reject: false});
+		const updateResult = await execa(
+			"gh",
+			args,
+			{
+				reject: false,
+			},
+		);
 
-		if (updateResult.exitCode !== 0) {
+		if (updateResult.exitCode !== 0)
+		{
 			const error = `Failed to update topics: ${describeGhError(updateResult.stderr).message}`;
-			if (logger) {
-				logger.error(error, {exit: false});
+			if (logger)
+			{
+				logger.error(
+					error,
+					{
+						exit: false,
+					},
+				);
 			}
 			return {
 				success: false,
@@ -131,10 +175,18 @@ export async function topicSingleRepository(options: TopicSingleRepoOptions): Pr
 			topics,
 			alreadyAdded: false,
 		};
-	} catch (error) {
+	}
+	catch (error)
+	{
 		const errorMessage = error instanceof Error ? error.message : String(error);
-		if (logger) {
-			logger.error(`Failed to add topic to repository ${owner}/${name}: ${errorMessage}`, {exit: false});
+		if (logger)
+		{
+			logger.error(
+				`Failed to add topic to repository ${owner}/${name}: ${errorMessage}`,
+				{
+					exit: false,
+				},
+			);
 		}
 		return {
 			success: false,

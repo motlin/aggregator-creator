@@ -1,7 +1,9 @@
 import type {Result} from "execa";
 
-export function createMockResult(override: Partial<Result> = {}): Result {
-	const mockResult = {
+export function createMockResult(override: Partial<Result> = {}): Result
+{
+	const mockResult =
+	{
 		command: "mock-command",
 		escapedCommand: "mock-command",
 		exitCode: 0,

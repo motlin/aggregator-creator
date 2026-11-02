@@ -2,7 +2,8 @@ import {execa as execa_} from "execa";
 import fs from "fs-extra";
 import path from "node:path";
 
-export interface MavenValidationResult {
+export interface MavenValidationResult
+{
 	path: string;
 	hasPom: boolean;
 	valid: boolean;
@@ -12,13 +13,20 @@ export interface MavenValidationResult {
 export async function validateMavenRepo(
 	repoPath: string,
 	execa: typeof execa_ = execa_,
-	logger?: {log: (message: string) => void; warn: (message: string) => void},
-): Promise<MavenValidationResult> {
+	logger?:
+	{
+		log: (message: string) => void;
+		warn: (message: string) => void;
+	},
+): Promise<MavenValidationResult>
+{
 	const absolutePath = path.resolve(repoPath);
 
-	try {
+	try
+	{
 		const stats = await fs.stat(absolutePath);
-		if (!stats.isDirectory()) {
+		if (!stats.isDirectory())
+		{
 			return {
 				path: absolutePath,
 				hasPom: false,
@@ -26,7 +34,9 @@ export async function validateMavenRepo(
 				error: "Path is not a directory",
 			};
 		}
-	} catch {
+	}
+	catch
+	{
 		return {
 			path: absolutePath,
 			hasPom: false,
@@ -36,9 +46,11 @@ export async function validateMavenRepo(
 	}
 
 	const pomPath = path.join(absolutePath, "pom.xml");
-	try {
+	try
+	{
 		const pomExists = await fs.pathExists(pomPath);
-		if (!pomExists) {
+		if (!pomExists)
+		{
 			logger?.log(`│  │  │ No pom.xml found at: ${pomPath}`);
 			return {
 				path: absolutePath,
@@ -47,7 +59,9 @@ export async function validateMavenRepo(
 				error: null,
 			};
 		}
-	} catch {
+	}
+	catch
+	{
 		return {
 			path: absolutePath,
 			hasPom: false,
@@ -56,7 +70,8 @@ export async function validateMavenRepo(
 		};
 	}
 
-	try {
+	try
+	{
 		await execa("mvn", ["help:effective-pom", "--quiet", "--file", pomPath]);
 		return {
 			path: absolutePath,
@@ -64,8 +79,11 @@ export async function validateMavenRepo(
 			valid: true,
 			error: null,
 		};
-	} catch (execError) {
-		if (execError instanceof Error && execError.message.includes("ENOENT")) {
+	}
+	catch (execError)
+	{
+		if (execError instanceof Error && execError.message.includes("ENOENT"))
+		{
 			logger?.warn(`│  │  │ Maven (mvn) command not found. Please install Maven.`);
 			return {
 				path: absolutePath,

@@ -14,11 +14,13 @@ import {DependencyRewriter} from "../../utils/dependency-rewriter.js";
 import {parsePomForGAV, parsePomForModules, parsePomForPackaging} from "../../utils/pom-parser.js";
 import {XmlDependencyRewriter} from "../../utils/xml-dependency-rewriter.js";
 
-function compareVersions(a: string, b: string): number {
+function compareVersions(a: string, b: string): number
+{
 	const aParts = a.split(/[.-]/);
 	const bParts = b.split(/[.-]/);
 
-	for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+	for (let i = 0; i < Math.max(aParts.length, bParts.length); i++)
+	{
 		const aPart = Number.parseInt(aParts[i], 10) || 0;
 		const bPart = Number.parseInt(bParts[i], 10) || 0;
 		if (aPart !== bPart) return aPart - bPart;
@@ -26,20 +28,26 @@ function compareVersions(a: string, b: string): number {
 	return 0;
 }
 
-export default class AggregatorCreate extends Command {
+export default class AggregatorCreate extends Command
+{
 	private verbose = false;
 
-	private verboseLog(message: string): void {
-		if (this.verbose) {
+	private verboseLog(message: string): void
+	{
+		if (this.verbose)
+		{
 			this.log(message);
 		}
 	}
 
-	static override args = {
-		directory: Args.string({
-			description: "Directory containing final Maven repos (or omit to read from stdin)",
-			required: false,
-		}),
+	static override args =
+	{
+		directory: Args.string(
+			{
+				description: "Directory containing final Maven repos (or omit to read from stdin)",
+				required: false,
+			},
+		),
 	};
 
 	static override description = "Create Maven aggregator POM from a directory of repositories";
@@ -57,100 +65,147 @@ export default class AggregatorCreate extends Command {
 
 	static override enableJsonFlag = true;
 
-	static override flags = {
-		groupId: Flags.string({
-			char: "g",
-			description: "GroupId for aggregator POM",
-			default: "com.example",
-		}),
-		artifactId: Flags.string({
-			char: "a",
-			description: "ArtifactId for aggregator POM",
-			default: "aggregator",
-		}),
-		pomVersion: Flags.string({
-			description: "Version for aggregator POM",
-			default: "1.0.0-SNAPSHOT",
-		}),
-		yes: Flags.boolean({
-			char: "y",
-			description: 'Automatically answer "yes" to all prompts',
-			default: false,
-		}),
-		parallel: Flags.boolean({
-			description: "Enable parallel processing",
-			default: true,
-			allowNo: true,
-		}),
-		rewriteDependencies: Flags.boolean({
-			description: "Rewrite child pom dependencies to use versions from dependencyManagement",
-			default: true,
-			allowNo: true,
-		}),
-		verbose: Flags.boolean({
-			char: "v",
-			description: "Show verbose output during aggregator creation",
-			default: false,
-		}),
+	static override flags =
+	{
+		groupId: Flags.string(
+			{
+				char: "g",
+				description: "GroupId for aggregator POM",
+				default: "com.example",
+			},
+		),
+		artifactId: Flags.string(
+			{
+				char: "a",
+				description: "ArtifactId for aggregator POM",
+				default: "aggregator",
+			},
+		),
+		pomVersion: Flags.string(
+			{
+				description: "Version for aggregator POM",
+				default: "1.0.0-SNAPSHOT",
+			},
+		),
+		yes: Flags.boolean(
+			{
+				char: "y",
+				description: 'Automatically answer "yes" to all prompts',
+				default: false,
+			},
+		),
+		parallel: Flags.boolean(
+			{
+				description: "Enable parallel processing",
+				default: true,
+				allowNo: true,
+			},
+		),
+		rewriteDependencies: Flags.boolean(
+			{
+				description: "Rewrite child pom dependencies to use versions from dependencyManagement",
+				default: true,
+				allowNo: true,
+			},
+		),
+		verbose: Flags.boolean(
+			{
+				char: "v",
+				description: "Show verbose output during aggregator creation",
+				default: false,
+			},
+		),
 	};
 
 	private async execute(
 		command: string,
 		args: string[] = [],
 		execaFn = _execa,
-	): Promise<Awaited<ReturnType<typeof _execa>>> {
-		return execaFn(command, args, {timeout: 8000});
+	): Promise<Awaited<ReturnType<typeof _execa>>>
+	{
+		return execaFn(
+			command,
+			args,
+			{
+				timeout: 8000,
+			},
+		);
 	}
 
 	/**
 	 * Check whether repoPath holds a readable, well-formed pom.xml. Returns null when it does, 'missing'
 	 * when there is no readable pom.xml, or the reason the pom.xml cannot be used.
 	 */
-	private async checkMavenRepo(repoPath: string): Promise<string | null> {
+	private async checkMavenRepo(repoPath: string): Promise<string | null>
+	{
 		const pomPath = path.join(repoPath, "pom.xml");
-		try {
+		try
+		{
 			await fs.access(pomPath, fs.constants.R_OK);
-		} catch {
+		}
+		catch
+		{
 			return "missing";
 		}
 
 		const parseResult = await parsePomForGAV(pomPath);
-		if (parseResult.reason?.includes("XML parsing failed")) {
+		if (parseResult.reason?.includes("XML parsing failed"))
+		{
 			return `Malformed pom.xml: ${parseResult.reason}`;
 		}
 		return null;
 	}
 
 	private skipMalformedRepo(
-		skippedRepos: {path: string; relativePath: string; reason: string}[],
+		skippedRepos:
+		{
+			path: string;
+			relativePath: string;
+			reason: string;
+		}[],
 		repoPath: string,
 		relativePath: string,
 		reason: string,
-	): void {
-		skippedRepos.push({path: repoPath, relativePath, reason});
+	): void
+	{
+		skippedRepos.push(
+			{
+				path: repoPath,
+				relativePath,
+				reason,
+			},
+		);
 		this.warn(`Skipping ${relativePath}: ${reason}`);
 	}
 
-	private async getMavenProjectAttribute(pomFile: string, attribute: string, execaFn = _execa): Promise<string> {
-		try {
+	private async getMavenProjectAttribute(pomFile: string, attribute: string, execaFn = _execa): Promise<string>
+	{
+		try
+		{
 			const result = await this.execute(
 				"mvn",
 				["-f", pomFile, "help:evaluate", `-Dexpression=${attribute}`, "--quiet", "-DforceStdout"],
 				execaFn,
 			);
-			if (typeof result.stdout === "string") {
+			if (typeof result.stdout === "string")
+			{
 				return result.stdout;
 			}
 
 			throw new Error(`Failed to evaluate Maven expression: ${String(result.stderr)}`);
-		} catch (error: unknown) {
+		}
+		catch (error: unknown)
+		{
 			const errorMessage = error instanceof Error ? error.message : String(error);
 
 			this.debug(`Maven error evaluating ${attribute} in ${pomFile}: ${errorMessage}`);
 
-			throw new Error(`Failed to get Maven attribute ${attribute} from ${pomFile}: ${errorMessage}`, {
-				cause: error,
-			});
+			throw new Error(
+				`Failed to get Maven attribute ${attribute} from ${pomFile}: ${errorMessage}`,
+				{
+					cause: error,
+				},
+			);
 		}
 	}
 
@@ -158,25 +213,31 @@ export default class AggregatorCreate extends Command {
 		repositoryBaseDir: string,
 		pomFileRelativePath: string,
 		execaFn = _execa,
-	): Promise<boolean> {
+	): Promise<boolean>
+	{
 		const pomFullPath = path.join(repositoryBaseDir, pomFileRelativePath);
-		try {
+		try
+		{
 			const modules = await this.getMavenProjectAttribute(pomFullPath, "project.modules", execaFn);
-			if (modules.length > 0 && modules !== "<modules/>") {
+			if (modules.length > 0 && modules !== "<modules/>")
+			{
 				this.verboseLog(`│  │  │ ${chalk.yellow(pomFileRelativePath)} is a parent POM`);
 				return true;
 			}
 
 			this.verboseLog(`│  │  │ ${chalk.yellow(pomFileRelativePath)} is not a parent POM`);
 			return false;
-		} catch (error: unknown) {
+		}
+		catch (error: unknown)
+		{
 			const errorMessage = error instanceof Error ? error.message : String(error);
 
 			if (
 				errorMessage.includes("Non-resolvable parent POM") ||
 				errorMessage.includes("parent.relativePath") ||
 				errorMessage.includes("Could not find artifact")
-			) {
+			)
+			{
 				this.verboseLog(
 					`│  │  │ ${chalk.yellow(pomFileRelativePath)} has parent POM resolution issues, treating as non-parent POM`,
 				);
@@ -195,18 +256,22 @@ export default class AggregatorCreate extends Command {
 		pomRelativePaths: string[],
 		execaFn = _execa,
 		parallel = true,
-	) {
+	)
+	{
 		this.verboseLog(
 			`│  │ Processing all found POM files for jar/bundle modules to add to the dependencyManagement section...`,
 		);
 
-		const processGAV = async (pomRelativePath: string) => {
+		const processGAV = async (pomRelativePath: string) =>
+		{
 			this.verboseLog(`│  ├──╮ Processing ${chalk.yellow(pomRelativePath)}`);
-			try {
+			try
+			{
 				const pomFullPath = path.join(repositoryBaseDir, pomRelativePath);
 				const packaging = await this.getPackagingType(pomFullPath, execaFn);
 
-				if (packaging === "jar" || packaging === "bundle") {
+				if (packaging === "jar" || packaging === "bundle")
+				{
 					this.verboseLog(`│  │  │ Has ${chalk.yellow(packaging)} packaging`);
 					const result = await this.getGAVFromPom(repositoryBaseDir, pomRelativePath, execaFn);
 					this.verboseLog(`│  ├──╯`);
@@ -214,7 +279,9 @@ export default class AggregatorCreate extends Command {
 				}
 				this.verboseLog(`│  │  │ Skipping ${chalk.yellow(packaging)} packaging`);
 				this.verboseLog(`│  ├──╯`);
-			} catch {
+			}
+			catch
+			{
 				this.verboseLog(`│  │  │ Could not determine packaging type, skipping`);
 				this.verboseLog(`│  ├──╯`);
 			}
@@ -223,12 +290,16 @@ export default class AggregatorCreate extends Command {
 
 		let gavResults: (MavenGAVCoords | null)[];
 
-		if (parallel) {
+		if (parallel)
+		{
 			const gavPromises = pomRelativePaths.map(async (pomRelativePath) => processGAV(pomRelativePath));
 			gavResults = await Promise.all(gavPromises);
-		} else {
+		}
+		else
+		{
 			gavResults = [];
-			for (const pomRelativePath of pomRelativePaths) {
+			for (const pomRelativePath of pomRelativePaths)
+			{
 				// oxlint-disable-next-line no-await-in-loop -- the non-parallel mode processes poms one at a time by design
 				const result = await processGAV(pomRelativePath);
 				gavResults.push(result);
@@ -240,13 +311,17 @@ export default class AggregatorCreate extends Command {
 		this.verboseLog(`│  │ `);
 		this.verboseLog(`│  ├──╮ Adding to the dependencyManagement section of the aggregator...`);
 
-		if (allGAVs.length > 0) {
-			for (const gav of allGAVs) {
+		if (allGAVs.length > 0)
+		{
+			for (const gav of allGAVs)
+			{
 				this.verboseLog(
 					`│  │  │ Adding group: ${chalk.yellow(gav.getGroupId())}, artifact: ${chalk.yellow(gav.getArtifactId())}, and version: ${chalk.yellow(gav.getVersion())}`,
 				);
 			}
-		} else {
+		}
+		else
+		{
 			this.verboseLog(`│  │  │ No GAVs found to add to the dependencyManagement section of the aggregator...`);
 		}
 
@@ -257,22 +332,32 @@ export default class AggregatorCreate extends Command {
 
 	private async processAllReactorModules(
 		aggregatorBaseDir: string,
-		mavenRepos: {path: string; relativePath: string}[],
+		mavenRepos:
+		{
+			path: string;
+			relativePath: string;
+		}[],
 		execaFn = _execa,
 		parallel = true,
-	): Promise<MavenGAVCoords[]> {
+	): Promise<MavenGAVCoords[]>
+	{
 		this.verboseLog(`│  │ Processing all reactor modules to add to the dependencyManagement section...`);
 
-		const processRepoModules = async (repo: {path: string; relativePath: string}) => {
+		const processRepoModules = async (repo: {path: string; relativePath: string}) =>
+		{
 			this.verboseLog(`│  ├──╮ Processing repository ${chalk.yellow(repo.relativePath)}`);
 
 			let pomPaths: string[] = [];
 
 			const rootPomPath = path.join(repo.path, "pom.xml");
-			if (await fs.pathExists(rootPomPath)) {
-				try {
+			if (await fs.pathExists(rootPomPath))
+			{
+				try
+				{
 					pomPaths = await this.findPomFiles(repo.path, execaFn);
-				} catch {
+				}
+				catch
+				{
 					pomPaths = ["pom.xml"];
 				}
 			}
@@ -280,19 +365,25 @@ export default class AggregatorCreate extends Command {
 			const gavs: MavenGAVCoords[] = [];
 
 			const BATCH_SIZE = 10;
-			for (let i = 0; i < pomPaths.length; i += BATCH_SIZE) {
+			for (let i = 0; i < pomPaths.length; i += BATCH_SIZE)
+			{
 				const batch = pomPaths.slice(i, i + BATCH_SIZE);
 
 				// oxlint-disable-next-line no-await-in-loop -- batches bound how many poms are read at once
 				const batchResults = await Promise.all(
-					batch.map(async (pomRelativePath) => {
-						try {
+					batch.map(async (pomRelativePath) =>
+					{
+						try
+						{
 							const result = await this.getGAVFromPom(repo.path, pomRelativePath, execaFn);
-							if (result) {
+							if (result)
+							{
 								this.verboseLog(`│  │  │ Added ${chalk.yellow(result.getArtifactId())}`);
 								return result;
 							}
-						} catch {
+						}
+						catch
+						{
 							this.verboseLog(`│  │  │ Could not process ${chalk.yellow(pomRelativePath)}`);
 						}
 						return null;
@@ -308,11 +399,15 @@ export default class AggregatorCreate extends Command {
 
 		let allGAVs: MavenGAVCoords[] = [];
 
-		if (parallel) {
+		if (parallel)
+		{
 			const results = await Promise.all(mavenRepos.map(async (repo) => processRepoModules(repo)));
 			allGAVs = results.flat();
-		} else {
-			for (const repo of mavenRepos) {
+		}
+		else
+		{
+			for (const repo of mavenRepos)
+			{
 				// oxlint-disable-next-line no-await-in-loop -- the non-parallel mode processes repositories one at a time by design
 				const gavs = await processRepoModules(repo);
 				allGAVs.push(...gavs);
@@ -322,21 +417,26 @@ export default class AggregatorCreate extends Command {
 		this.verboseLog(`│  │ `);
 		this.verboseLog(`│  ├──╮ Summary of modules for dependencyManagement:`);
 
-		if (allGAVs.length > 0) {
+		if (allGAVs.length > 0)
+		{
 			const gavMap = new Map<string, MavenGAVCoords>();
-			for (const gav of allGAVs) {
+			for (const gav of allGAVs)
+			{
 				const key = `${gav.getGroupId()}:${gav.getArtifactId()}:${gav.getVersion()}`;
 				gavMap.set(key, gav);
 			}
 
 			allGAVs = [...gavMap.values()];
 
-			for (const gav of allGAVs) {
+			for (const gav of allGAVs)
+			{
 				this.verboseLog(
 					`│  │  │ ${chalk.yellow(gav.getGroupId())}:${chalk.yellow(gav.getArtifactId())}:${chalk.yellow(gav.getVersion())}`,
 				);
 			}
-		} else {
+		}
+		else
+		{
 			this.verboseLog(`│  │  │ No modules found to add to dependencyManagement`);
 		}
 
@@ -345,20 +445,25 @@ export default class AggregatorCreate extends Command {
 		return allGAVs;
 	}
 
-	private async getModulesFromPom(pomFullPath: string, execaFn = _execa): Promise<string[]> {
+	private async getModulesFromPom(pomFullPath: string, execaFn = _execa): Promise<string[]>
+	{
 		const parseResult = await parsePomForModules(pomFullPath);
-		if (parseResult.success) {
+		if (parseResult.success)
+		{
 			return parseResult.modules;
 		}
 
-		try {
+		try
+		{
 			const modulesString = await this.getMavenProjectAttribute(pomFullPath, "project.modules", execaFn);
-			if (!modulesString || modulesString === "<modules/>" || modulesString.trim() === "") {
+			if (!modulesString || modulesString === "<modules/>" || modulesString.trim() === "")
+			{
 				return [];
 			}
 
 			const moduleMatches = modulesString.match(/<string>(.*?)<\/string>/g);
-			if (!moduleMatches) {
+			if (!moduleMatches)
+			{
 				return modulesString
 					.split(",")
 					.map((m) => m.trim())
@@ -366,82 +471,118 @@ export default class AggregatorCreate extends Command {
 			}
 
 			return moduleMatches.map((match) => match.replaceAll(/<\/?string>/g, ""));
-		} catch {
+		}
+		catch
+		{
 			return [];
 		}
 	}
 
-	private async getPackagingType(pomFullPath: string, execaFn = _execa): Promise<string> {
+	private async getPackagingType(pomFullPath: string, execaFn = _execa): Promise<string>
+	{
 		const packaging = await parsePomForPackaging(pomFullPath);
-		if (packaging !== "jar") {
+		if (packaging !== "jar")
+		{
 			return packaging;
 		}
 
 		// For 'jar' results, double-check with Maven in case it's inherited
-		try {
+		try
+		{
 			const mavenPackaging = await this.getMavenProjectAttribute(pomFullPath, "project.packaging", execaFn);
 			return mavenPackaging === "" ? "jar" : mavenPackaging;
-		} catch {
+		}
+		catch
+		{
 			return packaging;
 		}
 	}
 
-	private async findPomFiles(repositoryBaseDir: string, execaFn = _execa): Promise<string[]> {
-		try {
+	private async findPomFiles(repositoryBaseDir: string, execaFn = _execa): Promise<string[]>
+	{
+		try
+		{
 			await fs.ensureDir(path.dirname(repositoryBaseDir));
-		} catch (error: unknown) {
+		}
+		catch (error: unknown)
+		{
 			let errorMessage = "Unknown error";
 			let errorCode: string | undefined;
 
-			if (error instanceof Error) {
+			if (error instanceof Error)
+			{
 				errorMessage = error.message;
 				errorCode = "code" in error && typeof error.code === "string" ? error.code : undefined;
 			}
 
-			this.error(`Failed to access directory: ${errorMessage}`, {
-				exit: 1,
-				code: errorCode ?? "DIRECTORY_ACCESS_ERROR",
-				suggestions: [
-					"Check if the directory exists",
-					"Verify you have read permissions for the directory",
-					`Try: mkdir -p "${repositoryBaseDir}"`,
-				],
-			});
+			this.error(
+				`Failed to access directory: ${errorMessage}`,
+				{
+					exit: 1,
+					code: errorCode ?? "DIRECTORY_ACCESS_ERROR",
+					suggestions: [
+						"Check if the directory exists",
+						"Verify you have read permissions for the directory",
+						`Try: mkdir -p "${repositoryBaseDir}"`,
+					],
+				},
+			);
 		}
 
 		const allPoms = new Set<string>();
-		const pomsToProcess: Array<{pomPath: string; relativePath: string}> = [];
+		const pomsToProcess: Array<
+		{
+			pomPath: string;
+			relativePath: string;
+		}> = [];
 
 		const rootPomPath = path.join(repositoryBaseDir, "pom.xml");
-		if (await fs.pathExists(rootPomPath)) {
+		if (await fs.pathExists(rootPomPath))
+		{
 			allPoms.add("pom.xml");
-			pomsToProcess.push({pomPath: rootPomPath, relativePath: ""});
-		} else {
+			pomsToProcess.push(
+				{
+					pomPath: rootPomPath,
+					relativePath: "",
+				},
+			);
+		}
+		else
+		{
 			return [];
 		}
 
 		this.verboseLog(`│  │ Following module declarations from root POM...`);
 
-		while (pomsToProcess.length > 0) {
+		while (pomsToProcess.length > 0)
+		{
 			const batch = pomsToProcess.splice(0, 10);
 
 			// oxlint-disable-next-line no-await-in-loop -- each batch discovers the modules the next batch reads
 			const batchResults = await Promise.all(
-				batch.map(async ({pomPath, relativePath}) => {
+				batch.map(async ({pomPath, relativePath}) =>
+				{
 					const modules = await this.getModulesFromPom(pomPath, execaFn);
-					const newPoms: Array<{pomPath: string; relativePath: string}> = [];
+					const newPoms: Array<
+					{
+						pomPath: string;
+						relativePath: string;
+					}> = [];
 
-					if (modules.length > 0) {
+					if (modules.length > 0)
+					{
 						this.verboseLog(
 							`│  │  │ Found ${chalk.yellow(modules.length)} modules in ${chalk.yellow(relativePath || "root")} POM`,
 						);
 
 						const moduleChecks = await Promise.all(
-							modules.map(async (module) => {
+							modules.map(async (module) =>
+							{
 								const modulePomRelativePath = path.join(relativePath, module, "pom.xml");
 								const modulePomFullPath = path.join(repositoryBaseDir, modulePomRelativePath);
 
-								if (await fs.pathExists(modulePomFullPath)) {
+								if (await fs.pathExists(modulePomFullPath))
+								{
 									return {
 										relativePath: modulePomRelativePath,
 										fullPath: modulePomFullPath,
@@ -456,13 +597,17 @@ export default class AggregatorCreate extends Command {
 							}),
 						);
 
-						for (const check of moduleChecks) {
-							if (check) {
+						for (const check of moduleChecks)
+						{
+							if (check)
+							{
 								allPoms.add(check.relativePath);
-								newPoms.push({
-									pomPath: check.fullPath,
-									relativePath: check.parentPath,
-								});
+								newPoms.push(
+									{
+										pomPath: check.fullPath,
+										relativePath: check.parentPath,
+									},
+								);
 							}
 						}
 					}
@@ -471,7 +616,8 @@ export default class AggregatorCreate extends Command {
 				}),
 			);
 
-			for (const newPoms of batchResults) {
+			for (const newPoms of batchResults)
+			{
 				pomsToProcess.push(...newPoms);
 			}
 		}
@@ -481,13 +627,16 @@ export default class AggregatorCreate extends Command {
 		return result;
 	}
 
-	private async fetchLatestLiftwizardVersion(execaFn = _execa): Promise<string> {
+	private async fetchLatestLiftwizardVersion(execaFn = _execa): Promise<string>
+	{
 		this.verboseLog(`│  │ Fetching latest liftwizard-profile-parent version using Maven...`);
 
-		try {
+		try
+		{
 			const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "liftwizard-version-"));
 
-			try {
+			try
+			{
 				const result = await this.execute(
 					"mvn",
 					[
@@ -503,7 +652,8 @@ export default class AggregatorCreate extends Command {
 				const stdout = typeof result.stdout === "string" ? result.stdout : "";
 				const versionMatch = stdout.match(/Downloaded.*liftwizard-profile-parent-(\d+\.\d+\.\d+(?:-\w+)?)/);
 
-				if (!versionMatch) {
+				if (!versionMatch)
+				{
 					const localRepoPath = path.join(
 						os.homedir(),
 						".m2",
@@ -513,7 +663,8 @@ export default class AggregatorCreate extends Command {
 						"liftwizard-profile-parent",
 					);
 
-					if (await fs.pathExists(localRepoPath)) {
+					if (await fs.pathExists(localRepoPath))
+					{
 						const versions = await fs.readdir(localRepoPath);
 						const latestVersion = versions
 							.filter((v) => /^\d+\.\d+\.\d+(?:-\w+)?$/.test(v))
@@ -522,7 +673,8 @@ export default class AggregatorCreate extends Command {
 								undefined,
 							);
 
-						if (latestVersion !== undefined) {
+						if (latestVersion !== undefined)
+						{
 							this.verboseLog(`│  │ Found latest liftwizard version: ${chalk.yellow(latestVersion)}`);
 							return latestVersion;
 						}
@@ -534,10 +686,14 @@ export default class AggregatorCreate extends Command {
 				const latestVersion = versionMatch[1];
 				this.verboseLog(`│  │ Found latest liftwizard version: ${chalk.yellow(latestVersion)}`);
 				return latestVersion;
-			} finally {
+			}
+			finally
+			{
 				await fs.remove(tempDir);
 			}
-		} catch (error) {
+		}
+		catch (error)
+		{
 			const fallbackVersion = "2.1.13";
 			this.verboseLog(`│  │ Could not fetch latest version, using fallback: ${chalk.yellow(fallbackVersion)}`);
 			this.debug(`Maven error: ${error instanceof Error ? error.message : String(error)}`);
@@ -549,13 +705,16 @@ export default class AggregatorCreate extends Command {
 		repositoryBaseDir: string,
 		pomFileRelativePath: string,
 		execaFn = _execa,
-	): Promise<MavenGAVCoords | null> {
+	): Promise<MavenGAVCoords | null>
+	{
 		const pomFullPath = path.join(repositoryBaseDir, pomFileRelativePath);
-		try {
+		try
+		{
 			const parseResult = await parsePomForGAV(pomFullPath);
 
 			const {gav} = parseResult;
-			if (!parseResult.needsMavenFallback && gav.groupId && gav.artifactId && gav.version) {
+			if (!parseResult.needsMavenFallback && gav.groupId && gav.artifactId && gav.version)
+			{
 				this.verboseLog(`│  │  │ Fast XML parsing`);
 				return new MavenGAVCoords(gav.groupId, gav.artifactId, gav.version);
 			}
@@ -567,18 +726,23 @@ export default class AggregatorCreate extends Command {
 			const version = await this.getMavenProjectAttribute(pomFullPath, "project.version", execaFn);
 
 			return new MavenGAVCoords(groupId, artifactId, version);
-		} catch (error: unknown) {
+		}
+		catch (error: unknown)
+		{
 			const errorMessage = error instanceof Error ? error.message : String(error);
 
 			if (
 				errorMessage.includes("Non-resolvable parent POM") ||
 				errorMessage.includes("parent.relativePath") ||
 				errorMessage.includes("Could not find artifact")
-			) {
+			)
+			{
 				this.verboseLog(
 					`│  │  │ Could not process ${chalk.yellow(pomFileRelativePath)} due to parent POM resolution issues: ${errorMessage}`,
 				);
-			} else {
+			}
+			else
+			{
 				this.verboseLog(
 					`│  │  │ Failed to collect GAV from ${chalk.yellow(pomFileRelativePath)}: ${errorMessage}`,
 				);
@@ -595,7 +759,8 @@ export default class AggregatorCreate extends Command {
 		modules: string[],
 		gavs: MavenGAVCoords[],
 		liftwizardVersion: string,
-	): string {
+	): string
+	{
 		// Preserve the XML nesting in the method chain.
 		// prettier-ignore
 		const pom = create({version: "1.0"})
@@ -618,12 +783,14 @@ export default class AggregatorCreate extends Command {
 			.ele("description").txt("Aggregator POM for multiple Maven repositories").up();
 
 		const modulesEle = pom.ele("modules");
-		for (const module of modules) {
+		for (const module of modules)
+		{
 			modulesEle.ele("module").txt(module);
 		}
 		const dependencyManagementEle = pom.ele("dependencyManagement");
 		const dependenciesEle = dependencyManagementEle.ele("dependencies");
-		for (const gav of gavs) {
+		for (const gav of gavs)
+		{
 			const dependencyEle = dependenciesEle.ele("dependency");
 			dependencyEle.ele("groupId").txt(gav.getGroupId());
 			dependencyEle.ele("artifactId").txt(gav.getArtifactId());
@@ -632,29 +799,39 @@ export default class AggregatorCreate extends Command {
 
 		pom.ele("build").ele("defaultGoal").txt("verify").up();
 
-		return pom.end({prettyPrint: true});
+		return pom.end(
+			{
+				prettyPrint: true,
+			},
+		);
 	}
 
-	public async run(): Promise<{
+	public async run(): Promise<
+	{
 		success: boolean;
 		pomPath: string;
-		modules: {
+		modules:
+		{
 			path: string;
 			valid: boolean;
 			reason?: string;
 		}[];
-		stats: {
+		stats:
+		{
 			totalScanned: number;
 			validRepositories: number;
 			skippedRepositories: number;
 		};
-		mavenCoordinates: {
+		mavenCoordinates:
+		{
 			groupId: string;
 			artifactId: string;
 			version: string;
 		};
-	}> {
-		const execa = withDebugLogging(_execa, (message) => {
+	}>
+	{
+		const execa = withDebugLogging(_execa, (message) =>
+		{
 			this.debug(message);
 		});
 
@@ -663,22 +840,28 @@ export default class AggregatorCreate extends Command {
 		let directoryPath: string;
 		let validRepos: ValidatedRepository[] = [];
 
-		if (!args.directory && !process.stdin.isTTY) {
+		if (!args.directory && !process.stdin.isTTY)
+		{
 			const fullInput = await readStdin();
 
-			if (!fullInput.trim()) {
-				this.error("No input provided. Provide a directory path or pipe JSON data from stdin.", {
-					exit: 1,
-					code: "NO_INPUT",
-					suggestions: [
-						"Provide a directory path as an argument",
-						"Pipe JSON data from repo:list or repo:process command",
-						"Example: aggregator repo:list --owner someuser --json | aggregator aggregator:create ./output",
-					],
-				});
+			if (!fullInput.trim())
+			{
+				this.error(
+					"No input provided. Provide a directory path or pipe JSON data from stdin.",
+					{
+						exit: 1,
+						code: "NO_INPUT",
+						suggestions: [
+							"Provide a directory path as an argument",
+							"Pipe JSON data from repo:list or repo:process command",
+							"Example: aggregator repo:list --owner someuser --json | aggregator aggregator:create ./output",
+						],
+					},
+				);
 			}
 
-			try {
+			try
+			{
 				const jsonData: unknown = JSON.parse(fullInput);
 				const inputRepos =
 					typeof jsonData === "object" && jsonData !== null && "validRepos" in jsonData && jsonData.validRepos
@@ -686,79 +869,123 @@ export default class AggregatorCreate extends Command {
 						: jsonData;
 				validRepos = validatedRepositoriesSchema.parse(inputRepos).filter((repo) => repo.valid);
 
-				if (validRepos.length === 0) {
-					this.error("No valid repositories found in input", {
-						exit: 1,
-						code: "NO_VALID_REPOS",
-						suggestions: [
-							"Ensure the input contains valid Maven repositories",
-							"The input should be from repo:list --json or repo:process --json",
-						],
-					});
+				if (validRepos.length === 0)
+				{
+					this.error(
+						"No valid repositories found in input",
+						{
+							exit: 1,
+							code: "NO_VALID_REPOS",
+							suggestions: [
+								"Ensure the input contains valid Maven repositories",
+								"The input should be from repo:list --json or repo:process --json",
+							],
+						},
+					);
 				}
 
 				directoryPath = path.resolve(validRepos[0].path.split("/").slice(0, -2).join("/"));
-			} catch {
-				this.error("Invalid JSON input from stdin", {
-					exit: 1,
-					code: "INVALID_JSON",
-					suggestions: [
-						"Ensure the input is valid JSON",
-						"The input should match the output from repo:list --json or repo:process --json",
-					],
-				});
 			}
-		} else if (args.directory) {
+			catch
+			{
+				this.error(
+					"Invalid JSON input from stdin",
+					{
+						exit: 1,
+						code: "INVALID_JSON",
+						suggestions: [
+							"Ensure the input is valid JSON",
+							"The input should match the output from repo:list --json or repo:process --json",
+						],
+					},
+				);
+			}
+		}
+		else if (args.directory)
+		{
 			directoryPath = path.resolve(args.directory);
 
 			let isDirectory = false;
-			try {
+			try
+			{
 				isDirectory = (await fs.stat(directoryPath)).isDirectory();
-			} catch {
-				this.error(`Directory does not exist: ${directoryPath}`, {
-					exit: 1,
-					code: "DIRECTORY_NOT_FOUND",
-					suggestions: [
-						"Check the directory path",
-						`Clone repositories into it first, for example: ${this.config.bin} repo:clone --output-directory "${directoryPath}"`,
-					],
-				});
+			}
+			catch
+			{
+				this.error(
+					`Directory does not exist: ${directoryPath}`,
+					{
+						exit: 1,
+						code: "DIRECTORY_NOT_FOUND",
+						suggestions: [
+							"Check the directory path",
+							`Clone repositories into it first, for example: ${this.config.bin} repo:clone --output-directory "${directoryPath}"`,
+						],
+					},
+				);
 			}
 
-			if (!isDirectory) {
-				this.error(`Not a directory: ${directoryPath}`, {exit: 1, code: "NOT_A_DIRECTORY"});
+			if (!isDirectory)
+			{
+				this.error(
+					`Not a directory: ${directoryPath}`,
+					{
+						exit: 1,
+						code: "NOT_A_DIRECTORY",
+					},
+				);
 			}
-		} else {
-			this.error("No input provided. Provide a directory path or pipe JSON data from stdin.", {
-				exit: 1,
-				code: "NO_INPUT",
-				suggestions: [
-					"Provide a directory path as an argument",
-					"Pipe JSON data from repo:list or repo:process command",
-					"Example: aggregator repo:list --owner someuser --json | aggregator aggregator:create ./output",
-				],
-			});
+		}
+		else
+		{
+			this.error(
+				"No input provided. Provide a directory path or pipe JSON data from stdin.",
+				{
+					exit: 1,
+					code: "NO_INPUT",
+					suggestions: [
+						"Provide a directory path as an argument",
+						"Pipe JSON data from repo:list or repo:process command",
+						"Example: aggregator repo:list --owner someuser --json | aggregator aggregator:create ./output",
+					],
+				},
+			);
 		}
 
 		this.verboseLog(`╭─── Creating aggregator POM...`);
 		this.verboseLog(`│`);
 
-		const mavenRepos: {path: string; relativePath: string}[] = [];
-		const skippedRepos: {path: string; relativePath: string; reason: string}[] = [];
+		const mavenRepos:
+		{
+			path: string;
+			relativePath: string;
+		}[] = [];
+		const skippedRepos:
+		{
+			path: string;
+			relativePath: string;
+			reason: string;
+		}[] = [];
 		let totalScanned = 0;
 
-		if (validRepos.length > 0) {
+		if (validRepos.length > 0)
+		{
 			this.verboseLog(`├──╮ Using ${chalk.yellow(validRepos.length)} validated repositories from input...`);
 
-			for (const repo of validRepos) {
+			for (const repo of validRepos)
+			{
 				const relativePath = path.join(repo.owner.login, repo.name);
-				mavenRepos.push({
-					path: repo.path,
-					relativePath,
-				});
+				mavenRepos.push(
+					{
+						path: repo.path,
+						relativePath,
+					},
+				);
 			}
 			totalScanned = validRepos.length;
-		} else {
+		}
+		else
+		{
 			this.verboseLog(`├──╮ Scanning for Maven repositories in ${chalk.yellow(directoryPath)}...`);
 
 			const entries = await fs.readdir(directoryPath);
@@ -766,7 +993,8 @@ export default class AggregatorCreate extends Command {
 			const entryKinds = await Promise.all(
 				entries
 					.filter((entry) => entry !== "pom.xml")
-					.map(async (entry) => ({
+					.map(async (entry) => (
+					{
 						entry,
 						isDirectory: (await fs.stat(path.join(directoryPath, entry))).isDirectory(),
 					})),
@@ -777,17 +1005,21 @@ export default class AggregatorCreate extends Command {
 				`│  │ Found ${chalk.yellow(firstLevelEntries.length)} potential repository containers to scan`,
 			);
 
-			if (firstLevelEntries.length === 0) {
-				const result = {
+			if (firstLevelEntries.length === 0)
+			{
+				const result =
+				{
 					success: false,
 					pomPath: "",
 					modules: [],
-					stats: {
+					stats:
+					{
 						totalScanned: 0,
 						validRepositories: 0,
 						skippedRepositories: 0,
 					},
-					mavenCoordinates: {
+					mavenCoordinates:
+					{
 						groupId: flags.groupId,
 						artifactId: flags.artifactId,
 						version: flags.pomVersion,
@@ -795,22 +1027,27 @@ export default class AggregatorCreate extends Command {
 					error: "No Maven repositories found. Each repository must contain a pom.xml file.",
 				};
 
-				if (!this.jsonEnabled()) {
-					this.error(result.error, {
-						exit: 1,
-						code: "NO_MAVEN_REPOS",
-						suggestions: [
-							"Ensure the directory contains Maven projects with pom.xml files",
-							"Check that repository directories follow the expected structure",
-							"Verify that pom.xml files exist in the repository directories",
-						],
-					});
+				if (!this.jsonEnabled())
+				{
+					this.error(
+						result.error,
+						{
+							exit: 1,
+							code: "NO_MAVEN_REPOS",
+							suggestions: [
+								"Ensure the directory contains Maven projects with pom.xml files",
+								"Check that repository directories follow the expected structure",
+								"Verify that pom.xml files exist in the repository directories",
+							],
+						},
+					);
 				}
 
 				return result;
 			}
 
-			for (const entry of firstLevelEntries) {
+			for (const entry of firstLevelEntries)
+			{
 				this.verboseLog(`│  │ Examining: ${chalk.yellow(entry)}`);
 
 				const entryPath = path.join(directoryPath, entry);
@@ -818,23 +1055,29 @@ export default class AggregatorCreate extends Command {
 
 				// oxlint-disable-next-line no-await-in-loop -- repositories are scanned in order so log lines and warnings follow directory order
 				const problem = await this.checkMavenRepo(entryPath);
-				if (problem === null) {
-					mavenRepos.push({
-						path: entryPath,
-						relativePath: entry,
-					});
+				if (problem === null)
+				{
+					mavenRepos.push(
+						{
+							path: entryPath,
+							relativePath: entry,
+						},
+					);
 					continue;
 				}
 
-				if (problem !== "missing") {
+				if (problem !== "missing")
+				{
 					this.skipMalformedRepo(skippedRepos, entryPath, entry, problem);
 					continue;
 				}
 
-				try {
+				try
+				{
 					// oxlint-disable-next-line no-await-in-loop -- see the checkMavenRepo call above
 					const subEntries = await fs.readdir(entryPath);
-					for (const subEntry of subEntries) {
+					for (const subEntry of subEntries)
+					{
 						const subEntryPath = path.join(entryPath, subEntry);
 						// oxlint-disable-next-line no-await-in-loop -- see the checkMavenRepo call above
 						const subStats = await fs.stat(subEntryPath);
@@ -844,42 +1087,59 @@ export default class AggregatorCreate extends Command {
 						totalScanned++;
 						// oxlint-disable-next-line no-await-in-loop -- see the checkMavenRepo call above
 						const subProblem = await this.checkMavenRepo(subEntryPath);
-						if (subProblem === null) {
-							mavenRepos.push({
-								path: subEntryPath,
-								relativePath: path.join(entry, subEntry),
-							});
-						} else if (subProblem === "missing") {
-							skippedRepos.push({
-								path: subEntryPath,
-								relativePath: path.join(entry, subEntry),
-								reason: "Missing pom.xml",
-							});
-						} else {
+						if (subProblem === null)
+						{
+							mavenRepos.push(
+								{
+									path: subEntryPath,
+									relativePath: path.join(entry, subEntry),
+								},
+							);
+						}
+						else if (subProblem === "missing")
+						{
+							skippedRepos.push(
+								{
+									path: subEntryPath,
+									relativePath: path.join(entry, subEntry),
+									reason: "Missing pom.xml",
+								},
+							);
+						}
+						else
+						{
 							this.skipMalformedRepo(skippedRepos, subEntryPath, path.join(entry, subEntry), subProblem);
 						}
 					}
-				} catch (error) {
-					skippedRepos.push({
-						path: entryPath,
-						relativePath: entry,
-						reason: `Error reading directory: ${error instanceof Error ? error.message : String(error)}`,
-					});
+				}
+				catch (error)
+				{
+					skippedRepos.push(
+						{
+							path: entryPath,
+							relativePath: entry,
+							reason: `Error reading directory: ${error instanceof Error ? error.message : String(error)}`,
+						},
+					);
 				}
 			}
 		}
 
-		if (mavenRepos.length === 0) {
-			const result = {
+		if (mavenRepos.length === 0)
+		{
+			const result =
+			{
 				success: false,
 				pomPath: "",
 				modules: [],
-				stats: {
+				stats:
+				{
 					totalScanned,
 					validRepositories: 0,
 					skippedRepositories: skippedRepos.length,
 				},
-				mavenCoordinates: {
+				mavenCoordinates:
+				{
 					groupId: flags.groupId,
 					artifactId: flags.artifactId,
 					version: flags.pomVersion,
@@ -887,16 +1147,20 @@ export default class AggregatorCreate extends Command {
 				error: "No Maven repositories found. Each repository must contain a pom.xml file.",
 			};
 
-			if (!this.jsonEnabled()) {
-				this.error(result.error, {
-					exit: 1,
-					code: "NO_MAVEN_REPOS",
-					suggestions: [
-						"Ensure the directory contains Maven projects with pom.xml files",
-						"Check that repository directories follow the expected structure",
-						"Verify that pom.xml files exist in the repository directories",
-					],
-				});
+			if (!this.jsonEnabled())
+			{
+				this.error(
+					result.error,
+					{
+						exit: 1,
+						code: "NO_MAVEN_REPOS",
+						suggestions: [
+							"Ensure the directory contains Maven projects with pom.xml files",
+							"Check that repository directories follow the expected structure",
+							"Verify that pom.xml files exist in the repository directories",
+						],
+					},
+				);
 			}
 
 			return result;
@@ -904,7 +1168,8 @@ export default class AggregatorCreate extends Command {
 
 		const validModules = mavenRepos.map((repo) => repo.relativePath);
 
-		for (const repo of mavenRepos) {
+		for (const repo of mavenRepos)
+		{
 			this.verboseLog(`│  │ Found valid Maven repository: ${chalk.yellow(repo.relativePath)}`);
 		}
 		const allGAVs = await this.processAllReactorModules(directoryPath, mavenRepos, execa, flags.parallel);
@@ -914,10 +1179,13 @@ export default class AggregatorCreate extends Command {
 		this.verboseLog(
 			`│  │  │ Found ${chalk.yellow(allGAVs.length)} GAVs to add to the dependencyManagement section of the POM`,
 		);
-		if (skippedRepos.length > 0) {
+		if (skippedRepos.length > 0)
+		{
 			this.verboseLog(`│  │  │ Skipped ${chalk.yellow(skippedRepos.length)} repositories`);
-			for (const repo of skippedRepos) {
-				if (repo.reason === "Missing pom.xml") {
+			for (const repo of skippedRepos)
+			{
+				if (repo.reason === "Missing pom.xml")
+				{
 					this.verboseLog(`│  │  │   ${chalk.yellow(repo.relativePath)}: Missing pom.xml file`);
 				}
 			}
@@ -930,7 +1198,8 @@ export default class AggregatorCreate extends Command {
 		const {yes} = flags;
 		let proceed = yes;
 
-		if (!proceed) {
+		if (!proceed)
+		{
 			this.verboseLog(`│  │`);
 			this.verboseLog(`│  ├──╮ Ready to create aggregator POM with the following settings:`);
 			this.verboseLog(`│  │  │ - groupId: ${chalk.yellow(flags.groupId)}`);
@@ -941,7 +1210,10 @@ export default class AggregatorCreate extends Command {
 			);
 			this.verboseLog(`│  │  │ - modules: ${chalk.yellow(validModules.length)} Maven repositories`);
 
-			const {confirmed} = await inquirer.prompt<{confirmed: boolean}>([
+			const {confirmed} = await inquirer.prompt<
+			{
+				confirmed: boolean;
+			}>([
 				{
 					type: "confirm",
 					name: "confirmed",
@@ -952,28 +1224,33 @@ export default class AggregatorCreate extends Command {
 			proceed = confirmed;
 		}
 
-		if (!proceed) {
+		if (!proceed)
+		{
 			this.warn(`│  ├──╯ Operation canceled by user.`);
 			return {
 				success: false,
 				pomPath: "",
 				modules: [
-					...mavenRepos.map((repo) => ({
+					...mavenRepos.map((repo) => (
+					{
 						path: repo.relativePath,
 						valid: true,
 					})),
-					...skippedRepos.map((repo) => ({
+					...skippedRepos.map((repo) => (
+					{
 						path: repo.relativePath,
 						valid: false,
 						reason: repo.reason,
 					})),
 				],
-				stats: {
+				stats:
+				{
 					totalScanned,
 					validRepositories: mavenRepos.length,
 					skippedRepositories: skippedRepos.length,
 				},
-				mavenCoordinates: {
+				mavenCoordinates:
+				{
 					groupId: flags.groupId,
 					artifactId: flags.artifactId,
 					version: flags.pomVersion,
@@ -991,7 +1268,8 @@ export default class AggregatorCreate extends Command {
 		);
 
 		const pomPath = path.join(directoryPath, "pom.xml");
-		try {
+		try
+		{
 			await fs.writeFile(pomPath, pomXml);
 
 			const mvnDir = path.join(directoryPath, ".mvn");
@@ -1006,30 +1284,38 @@ export default class AggregatorCreate extends Command {
 				"\n";
 			await fs.writeFile(mavenConfigPath, mavenConfig);
 
-			if (this.verbose) {
+			if (this.verbose)
+			{
 				this.log(`│  │`);
 				this.log(`│  ├──╮ Created aggregator POM at ${chalk.yellow(pomPath)}`);
 				this.log(`│  │  │ Included ${chalk.yellow(validModules.length)} modules`);
 				this.log(`│  │  │ Created .mvn directory with Maven configuration`);
 				this.log(`│  ├──╯`);
-			} else {
+			}
+			else
+			{
 				this.log(`Created aggregator POM: ${pomPath} (${validModules.length} modules)`);
 			}
 
-			if (flags.rewriteDependencies && allGAVs.length > 0) {
-				const xmlRewriter = new XmlDependencyRewriter({
-					aggregatorPath: directoryPath,
-					gavs: allGAVs,
-					modules: validModules,
-					verbose: this.verbose,
-					log: (message: string) => {
-						this.verboseLog(message);
+			if (flags.rewriteDependencies && allGAVs.length > 0)
+			{
+				const xmlRewriter = new XmlDependencyRewriter(
+					{
+						aggregatorPath: directoryPath,
+						gavs: allGAVs,
+						modules: validModules,
+						verbose: this.verbose,
+						log: (message: string) =>
+						{
+							this.verboseLog(message);
+						},
 					},
-				});
+				);
 
 				const xmlResult = await xmlRewriter.rewriteDependencies();
 
-				if (xmlResult.mavenFallbacks.length > 0) {
+				if (xmlResult.mavenFallbacks.length > 0)
+				{
 					this.verboseLog(`│  │`);
 					this.verboseLog(`│  ├──╮ Using Maven for complex dependency updates...`);
 
@@ -1039,7 +1325,8 @@ export default class AggregatorCreate extends Command {
 							gavs: allGAVs,
 							modules: xmlResult.mavenFallbacks,
 							verbose: false,
-							log: (message: string) => {
+							log: (message: string) =>
+							{
 								this.verboseLog(message);
 							},
 						},
@@ -1054,27 +1341,33 @@ export default class AggregatorCreate extends Command {
 					this.verboseLog(`│  ├──╯`);
 				}
 
-				if (xmlResult.rewrittenPoms.length > 0 || xmlResult.errors.length > 0) {
+				if (xmlResult.rewrittenPoms.length > 0 || xmlResult.errors.length > 0)
+				{
 					this.verboseLog(`│  │`);
 					this.verboseLog(`│  ├──╮ Dependency rewriting summary:`);
-					if (xmlResult.rewrittenPoms.length > 0) {
+					if (xmlResult.rewrittenPoms.length > 0)
+					{
 						this.verboseLog(`│  │  │ Updated ${chalk.yellow(xmlResult.rewrittenPoms.length)} pom files`);
 					}
-					if (xmlResult.mavenFallbacks.length > 0) {
+					if (xmlResult.mavenFallbacks.length > 0)
+					{
 						this.verboseLog(
 							`│  │  │ Used Maven for ${chalk.yellow(xmlResult.mavenFallbacks.length)} complex pom files`,
 						);
 					}
-					if (xmlResult.errors.length > 0) {
+					if (xmlResult.errors.length > 0)
+					{
 						this.verboseLog(`│  │  │ Failed to update ${chalk.yellow(xmlResult.errors.length)} pom files`);
-						for (const error of xmlResult.errors) {
+						for (const error of xmlResult.errors)
+						{
 							this.verboseLog(`│  │  │   ${chalk.yellow(error.pom)}: ${error.error}`);
 						}
 					}
 					this.verboseLog(`│  ├──╯`);
 				}
 
-				if (!this.verbose && xmlResult.rewrittenPoms.length > 0) {
+				if (!this.verbose && xmlResult.rewrittenPoms.length > 0)
+				{
 					this.log(`Rewrote dependencies in ${xmlResult.rewrittenPoms.length} pom files.`);
 				}
 			}
@@ -1086,45 +1379,55 @@ export default class AggregatorCreate extends Command {
 				success: true,
 				pomPath,
 				modules: [
-					...mavenRepos.map((repo) => ({
+					...mavenRepos.map((repo) => (
+					{
 						path: repo.relativePath,
 						valid: true,
 					})),
-					...skippedRepos.map((repo) => ({
+					...skippedRepos.map((repo) => (
+					{
 						path: repo.relativePath,
 						valid: false,
 						reason: repo.reason,
 					})),
 				],
-				stats: {
+				stats:
+				{
 					totalScanned,
 					validRepositories: mavenRepos.length,
 					skippedRepositories: skippedRepos.length,
 				},
-				mavenCoordinates: {
+				mavenCoordinates:
+				{
 					groupId: flags.groupId,
 					artifactId: flags.artifactId,
 					version: flags.pomVersion,
 				},
 			};
-		} catch (error: unknown) {
+		}
+		catch (error: unknown)
+		{
 			let errorMessage = "Unknown error";
 			let errorCode: string | undefined;
 
-			if (error instanceof Error) {
+			if (error instanceof Error)
+			{
 				errorMessage = error.message;
 				errorCode = "code" in error && typeof error.code === "string" ? error.code : undefined;
 			}
 
-			return this.error(`Failed to write aggregator POM: ${errorMessage}`, {
-				exit: 1,
-				code: errorCode ?? "POM_WRITE_ERROR",
-				suggestions: [
-					"Check if you have write permissions in the directory",
-					"Ensure the directory is not read-only",
-					`Verify the path exists: ${pomPath}`,
-				],
-			});
+			return this.error(
+				`Failed to write aggregator POM: ${errorMessage}`,
+				{
+					exit: 1,
+					code: errorCode ?? "POM_WRITE_ERROR",
+					suggestions: [
+						"Check if you have write permissions in the directory",
+						"Ensure the directory is not read-only",
+						`Verify the path exists: ${pomPath}`,
+					],
+				},
+			);
 		}
 	}
 }

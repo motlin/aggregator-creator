@@ -6,18 +6,22 @@ import os from "node:os";
 import MavenGAVCoords from "../../src/maven-gav.js";
 import {XmlDependencyRewriter} from "../../src/utils/xml-dependency-rewriter.js";
 
-describe("XmlDependencyRewriter edge cases", () => {
+describe("XmlDependencyRewriter edge cases", () =>
+{
 	let tempDir: string;
 
-	beforeEach(async () => {
+	beforeEach(async () =>
+	{
 		tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "xml-rewriter-edge-test-"));
 	});
 
-	afterEach(async () => {
+	afterEach(async () =>
+	{
 		await fs.remove(tempDir);
 	});
 
-	it("handles dependencies with scope", async () => {
+	it("handles dependencies with scope", async () =>
+	{
 		const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -41,11 +45,13 @@ describe("XmlDependencyRewriter edge cases", () => {
 
 		const gavs = [new MavenGAVCoords("com.example", "library-a", "1.5.0")];
 
-		const rewriter = new XmlDependencyRewriter({
-			aggregatorPath: tempDir,
-			gavs,
-			modules: ["module1"],
-		});
+		const rewriter = new XmlDependencyRewriter(
+			{
+				aggregatorPath: tempDir,
+				gavs,
+				modules: ["module1"],
+			},
+		);
 
 		const result = await rewriter.rewriteDependencies();
 
@@ -57,7 +63,8 @@ describe("XmlDependencyRewriter edge cases", () => {
 		expect(updatedContent).to.include("<scope>test</scope>");
 	});
 
-	it("handles dependencies with classifier", async () => {
+	it("handles dependencies with classifier", async () =>
+	{
 		const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -81,11 +88,13 @@ describe("XmlDependencyRewriter edge cases", () => {
 
 		const gavs = [new MavenGAVCoords("com.example", "library-a", "1.5.0")];
 
-		const rewriter = new XmlDependencyRewriter({
-			aggregatorPath: tempDir,
-			gavs,
-			modules: ["module1"],
-		});
+		const rewriter = new XmlDependencyRewriter(
+			{
+				aggregatorPath: tempDir,
+				gavs,
+				modules: ["module1"],
+			},
+		);
 
 		const result = await rewriter.rewriteDependencies();
 
@@ -97,7 +106,8 @@ describe("XmlDependencyRewriter edge cases", () => {
 		expect(updatedContent).to.include("<classifier>tests</classifier>");
 	});
 
-	it("handles dependencies with type", async () => {
+	it("handles dependencies with type", async () =>
+	{
 		const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -121,11 +131,13 @@ describe("XmlDependencyRewriter edge cases", () => {
 
 		const gavs = [new MavenGAVCoords("com.example", "library-a", "1.5.0")];
 
-		const rewriter = new XmlDependencyRewriter({
-			aggregatorPath: tempDir,
-			gavs,
-			modules: ["module1"],
-		});
+		const rewriter = new XmlDependencyRewriter(
+			{
+				aggregatorPath: tempDir,
+				gavs,
+				modules: ["module1"],
+			},
+		);
 
 		const result = await rewriter.rewriteDependencies();
 
@@ -137,7 +149,8 @@ describe("XmlDependencyRewriter edge cases", () => {
 		expect(updatedContent).to.include("<type>test-jar</type>");
 	});
 
-	it("handles dependencies with all optional fields", async () => {
+	it("handles dependencies with all optional fields", async () =>
+	{
 		const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -163,11 +176,13 @@ describe("XmlDependencyRewriter edge cases", () => {
 
 		const gavs = [new MavenGAVCoords("com.example", "library-a", "1.5.0")];
 
-		const rewriter = new XmlDependencyRewriter({
-			aggregatorPath: tempDir,
-			gavs,
-			modules: ["module1"],
-		});
+		const rewriter = new XmlDependencyRewriter(
+			{
+				aggregatorPath: tempDir,
+				gavs,
+				modules: ["module1"],
+			},
+		);
 
 		const result = await rewriter.rewriteDependencies();
 
@@ -181,7 +196,8 @@ describe("XmlDependencyRewriter edge cases", () => {
 		expect(updatedContent).to.include("<classifier>jdk8</classifier>");
 	});
 
-	it("handles empty dependencies section", async () => {
+	it("handles empty dependencies section", async () =>
+	{
 		const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -199,11 +215,13 @@ describe("XmlDependencyRewriter edge cases", () => {
 
 		const gavs = [new MavenGAVCoords("com.example", "library-a", "1.5.0")];
 
-		const rewriter = new XmlDependencyRewriter({
-			aggregatorPath: tempDir,
-			gavs,
-			modules: ["module1"],
-		});
+		const rewriter = new XmlDependencyRewriter(
+			{
+				aggregatorPath: tempDir,
+				gavs,
+				modules: ["module1"],
+			},
+		);
 
 		const result = await rewriter.rewriteDependencies();
 
@@ -211,7 +229,8 @@ describe("XmlDependencyRewriter edge cases", () => {
 		expect(result.rewrittenPoms).to.deep.equal([]);
 	});
 
-	it("handles POM without dependencies section", async () => {
+	it("handles POM without dependencies section", async () =>
+	{
 		const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -226,11 +245,13 @@ describe("XmlDependencyRewriter edge cases", () => {
 
 		const gavs = [new MavenGAVCoords("com.example", "library-a", "1.5.0")];
 
-		const rewriter = new XmlDependencyRewriter({
-			aggregatorPath: tempDir,
-			gavs,
-			modules: ["module1"],
-		});
+		const rewriter = new XmlDependencyRewriter(
+			{
+				aggregatorPath: tempDir,
+				gavs,
+				modules: ["module1"],
+			},
+		);
 
 		const result = await rewriter.rewriteDependencies();
 
@@ -238,7 +259,8 @@ describe("XmlDependencyRewriter edge cases", () => {
 		expect(result.rewrittenPoms).to.deep.equal([]);
 	});
 
-	it("handles property placeholders in groupId", async () => {
+	it("handles property placeholders in groupId", async () =>
+	{
 		const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -261,18 +283,21 @@ describe("XmlDependencyRewriter edge cases", () => {
 
 		const gavs = [new MavenGAVCoords("com.example", "library-a", "1.5.0")];
 
-		const rewriter = new XmlDependencyRewriter({
-			aggregatorPath: tempDir,
-			gavs,
-			modules: ["module1"],
-		});
+		const rewriter = new XmlDependencyRewriter(
+			{
+				aggregatorPath: tempDir,
+				gavs,
+				modules: ["module1"],
+			},
+		);
 
 		const result = await rewriter.rewriteDependencies();
 
 		expect(result.rewrittenPoms).to.deep.equal([]);
 	});
 
-	it("handles property placeholders in multiple locations", async () => {
+	it("handles property placeholders in multiple locations", async () =>
+	{
 		const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -308,11 +333,13 @@ describe("XmlDependencyRewriter edge cases", () => {
 			new MavenGAVCoords("com.example", "lib2", "2.0.0"),
 		];
 
-		const rewriter = new XmlDependencyRewriter({
-			aggregatorPath: tempDir,
-			gavs,
-			modules: ["module1"],
-		});
+		const rewriter = new XmlDependencyRewriter(
+			{
+				aggregatorPath: tempDir,
+				gavs,
+				modules: ["module1"],
+			},
+		);
 
 		const result = await rewriter.rewriteDependencies();
 
@@ -326,7 +353,8 @@ describe("XmlDependencyRewriter edge cases", () => {
 		expect(updatedPom).not.to.match(/\$\{lib\.version\}/);
 	});
 
-	it("handles mixed plain and array dependency structures", async () => {
+	it("handles mixed plain and array dependency structures", async () =>
+	{
 		const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -357,11 +385,13 @@ describe("XmlDependencyRewriter edge cases", () => {
 			new MavenGAVCoords("com.example", "library-b", "2.5.0"),
 		];
 
-		const rewriter = new XmlDependencyRewriter({
-			aggregatorPath: tempDir,
-			gavs,
-			modules: ["module1"],
-		});
+		const rewriter = new XmlDependencyRewriter(
+			{
+				aggregatorPath: tempDir,
+				gavs,
+				modules: ["module1"],
+			},
+		);
 
 		const result = await rewriter.rewriteDependencies();
 
@@ -373,9 +403,12 @@ describe("XmlDependencyRewriter edge cases", () => {
 		expect(updatedContent).to.include("<version>2.5.0</version>");
 	});
 
-	it("handles very large number of dependencies", async () => {
+	it("handles very large number of dependencies", async () =>
+	{
 		const dependencies = Array.from(
-			{length: 100},
+			{
+				length: 100,
+			},
 			(_, i) => `        <dependency>
             <groupId>com.example</groupId>
             <artifactId>library-${i}</artifactId>
@@ -399,13 +432,20 @@ ${dependencies}
 		await fs.ensureDir(modulePath);
 		await fs.writeFile(path.join(modulePath, "pom.xml"), pomContent);
 
-		const gavs = Array.from({length: 100}, (_, i) => new MavenGAVCoords("com.example", `library-${i}`, "2.0.0"));
+		const gavs = Array.from(
+			{
+				length: 100,
+			},
+			(_, i) => new MavenGAVCoords("com.example", `library-${i}`, "2.0.0"),
+		);
 
-		const rewriter = new XmlDependencyRewriter({
-			aggregatorPath: tempDir,
-			gavs,
-			modules: ["module1"],
-		});
+		const rewriter = new XmlDependencyRewriter(
+			{
+				aggregatorPath: tempDir,
+				gavs,
+				modules: ["module1"],
+			},
+		);
 
 		const result = await rewriter.rewriteDependencies();
 
@@ -418,11 +458,18 @@ ${dependencies}
 		expect(versionMatches?.length).to.equal(1);
 	});
 
-	it("handles concurrent updates to different modules", async () => {
-		const modules = Array.from({length: 10}, (_, i) => `module${i}`);
+	it("handles concurrent updates to different modules", async () =>
+	{
+		const modules = Array.from(
+			{
+				length: 10,
+			},
+			(_, i) => `module${i}`,
+		);
 
 		await Promise.all(
-			modules.map(async (module) => {
+			modules.map(async (module) =>
+			{
 				const modulePath = path.join(tempDir, module);
 				await fs.ensureDir(modulePath);
 
@@ -448,11 +495,13 @@ ${dependencies}
 
 		const gavs = [new MavenGAVCoords("com.example", "shared-lib", "2.0.0")];
 
-		const rewriter = new XmlDependencyRewriter({
-			aggregatorPath: tempDir,
-			gavs,
-			modules,
-		});
+		const rewriter = new XmlDependencyRewriter(
+			{
+				aggregatorPath: tempDir,
+				gavs,
+				modules,
+			},
+		);
 
 		const result = await rewriter.rewriteDependencies();
 
@@ -462,12 +511,14 @@ ${dependencies}
 		const updatedContents = await Promise.all(
 			modules.map(async (module) => fs.readFile(path.join(tempDir, module, "pom.xml"), "utf8")),
 		);
-		for (const updatedContent of updatedContents) {
+		for (const updatedContent of updatedContents)
+		{
 			expect(updatedContent).to.include("<version>2.0.0</version>");
 		}
 	});
 
-	it("preserves XML formatting and indentation", async () => {
+	it("preserves XML formatting and indentation", async () =>
+	{
 		const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -490,11 +541,13 @@ ${dependencies}
 
 		const gavs = [new MavenGAVCoords("com.example", "library-a", "1.5.0")];
 
-		const rewriter = new XmlDependencyRewriter({
-			aggregatorPath: tempDir,
-			gavs,
-			modules: ["module1"],
-		});
+		const rewriter = new XmlDependencyRewriter(
+			{
+				aggregatorPath: tempDir,
+				gavs,
+				modules: ["module1"],
+			},
+		);
 
 		await rewriter.rewriteDependencies();
 

@@ -9,11 +9,13 @@ import {createSandbox} from "sinon";
 
 const root = path.join(import.meta.dirname, "../../..");
 
-describe("aggregator:create", () => {
+describe("aggregator:create", () =>
+{
 	let tempDir: string;
 	const sandbox = createSandbox();
 
-	beforeEach(async () => {
+	beforeEach(async () =>
+	{
 		tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "aggregator-test-"));
 
 		const validRepo1 = path.join(tempDir, "valid-repo1");
@@ -51,69 +53,92 @@ describe("aggregator:create", () => {
 		await fs.writeFile(path.join(validRepo1, "pom.xml"), validPom1);
 		await fs.writeFile(path.join(validRepo2, "pom.xml"), validPom2);
 
-		Object.defineProperty(process.stdin, "isTTY", {
-			value: undefined,
-			writable: true,
-			configurable: true,
-		});
+		Object.defineProperty(
+			process.stdin,
+			"isTTY",
+			{
+				value: undefined,
+				writable: true,
+				configurable: true,
+			},
+		);
 		sandbox.stub(process.stdin, "isTTY").value(true);
 	});
 
-	afterEach(async () => {
+	afterEach(async () =>
+	{
 		await fs.remove(tempDir);
 		sandbox.restore();
 	});
 
-	it("errors when no directory is provided", async () => {
-		Object.defineProperty(process.stdin, "isTTY", {
-			value: undefined,
-			writable: true,
-			configurable: true,
-		});
+	it("errors when no directory is provided", async () =>
+	{
+		Object.defineProperty(
+			process.stdin,
+			"isTTY",
+			{
+				value: undefined,
+				writable: true,
+				configurable: true,
+			},
+		);
 		sandbox.stub(process.stdin, "isTTY").value(true);
 
 		const result = await runCommand(["aggregator:create", "--json"], root);
-		expect(result).to.deep.equal({
-			result: undefined,
-			stdout:
-				JSON.stringify(
-					{
-						error: {
-							code: "NO_INPUT",
-							oclif: {
-								exit: 1,
-							},
-							suggestions: [
-								"Provide a directory path as an argument",
-								"Pipe JSON data from repo:list or repo:process command",
-								"Example: aggregator repo:list --owner someuser --json | aggregator aggregator:create ./output",
-							],
-						},
-					},
-					null,
-					2,
-				) + "\n",
-			stderr: "",
-		});
-	});
-
-	it("creates an aggregator POM with default values", async () => {
-		const mockResponse = {
-			statusCode: 200,
-			on(event: string, callback: (data?: string) => void) {
-				if (event === "data") {
-					callback(
-						JSON.stringify({
-							response: {
-								docs: [
-									{
-										latestVersion: "2.1.1",
-									},
+		expect(result).to.deep.equal(
+			{
+				result: undefined,
+				stdout:
+					JSON.stringify(
+						{
+							error:
+							{
+								code: "NO_INPUT",
+								oclif:
+								{
+									exit: 1,
+								},
+								suggestions: [
+									"Provide a directory path as an argument",
+									"Pipe JSON data from repo:list or repo:process command",
+									"Example: aggregator repo:list --owner someuser --json | aggregator aggregator:create ./output",
 								],
 							},
-						}),
+						},
+						null,
+						2,
+					) + "\n",
+				stderr: "",
+			},
+		);
+	});
+
+	it("creates an aggregator POM with default values", async () =>
+	{
+		const mockResponse =
+		{
+			statusCode: 200,
+			on(event: string, callback: (data?: string) => void)
+			{
+				if (event === "data")
+				{
+					callback(
+						JSON.stringify(
+							{
+								response:
+								{
+									docs: [
+										{
+											latestVersion: "2.1.1",
+										},
+									],
+								},
+							},
+						),
 					);
-				} else if (event === "end") {
+				}
+				else if (event === "end")
+				{
 					callback();
 				}
 
@@ -121,13 +146,16 @@ describe("aggregator:create", () => {
 			},
 		};
 
-		sandbox.stub(https, "get").callsFake((url, options, callback) => {
-			if (typeof options === "function") {
+		sandbox.stub(https, "get").callsFake((url, options, callback) =>
+		{
+			if (typeof options === "function")
+			{
 				callback = options;
 			}
 			callback!(mockResponse as Parameters<typeof https.get>[2] extends (res: infer R) => void ? R : never);
 			return {
-				on() {
+				on()
+				{
 					return this;
 				},
 			} as unknown as ReturnType<typeof https.get>;
@@ -135,7 +163,8 @@ describe("aggregator:create", () => {
 
 		const result = await runCommand(["aggregator:create", tempDir, "--yes", "--json"], root);
 
-		const expectedResult = {
+		const expectedResult =
+		{
 			success: true,
 			pomPath: path.join(tempDir, "pom.xml"),
 			modules: [
@@ -148,23 +177,27 @@ describe("aggregator:create", () => {
 					valid: true,
 				},
 			],
-			stats: {
+			stats:
+			{
 				totalScanned: 3,
 				validRepositories: 2,
 				skippedRepositories: 0,
 			},
-			mavenCoordinates: {
+			mavenCoordinates:
+			{
 				groupId: "com.example",
 				artifactId: "aggregator",
 				version: "1.0.0-SNAPSHOT",
 			},
 		};
 
-		expect(result).to.deep.equal({
-			stdout: JSON.stringify(expectedResult, null, 2) + "\n",
-			stderr: "",
-			result: expectedResult,
-		});
+		expect(result).to.deep.equal(
+			{
+				stdout: JSON.stringify(expectedResult, null, 2) + "\n",
+				stderr: "",
+				result: expectedResult,
+			},
+		);
 
 		const pomPath = path.join(tempDir, "pom.xml");
 		expect(fs.existsSync(pomPath)).to.equal(true);
@@ -199,23 +232,32 @@ describe("aggregator:create", () => {
 		expect(depMgmtMatches2).to.not.equal(null);
 	});
 
-	it("creates an aggregator POM with custom values", async () => {
-		const mockResponse = {
+	it("creates an aggregator POM with custom values", async () =>
+	{
+		const mockResponse =
+		{
 			statusCode: 200,
-			on(event: string, callback: (data?: string) => void) {
-				if (event === "data") {
+			on(event: string, callback: (data?: string) => void)
+			{
+				if (event === "data")
+				{
 					callback(
-						JSON.stringify({
-							response: {
-								docs: [
-									{
-										latestVersion: "2.1.1",
-									},
-								],
+						JSON.stringify(
+							{
+								response:
+								{
+									docs: [
+										{
+											latestVersion: "2.1.1",
+										},
+									],
+								},
 							},
-						}),
+						),
 					);
-				} else if (event === "end") {
+				}
+				else if (event === "end")
+				{
 					callback();
 				}
 
@@ -223,13 +265,16 @@ describe("aggregator:create", () => {
 			},
 		};
 
-		sandbox.stub(https, "get").callsFake((url, options, callback) => {
-			if (typeof options === "function") {
+		sandbox.stub(https, "get").callsFake((url, options, callback) =>
+		{
+			if (typeof options === "function")
+			{
 				callback = options;
 			}
 			callback!(mockResponse as Parameters<typeof https.get>[2] extends (res: infer R) => void ? R : never);
 			return {
-				on() {
+				on()
+				{
 					return this;
 				},
 			} as unknown as ReturnType<typeof https.get>;
@@ -250,7 +295,8 @@ describe("aggregator:create", () => {
 			root,
 		);
 
-		const expectedResult = {
+		const expectedResult =
+		{
 			success: true,
 			pomPath: path.join(tempDir, "pom.xml"),
 			modules: [
@@ -263,23 +309,27 @@ describe("aggregator:create", () => {
 					valid: true,
 				},
 			],
-			stats: {
+			stats:
+			{
 				totalScanned: 3,
 				validRepositories: 2,
 				skippedRepositories: 0,
 			},
-			mavenCoordinates: {
+			mavenCoordinates:
+			{
 				groupId: "org.test",
 				artifactId: "custom-agg",
 				version: "2.0.0",
 			},
 		};
 
-		expect(result).to.deep.equal({
-			stdout: JSON.stringify(expectedResult, null, 2) + "\n",
-			stderr: "",
-			result: expectedResult,
-		});
+		expect(result).to.deep.equal(
+			{
+				stdout: JSON.stringify(expectedResult, null, 2) + "\n",
+				stderr: "",
+				result: expectedResult,
+			},
+		);
 
 		const pomPath = path.join(tempDir, "pom.xml");
 		expect(fs.existsSync(pomPath)).to.equal(true);
@@ -294,23 +344,32 @@ describe("aggregator:create", () => {
 		expect(pomContent).to.include("<version>2.0.0</version>");
 	});
 
-	it("outputs in json format when --json flag is provided", async () => {
-		const mockResponse = {
+	it("outputs in json format when --json flag is provided", async () =>
+	{
+		const mockResponse =
+		{
 			statusCode: 200,
-			on(event: string, callback: (data?: string) => void) {
-				if (event === "data") {
+			on(event: string, callback: (data?: string) => void)
+			{
+				if (event === "data")
+				{
 					callback(
-						JSON.stringify({
-							response: {
-								docs: [
-									{
-										latestVersion: "2.1.1",
-									},
-								],
+						JSON.stringify(
+							{
+								response:
+								{
+									docs: [
+										{
+											latestVersion: "2.1.1",
+										},
+									],
+								},
 							},
-						}),
+						),
 					);
-				} else if (event === "end") {
+				}
+				else if (event === "end")
+				{
 					callback();
 				}
 
@@ -318,13 +377,16 @@ describe("aggregator:create", () => {
 			},
 		};
 
-		sandbox.stub(https, "get").callsFake((url, options, callback) => {
-			if (typeof options === "function") {
+		sandbox.stub(https, "get").callsFake((url, options, callback) =>
+		{
+			if (typeof options === "function")
+			{
 				callback = options;
 			}
 			callback!(mockResponse as Parameters<typeof https.get>[2] extends (res: infer R) => void ? R : never);
 			return {
-				on() {
+				on()
+				{
 					return this;
 				},
 			} as unknown as ReturnType<typeof https.get>;
@@ -334,49 +396,62 @@ describe("aggregator:create", () => {
 
 		const output = JSON.parse(stdout);
 
-		expect(output).to.deep.equal({
-			success: true,
-			pomPath: path.join(tempDir, "pom.xml"),
-			modules: [
+		expect(output).to.deep.equal(
+			{
+				success: true,
+				pomPath: path.join(tempDir, "pom.xml"),
+				modules: [
+					{
+						path: "valid-repo1",
+						valid: true,
+					},
+					{
+						path: "valid-repo2",
+						valid: true,
+					},
+				],
+				stats:
 				{
-					path: "valid-repo1",
-					valid: true,
+					totalScanned: 3,
+					validRepositories: 2,
+					skippedRepositories: 0,
 				},
+				mavenCoordinates:
 				{
-					path: "valid-repo2",
-					valid: true,
+					groupId: "com.example",
+					artifactId: "aggregator",
+					version: "1.0.0-SNAPSHOT",
 				},
-			],
-			stats: {
-				totalScanned: 3,
-				validRepositories: 2,
-				skippedRepositories: 0,
 			},
-			mavenCoordinates: {
-				groupId: "com.example",
-				artifactId: "aggregator",
-				version: "1.0.0-SNAPSHOT",
-			},
-		});
+		);
 	});
 
-	it("returns a structured error when no Maven repositories are found with --json flag", async () => {
-		const mockResponse = {
+	it("returns a structured error when no Maven repositories are found with --json flag", async () =>
+	{
+		const mockResponse =
+		{
 			statusCode: 200,
-			on(event: string, callback: (data?: string) => void) {
-				if (event === "data") {
+			on(event: string, callback: (data?: string) => void)
+			{
+				if (event === "data")
+				{
 					callback(
-						JSON.stringify({
-							response: {
-								docs: [
-									{
-										latestVersion: "2.1.1",
-									},
-								],
+						JSON.stringify(
+							{
+								response:
+								{
+									docs: [
+										{
+											latestVersion: "2.1.1",
+										},
+									],
+								},
 							},
-						}),
+						),
 					);
-				} else if (event === "end") {
+				}
+				else if (event === "end")
+				{
 					callback();
 				}
 
@@ -384,13 +459,16 @@ describe("aggregator:create", () => {
 			},
 		};
 
-		sandbox.stub(https, "get").callsFake((url, options, callback) => {
-			if (typeof options === "function") {
+		sandbox.stub(https, "get").callsFake((url, options, callback) =>
+		{
+			if (typeof options === "function")
+			{
 				callback = options;
 			}
 			callback!(mockResponse as Parameters<typeof https.get>[2] extends (res: infer R) => void ? R : never);
 			return {
-				on() {
+				on()
+				{
 					return this;
 				},
 			} as unknown as ReturnType<typeof https.get>;
@@ -398,49 +476,69 @@ describe("aggregator:create", () => {
 
 		const emptyDir = await fs.mkdtemp(path.join(os.tmpdir(), "empty-dir-"));
 
-		try {
+		try
+		{
 			const {stdout} = await runCommand(["aggregator:create", emptyDir, "--json", "--yes"], root);
 
 			const output = JSON.parse(stdout);
 
-			expect(output).to.deep.equal({
-				success: false,
-				pomPath: "",
-				modules: [],
-				stats: {
-					totalScanned: 0,
-					validRepositories: 0,
-					skippedRepositories: 0,
+			expect(output).to.deep.equal(
+				{
+					success: false,
+					pomPath: "",
+					modules: [],
+					stats:
+					{
+						totalScanned: 0,
+						validRepositories: 0,
+						skippedRepositories: 0,
+					},
+					mavenCoordinates:
+					{
+						groupId: "com.example",
+						artifactId: "aggregator",
+						version: "1.0.0-SNAPSHOT",
+					},
+					error: "No Maven repositories found. Each repository must contain a pom.xml file.",
 				},
-				mavenCoordinates: {
-					groupId: "com.example",
-					artifactId: "aggregator",
-					version: "1.0.0-SNAPSHOT",
-				},
-				error: "No Maven repositories found. Each repository must contain a pom.xml file.",
-			});
-		} finally {
+			);
+		}
+		finally
+		{
 			await fs.remove(emptyDir);
 		}
 	});
 
-	it("errors instead of creating the directory when it does not exist", async () => {
+	it("errors instead of creating the directory when it does not exist", async () =>
+	{
 		const missingDir = path.join(tempDir, "does-not-exist");
 
 		const {error} = await runCommand(["aggregator:create", missingDir, "--yes"], root);
 
-		expect({
-			message: error?.message,
-			code: (error as {code?: string} | undefined)?.code,
-			created: await fs.pathExists(missingDir),
-		}).to.deep.equal({
-			message: `Directory does not exist: ${missingDir}`,
-			code: "DIRECTORY_NOT_FOUND",
-			created: false,
-		});
+		expect(
+			{
+				message: error?.message,
+				code: (
+					error as
+						|
+						  {
+								code?: string;
+						  }
+						| undefined
+				)?.code,
+				created: await fs.pathExists(missingDir),
+			},
+		).to.deep.equal(
+			{
+				message: `Directory does not exist: ${missingDir}`,
+				code: "DIRECTORY_NOT_FOUND",
+				created: false,
+			},
+		);
 	});
 
-	it("skips repositories with a malformed pom.xml and reports why", async () => {
+	it("skips repositories with a malformed pom.xml and reports why", async () =>
+	{
 		const malformedRepo = path.join(tempDir, "owner", "malformed-repo");
 		await fs.ensureDir(malformedRepo);
 		await fs.writeFile(path.join(malformedRepo, "pom.xml"), "<project><groupId>broken</groupId");
@@ -449,25 +547,40 @@ describe("aggregator:create", () => {
 
 		const output = JSON.parse(stdout);
 
-		expect({modules: output.modules, stats: output.stats}).to.deep.equal({
-			modules: [
-				{path: "valid-repo1", valid: true},
-				{path: "valid-repo2", valid: true},
-				{
-					path: path.join("owner", "malformed-repo"),
-					valid: false,
-					reason: "Malformed pom.xml: XML parsing failed: Unclosed root tag\nLine: 0\nColumn: 33\nChar: ",
-				},
-			],
-			stats: {
-				totalScanned: 5,
-				validRepositories: 2,
-				skippedRepositories: 1,
+		expect(
+			{
+				modules: output.modules,
+				stats: output.stats,
 			},
-		});
+		).to.deep.equal(
+			{
+				modules: [
+					{
+						path: "valid-repo1",
+						valid: true,
+					},
+					{
+						path: "valid-repo2",
+						valid: true,
+					},
+					{
+						path: path.join("owner", "malformed-repo"),
+						valid: false,
+						reason: "Malformed pom.xml: XML parsing failed: Unclosed root tag\nLine: 0\nColumn: 33\nChar: ",
+					},
+				],
+				stats:
+				{
+					totalScanned: 5,
+					validRepositories: 2,
+					skippedRepositories: 1,
+				},
+			},
+		);
 	});
 
-	it("uses the latest liftwizard-profile-parent version that maven-dependency-plugin resolves into the local repository", async () => {
+	it("uses the latest liftwizard-profile-parent version that maven-dependency-plugin resolves into the local repository", async () =>
+	{
 		const fakeHome = path.join(tempDir, "fake-home");
 		const liftwizardVersionsDir = path.join(
 			fakeHome,
@@ -484,7 +597,9 @@ describe("aggregator:create", () => {
 		await fs.outputFile(
 			path.join(fakeBin, "mvn"),
 			'#!/bin/sh\n[ "$1" = "org.apache.maven.plugins:maven-dependency-plugin:3.6.0:get" ] && [ "$2" = "-Dartifact=io.liftwizard:liftwizard-profile-parent:LATEST:pom" ] && exit 0\nexit 1\n',
-			{mode: 0o755},
+			{
+				mode: 0o755,
+			},
 		);
 		sandbox.stub(process.env, "PATH").value(`${fakeBin}${path.delimiter}${process.env.PATH}`);
 		sandbox.stub(process.env, "HOME").value(fakeHome);

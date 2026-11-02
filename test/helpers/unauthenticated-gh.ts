@@ -8,20 +8,27 @@ const AUTH_VARIABLES = ["GH_TOKEN", "GITHUB_TOKEN", "GH_ENTERPRISE_TOKEN", "GITH
  * Point gh at an empty config directory with no token so every gh call fails as unauthenticated.
  * Returns a function that restores the original environment.
  */
-export async function useUnauthenticatedGh(): Promise<() => Promise<void>> {
+export async function useUnauthenticatedGh(): Promise<() => Promise<void>>
+{
 	const saved = Object.fromEntries(AUTH_VARIABLES.map((name) => [name, process.env[name]]));
 	const configDir = await fs.mkdtemp(path.join(os.tmpdir(), "gh-unauthenticated-"));
 
-	for (const name of AUTH_VARIABLES) {
+	for (const name of AUTH_VARIABLES)
+	{
 		Reflect.deleteProperty(process.env, name);
 	}
 	process.env.GH_CONFIG_DIR = configDir;
 
-	return async () => {
-		for (const [name, value] of Object.entries(saved)) {
-			if (value === undefined) {
+	return async () =>
+	{
+		for (const [name, value] of Object.entries(saved))
+		{
+			if (value === undefined)
+			{
 				Reflect.deleteProperty(process.env, name);
-			} else {
+			}
+			else
+			{
 				process.env[name] = value;
 			}
 		}

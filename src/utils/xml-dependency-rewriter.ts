@@ -8,7 +8,8 @@ import MavenGAVCoords from "../maven-gav.js";
 // oxlint-disable-next-line @typescript-eslint/no-explicit-any
 const parseXML = promisify<string, any, PomData>(parseString);
 
-export interface XmlDependencyRewriteOptions {
+export interface XmlDependencyRewriteOptions
+{
 	aggregatorPath: string;
 	gavs: MavenGAVCoords[];
 	modules: string[];
@@ -17,14 +18,20 @@ export interface XmlDependencyRewriteOptions {
 	fallbackToMaven?: boolean;
 }
 
-export interface XmlDependencyRewriteResult {
+export interface XmlDependencyRewriteResult
+{
 	success: boolean;
 	rewrittenPoms: string[];
-	errors: Array<{pom: string; error: string}>;
+	errors: Array<
+	{
+		pom: string;
+		error: string;
+	}>;
 	mavenFallbacks: string[];
 }
 
-interface Dependency {
+interface Dependency
+{
 	groupId?: string | string[];
 	artifactId?: string | string[];
 	version?: string | string[];
@@ -33,36 +40,49 @@ interface Dependency {
 	classifier?: string | string[];
 }
 
-interface Parent {
+interface Parent
+{
 	groupId?: string | string[];
 	artifactId?: string | string[];
 	version?: string | string[];
 	relativePath?: string | string[];
 }
 
-interface PomData {
-	project?: {
+interface PomData
+{
+	project?:
+	{
 		parent?: Parent | Parent[];
-		dependencies?: Array<{
+		dependencies?: Array<
+		{
 			dependency?: Dependency | Dependency[];
 		}>;
-		dependencyManagement?: Array<{
-			dependencies?: Array<{
+		dependencyManagement?: Array<
+		{
+			dependencies?: Array<
+			{
 				dependency?: Dependency | Dependency[];
 			}>;
 		}>;
-		build?: Array<{
-			plugins?: Array<{
-				plugin?: Array<{
-					dependencies?: Array<{
+		build?: Array<
+		{
+			plugins?: Array<
+			{
+				plugin?: Array<
+				{
+					dependencies?: Array<
+					{
 						dependency?: Dependency | Dependency[];
 					}>;
 				}>;
 			}>;
 		}>;
-		profiles?: Array<{
-			profile?: Array<{
-				dependencies?: Array<{
+		profiles?: Array<
+		{
+			profile?: Array<
+			{
+				dependencies?: Array<
+				{
 					dependency?: Dependency | Dependency[];
 				}>;
 			}>;
@@ -70,64 +90,89 @@ interface PomData {
 	};
 }
 
-export class XmlDependencyRewriter {
+export class XmlDependencyRewriter
+{
 	private readonly options: XmlDependencyRewriteOptions;
 	private readonly log: (message: string) => void;
 	private readonly gavMap: Map<string, string>;
 
-	constructor(options: XmlDependencyRewriteOptions) {
+	constructor(options: XmlDependencyRewriteOptions)
+	{
 		this.options = options;
-		this.log = options.log ?? (() => {});
+		this.log =
+			options.log ??
+			(() =>
+			{
+			});
 
 		this.gavMap = new Map();
-		for (const gav of options.gavs) {
+		for (const gav of options.gavs)
+		{
 			const key = `${gav.getGroupId()}:${gav.getArtifactId()}`;
 			this.gavMap.set(key, gav.getVersion());
 		}
 	}
 
-	async rewriteDependencies(): Promise<XmlDependencyRewriteResult> {
-		const result: XmlDependencyRewriteResult = {
+	async rewriteDependencies(): Promise<XmlDependencyRewriteResult>
+	{
+		const result: XmlDependencyRewriteResult =
+		{
 			success: true,
 			rewrittenPoms: [],
 			errors: [],
 			mavenFallbacks: [],
 		};
 
-		if (this.options.gavs.length === 0) {
+		if (this.options.gavs.length === 0)
+		{
 			return result;
 		}
 
 		this.log(`│  │`);
 		this.log(`│  ├──╮ 🔧 Rewriting child pom dependencies using direct XML editing...`);
 
-		const processPromises = this.options.modules.map(async (module) => {
+		const processPromises = this.options.modules.map(async (module) =>
+		{
 			const pomPath = path.join(this.options.aggregatorPath, module, "pom.xml");
 
-			if (!(await fs.pathExists(pomPath))) {
+			if (!(await fs.pathExists(pomPath)))
+			{
 				this.log(`│  │  │ ⚠️ Skipping ${chalk.yellow(module)}: pom.xml not found`);
 				return;
 			}
 
 			this.log(`│  │  │ Processing ${chalk.yellow(module)}...`);
 
-			try {
+			try
+			{
 				const {updated, fallbackNeeded} = await this.updatePomDependencies(pomPath);
 
-				if (fallbackNeeded) {
+				if (fallbackNeeded)
+				{
 					result.mavenFallbacks.push(module);
 					this.log(
 						`│  │  │ ⚠️ ${chalk.yellow(module)} requires Maven fallback (properties/complex structure)`,
 					);
-				} else if (updated) {
+				}
+				else if (updated)
+				{
 					result.rewrittenPoms.push(module);
 					this.log(`│  │  │ ✅ Updated dependencies in ${chalk.yellow(module)}`);
-				} else {
+				}
+				else
+				{
 					this.log(`│  │  │ ℹ️ No updates needed for ${chalk.yellow(module)}`);
 				}
-			} catch (error) {
+			}
+			catch (error)
+			{
 				const errorMessage = error instanceof Error ? error.message : String(error);
-				result.errors.push({pom: module, error: errorMessage});
+				result.errors.push(
+					{
+						pom: module,
+						error: errorMessage,
+					},
+				);
 				result.success = false;
 				this.log(`│  │  │ ❌ Failed to update ${chalk.yellow(module)}: ${errorMessage}`);
 			}
@@ -140,37 +185,50 @@ export class XmlDependencyRewriter {
 		return result;
 	}
 
-	private async updatePomDependencies(pomPath: string): Promise<{updated: boolean; fallbackNeeded: boolean}> {
+	private async updatePomDependencies(pomPath: string): Promise<
+	{
+		updated: boolean;
+		fallbackNeeded: boolean;
+	}>
+	{
 		const pomContent = await fs.readFile(pomPath, "utf8");
 
-		const pomData = await parseXML(pomContent, {
-			preserveChildrenOrder: true,
-			explicitArray: true,
-			normalizeTags: false,
-			attrkey: "$",
-			charkey: "_",
-		});
+		const pomData = await parseXML(
+			pomContent,
+			{
+				preserveChildrenOrder: true,
+				explicitArray: true,
+				normalizeTags: false,
+				attrkey: "$",
+				charkey: "_",
+			},
+		);
 
-		if (this.options.verbose) {
+		if (this.options.verbose)
+		{
 			this.log(`│  │  │   → Parsed POM structure`);
-			if (pomData.project && pomData.project.dependencies?.[0]) {
+			if (pomData.project && pomData.project.dependencies?.[0])
+			{
 				this.log(`│  │  │   → Found dependencies section`);
 			}
 		}
 
-		if (!pomData.project) {
+		if (!pomData.project)
+		{
 			throw new Error("Invalid POM: no project element found");
 		}
 
 		let updated = false;
 		const fallbackNeeded = false;
 
-		if (this.options.verbose) {
+		if (this.options.verbose)
+		{
 			this.log(`│  │  │   → Updating parent version...`);
 		}
 		updated = this.updateParent(pomData) || updated;
 
-		if (this.options.verbose) {
+		if (this.options.verbose)
+		{
 			this.log(`│  │  │   → Checking dependencies...`);
 		}
 		const projectDeps = pomData.project.dependencies?.[0]?.dependency;
@@ -179,36 +237,55 @@ export class XmlDependencyRewriter {
 		updated = this.updateDependencyList(projectDeps) || updated;
 		updated = this.updateDependencyList(depMgmtDeps) || updated;
 
-		if (pomData.project.build?.[0]?.plugins?.[0]?.plugin) {
-			for (const plugin of pomData.project.build[0].plugins[0].plugin) {
+		if (pomData.project.build?.[0]?.plugins?.[0]?.plugin)
+		{
+			for (const plugin of pomData.project.build[0].plugins[0].plugin)
+			{
 				const pluginDeps = plugin.dependencies?.[0]?.dependency;
 				updated = this.updateDependencyList(pluginDeps) || updated;
 			}
 		}
 
-		if (pomData.project.profiles?.[0]?.profile) {
-			for (const profile of pomData.project.profiles[0].profile) {
+		if (pomData.project.profiles?.[0]?.profile)
+		{
+			for (const profile of pomData.project.profiles[0].profile)
+			{
 				const profileDeps = profile.dependencies?.[0]?.dependency;
 				updated = this.updateDependencyList(profileDeps) || updated;
 			}
 		}
 
-		if (updated) {
-			const xmlBuilder = new Builder({
-				xmldec: {version: "1.0", encoding: "utf8"},
-				renderOpts: {pretty: true, indent: "    "},
-				headless: false,
-				attrkey: "$",
-				charkey: "_",
-			});
+		if (updated)
+		{
+			const xmlBuilder = new Builder(
+				{
+					xmldec:
+					{
+						version: "1.0",
+						encoding: "utf8",
+					},
+					renderOpts:
+					{
+						pretty: true,
+						indent: "    ",
+					},
+					headless: false,
+					attrkey: "$",
+					charkey: "_",
+				},
+			);
 			const newXml = xmlBuilder.buildObject(pomData);
 			await fs.writeFile(pomPath, newXml);
 		}
 
-		return {updated, fallbackNeeded};
+		return {
+			updated,
+			fallbackNeeded,
+		};
 	}
 
-	private updateParent(pomData: PomData): boolean {
+	private updateParent(pomData: PomData): boolean
+	{
 		const parentData = pomData.project?.parent;
 		const parent = Array.isArray(parentData) ? parentData[0] : parentData;
 		if (!parent) return false;
@@ -222,14 +299,19 @@ export class XmlDependencyRewriter {
 		const key = `${groupId}:${artifactId}`;
 		const newVersion = this.gavMap.get(key);
 
-		if (newVersion && newVersion !== currentVersion) {
-			if (Array.isArray(parent.version)) {
+		if (newVersion && newVersion !== currentVersion)
+		{
+			if (Array.isArray(parent.version))
+			{
 				parent.version[0] = newVersion;
-			} else {
+			}
+			else
+			{
 				parent.version = newVersion;
 			}
 
-			if (this.options.verbose) {
+			if (this.options.verbose)
+			{
 				this.log(
 					`│  │  │   → Updated parent ${chalk.yellow(groupId)}:${chalk.yellow(artifactId)} from ${chalk.yellow(
 						currentVersion,
@@ -242,9 +324,12 @@ export class XmlDependencyRewriter {
 		return false;
 	}
 
-	private updateDependencyList(dependencies: Dependency | Dependency[] | undefined): boolean {
-		if (!dependencies) {
-			if (this.options.verbose) {
+	private updateDependencyList(dependencies: Dependency | Dependency[] | undefined): boolean
+	{
+		if (!dependencies)
+		{
+			if (this.options.verbose)
+			{
 				this.log(`│  │  │   → No dependencies found in this section`);
 			}
 			return false;
@@ -253,20 +338,24 @@ export class XmlDependencyRewriter {
 		let updated = false;
 		const deps = Array.isArray(dependencies) ? dependencies : [dependencies];
 
-		if (this.options.verbose) {
+		if (this.options.verbose)
+		{
 			this.log(`│  │  │   → Found ${deps.length} dependencies to check`);
 		}
 
-		for (const dep of deps) {
+		for (const dep of deps)
+		{
 			const groupId = Array.isArray(dep.groupId) ? dep.groupId[0] : dep.groupId;
 			const artifactId = Array.isArray(dep.artifactId) ? dep.artifactId[0] : dep.artifactId;
 			const currentVersion = Array.isArray(dep.version) ? dep.version[0] : dep.version;
 
-			if (groupId && artifactId && currentVersion) {
+			if (groupId && artifactId && currentVersion)
+			{
 				const key = `${groupId}:${artifactId}`;
 				const newVersion = this.gavMap.get(key);
 
-				if (this.options.verbose) {
+				if (this.options.verbose)
+				{
 					this.log(
 						`│  │  │   → Checking ${chalk.yellow(key)}: current=${chalk.yellow(
 							currentVersion,
@@ -274,15 +363,20 @@ export class XmlDependencyRewriter {
 					);
 				}
 
-				if (newVersion && newVersion !== currentVersion) {
-					if (Array.isArray(dep.version)) {
+				if (newVersion && newVersion !== currentVersion)
+				{
+					if (Array.isArray(dep.version))
+					{
 						dep.version[0] = newVersion;
-					} else {
+					}
+					else
+					{
 						dep.version = newVersion;
 					}
 					updated = true;
 
-					if (this.options.verbose) {
+					if (this.options.verbose)
+					{
 						this.log(
 							`│  │  │   → Updated ${chalk.yellow(groupId)}:${chalk.yellow(artifactId)} from ${chalk.yellow(
 								currentVersion,

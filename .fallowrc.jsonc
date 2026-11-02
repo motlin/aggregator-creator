@@ -5,7 +5,8 @@
 	// Used without an import: oclif loads @oclif/plugin-help from package.json's
 	// oclif.plugins, and the markdownlint-cli2 pre-commit hook runs the binary.
 	"ignoreDependencies": ["@oclif/plugin-help", "markdownlint-cli2"],
-	"rules": {
+	"rules":
+	{
 		"unused-dependencies": "error",
 	},
 }

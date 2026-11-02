@@ -7,7 +7,8 @@ import chalk from "chalk";
 import {z} from "zod";
 import {repositoriesSchema} from "../../types/repository.js";
 
-export default class RepoList extends Command {
+export default class RepoList extends Command
+{
 	static override description = "List GitHub repositories based on filters";
 
 	static override examples = [
@@ -24,29 +25,70 @@ export default class RepoList extends Command {
 
 	static override enableJsonFlag = true;
 
-	static override flags = {
-		owner: Flags.string({char: "o", description: "GitHub username/org to filter by", multiple: true}),
-		topic: Flags.string({char: "t", description: "Topic filter", multiple: true}),
-		"exclude-topic": Flags.string({char: "x", description: "Exclude repositories with this topic", multiple: true}),
-		language: Flags.string({char: "g", description: "Language filter", multiple: true}),
-		"include-forks": Flags.boolean({description: "Include forked repositories", default: false}),
-		"include-archived": Flags.boolean({description: "Include archived repositories", default: false}),
-		visibility: Flags.string({
-			description: "Repository visibility filter",
-			options: ["public", "private", "all"],
-			default: "public",
-		}),
-		limit: Flags.integer({
-			char: "l",
-			description: "Max repositories (GitHub search returns at most 100)",
-			min: 1,
-			max: 100,
-		}),
-		verbose: Flags.boolean({
-			char: "v",
-			description: "Show verbose output during listing",
-			default: false,
-		}),
+	static override flags =
+	{
+		owner: Flags.string(
+			{
+				char: "o",
+				description: "GitHub username/org to filter by",
+				multiple: true,
+			},
+		),
+		topic: Flags.string(
+			{
+				char: "t",
+				description: "Topic filter",
+				multiple: true,
+			},
+		),
+		"exclude-topic": Flags.string(
+			{
+				char: "x",
+				description: "Exclude repositories with this topic",
+				multiple: true,
+			},
+		),
+		language: Flags.string(
+			{
+				char: "g",
+				description: "Language filter",
+				multiple: true,
+			},
+		),
+		"include-forks": Flags.boolean(
+			{
+				description: "Include forked repositories",
+				default: false,
+			},
+		),
+		"include-archived": Flags.boolean(
+			{
+				description: "Include archived repositories",
+				default: false,
+			},
+		),
+		visibility: Flags.string(
+			{
+				description: "Repository visibility filter",
+				options: ["public", "private", "all"],
+				default: "public",
+			},
+		),
+		limit: Flags.integer(
+			{
+				char: "l",
+				description: "Max repositories (GitHub search returns at most 100)",
+				min: 1,
+				max: 100,
+			},
+		),
+		verbose: Flags.boolean(
+			{
+				char: "v",
+				description: "Show verbose output during listing",
+				default: false,
+			},
+		),
 	};
 
 	private async fetchRepositories(
@@ -60,15 +102,19 @@ export default class RepoList extends Command {
 		visibility: string,
 		execa: typeof execa_,
 		verbose: boolean,
-	): Promise<z.infer<typeof repositoriesSchema>> {
-		if (verbose) {
+	): Promise<z.infer<typeof repositoriesSchema>>
+	{
+		if (verbose)
+		{
 			this.log(
 				`├──╮ Fetching GitHub repositories${usernames.length > 0 ? ` for users: ${chalk.yellow(usernames.join(", "))}` : ""}`,
 			);
 		}
 
-		try {
-			if (verbose) {
+		try
+		{
+			if (verbose)
+			{
 				this.log(`│  ├──╮ Building search query`);
 			}
 			const topicQueries = topics.map((topic) => `topic:${topic}`).join(" ");
@@ -76,26 +122,31 @@ export default class RepoList extends Command {
 			const languageQueries = languages.map((language) => `language:${language}`).join(" ");
 			let query = "";
 
-			if (usernames.length > 0) {
+			if (usernames.length > 0)
+			{
 				const userQueries = usernames.map((username) => `user:${username}`).join(" ");
 				query += `${userQueries} `;
 			}
 
-			if (visibility !== "all") {
+			if (visibility !== "all")
+			{
 				query += `is:${visibility} `;
 			}
 
 			query += `${topicQueries} ${excludeTopicQueries} ${languageQueries}`;
 
-			if (!includeForks) {
+			if (!includeForks)
+			{
 				query += " fork:false";
 			}
 
-			if (!includeArchived) {
+			if (!includeArchived)
+			{
 				query += " archived:false";
 			}
 
-			if (verbose) {
+			if (verbose)
+			{
 				this.log(`│  │  │ Query: ${chalk.yellow(query)}`);
 				this.log(`│  ├──╯`);
 				this.log(`│  ├──╮ Executing GitHub API search`);
@@ -103,9 +154,11 @@ export default class RepoList extends Command {
 
 			const args = ["api", "-X", "GET", "search/repositories", "-f", `q=${query}`, "--jq", ".items"];
 
-			if (limit) {
+			if (limit)
+			{
 				args.splice(6, 0, "-f", `per_page=${limit}`);
-				if (verbose) {
+				if (verbose)
+				{
 					this.log(`│  │  │ Limit: ${chalk.yellow(limit)}`);
 				}
 			}
@@ -115,55 +168,72 @@ export default class RepoList extends Command {
 
 			const {stdout} = await execa("gh", args);
 
-			if (verbose) {
+			if (verbose)
+			{
 				this.log(`│  ├──╯`);
 				this.log(`├──╯`);
 			}
 
 			const repositories: unknown = JSON.parse(stdout);
 			return repositoriesSchema.parse(repositories);
-		} catch (error) {
-			if (error instanceof z.ZodError) {
-				this.error("Invalid repository data format received from GitHub API", {
-					exit: 1,
-					code: "INVALID_DATA_FORMAT",
-					suggestions: [
-						"GitHub API response format may have changed",
-						"Try updating the CLI to the latest version",
-					],
-				});
+		}
+		catch (error)
+		{
+			if (error instanceof z.ZodError)
+			{
+				this.error(
+					"Invalid repository data format received from GitHub API",
+					{
+						exit: 1,
+						code: "INVALID_DATA_FORMAT",
+						suggestions: [
+							"GitHub API response format may have changed",
+							"Try updating the CLI to the latest version",
+						],
+					},
+				);
 			}
 
 			const {authenticated, message} = describeGhError(error instanceof Error ? error.message : "Unknown error");
 
-			return this.error(`Failed to fetch repositories: ${message}`, {
-				exit: 1,
-				code: authenticated ? "GH_API_ERROR" : "GH_NOT_AUTHENTICATED",
-				suggestions: ["Check your GitHub authentication with: gh auth status"],
-			});
+			return this.error(
+				`Failed to fetch repositories: ${message}`,
+				{
+					exit: 1,
+					code: authenticated ? "GH_API_ERROR" : "GH_NOT_AUTHENTICATED",
+					suggestions: ["Check your GitHub authentication with: gh auth status"],
+				},
+			);
 		}
 	}
 
-	public async run(): Promise<z.infer<typeof repositoriesSchema>> {
+	public async run(): Promise<z.infer<typeof repositoriesSchema>>
+	{
 		const {flags} = await this.parse(RepoList);
 		const {verbose} = flags;
 
-		const execa = withDebugLogging(execa_, (message) => {
+		const execa = withDebugLogging(execa_, (message) =>
+		{
 			this.debug(message);
 		});
 
-		if (verbose) {
+		if (verbose)
+		{
 			this.log(`╭─── Listing GitHub repositories...`);
 			this.log(`│`);
 			this.log(`├──╮ Prerequisites`);
 		}
 
-		try {
-			if (verbose) {
+		try
+		{
+			if (verbose)
+			{
 				this.log(`│  ├──╮ Check gh CLI`);
 			}
 			await execa("gh", ["--version"]);
-		} catch {
+		}
+		catch
+		{
 			this.error(
 				"GitHub CLI (gh) is not installed or not in PATH. Please install it from https://cli.github.com/",
 				{
@@ -178,7 +248,8 @@ export default class RepoList extends Command {
 			);
 		}
 
-		if (verbose) {
+		if (verbose)
+		{
 			this.log(`├──╯ Prerequisites complete`);
 			this.log(`│`);
 		}
@@ -200,20 +271,26 @@ export default class RepoList extends Command {
 			verbose,
 		);
 
-		if (repositories.length === 0) {
-			if (verbose) {
+		if (repositories.length === 0)
+		{
+			if (verbose)
+			{
 				this.log(`├──╯ No repositories found matching the criteria.`);
 				this.log(`│`);
-			} else {
+			}
+			else
+			{
 				this.log(`No repositories found.`);
 			}
 			return repositoriesSchema.parse([]);
 		}
 
-		if (verbose) {
+		if (verbose)
+		{
 			this.log(`├──╮ Results: ${chalk.yellow(repositories.length)} repositories`);
 
-			for (const repo of repositories) {
+			for (const repo of repositories)
+			{
 				const language = repo.language ?? "No language";
 				const topics =
 					repo.topics && repo.topics.length > 0 ? `Topics: [${repo.topics.join(", ")}]` : "No topics";
@@ -231,9 +308,12 @@ export default class RepoList extends Command {
 
 			this.log(`│`);
 			this.log(`╰─── Repository listing complete`);
-		} else {
+		}
+		else
+		{
 			this.log(`Found ${repositories.length} repositories.`);
-			for (const repo of repositories) {
+			for (const repo of repositories)
+			{
 				this.log(`${repo.owner.login}/${repo.name}`);
 			}
 		}
