@@ -7,18 +7,22 @@ import os from "node:os";
 
 const root = path.join(import.meta.dirname, "../../..");
 
-describe("aggregator:create processAllReactorModules", () => {
+describe("aggregator:create processAllReactorModules", () =>
+{
 	let tempDir: string;
 
-	beforeEach(async () => {
+	beforeEach(async () =>
+	{
 		tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "reactor-modules-test-"));
 	});
 
-	afterEach(async () => {
+	afterEach(async () =>
+	{
 		await fs.remove(tempDir);
 	});
 
-	it("collects modules from single-module repository", async () => {
+	it("collects modules from single-module repository", async () =>
+	{
 		const repo1 = path.join(tempDir, "repo1");
 		await fs.ensureDir(repo1);
 
@@ -51,7 +55,8 @@ describe("aggregator:create processAllReactorModules", () => {
 		expect(depMatch).to.not.equal(null);
 	});
 
-	it("collects modules from multi-module repository", async () => {
+	it("collects modules from multi-module repository", async () =>
+	{
 		const repo1 = path.join(tempDir, "multi-repo");
 		await fs.ensureDir(repo1);
 
@@ -127,7 +132,8 @@ describe("aggregator:create processAllReactorModules", () => {
 		expect(moduleBMatch).to.not.equal(null);
 	});
 
-	it("collects modules from multiple repositories", async () => {
+	it("collects modules from multiple repositories", async () =>
+	{
 		const repo1 = path.join(tempDir, "repo1");
 		const repo2 = path.join(tempDir, "repo2");
 		await fs.ensureDir(repo1);
@@ -177,7 +183,8 @@ describe("aggregator:create processAllReactorModules", () => {
 		expect(repo2Match).to.not.equal(null);
 	});
 
-	it("handles nested modules", async () => {
+	it("handles nested modules", async () =>
+	{
 		const repo1 = path.join(tempDir, "nested-repo");
 		await fs.ensureDir(repo1);
 
@@ -250,7 +257,8 @@ describe("aggregator:create processAllReactorModules", () => {
 		expect(childMatch).to.not.equal(null);
 	});
 
-	it("handles repositories with only pom packaging", async () => {
+	it("handles repositories with only pom packaging", async () =>
+	{
 		const repo1 = path.join(tempDir, "pom-only");
 		await fs.ensureDir(repo1);
 
@@ -283,7 +291,8 @@ describe("aggregator:create processAllReactorModules", () => {
 		expect(pomOnlyMatch).to.not.equal(null);
 	});
 
-	it("skips modules that fail to parse", async () => {
+	it("skips modules that fail to parse", async () =>
+	{
 		const repo1 = path.join(tempDir, "mixed-repo");
 		await fs.ensureDir(repo1);
 
@@ -318,7 +327,8 @@ describe("aggregator:create processAllReactorModules", () => {
 		expect(pomContent).to.not.include("broken-repo");
 	});
 
-	it("processes with --parallel flag", async () => {
+	it("processes with --parallel flag", async () =>
+	{
 		const repo1 = path.join(tempDir, "repo1");
 		const repo2 = path.join(tempDir, "repo2");
 		await fs.ensureDir(repo1);

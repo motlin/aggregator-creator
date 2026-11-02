@@ -2,35 +2,42 @@ import fs from "fs-extra";
 import {type OptionsV2, parseString} from "xml2js";
 import {promisify} from "node:util";
 
-export interface PomGAV {
+export interface PomGAV
+{
 	groupId?: string;
 	artifactId?: string;
 	version?: string;
 }
 
-export interface ParsePomResult {
+export interface ParsePomResult
+{
 	gav: PomGAV;
 	needsMavenFallback: boolean;
 	reason?: string;
 }
 
-export interface ParseModulesResult {
+export interface ParseModulesResult
+{
 	modules: string[];
 	success: boolean;
 	reason?: string;
 }
 
-interface ParsedPomData {
-	project?: {
+interface ParsedPomData
+{
+	project?:
+	{
 		groupId?: string;
 		artifactId?: string;
 		version?: string;
-		parent?: {
+		parent?:
+		{
 			groupId?: string;
 			artifactId?: string;
 			version?: string;
 		};
-		modules?: {
+		modules?:
+		{
 			module?: string | string[];
 		};
 		packaging?: string;
@@ -45,17 +52,23 @@ const parseXML = promisify<string, OptionsV2, ParsedPomData | null>(parseString)
  * Returns the coordinates if all are found and don't contain property placeholders,
  * otherwise indicates that Maven fallback is needed.
  */
-export async function parsePomForGAV(pomPath: string): Promise<ParsePomResult> {
-	try {
+export async function parsePomForGAV(pomPath: string): Promise<ParsePomResult>
+{
+	try
+	{
 		const pomContent = await fs.readFile(pomPath, "utf8");
 
-		const pomData = await parseXML(pomContent, {
-			explicitArray: false,
-			ignoreAttrs: true,
-			trim: true,
-		});
+		const pomData = await parseXML(
+			pomContent,
+			{
+				explicitArray: false,
+				ignoreAttrs: true,
+				trim: true,
+			},
+		);
 
-		if (!pomData?.project) {
+		if (!pomData?.project)
+		{
 			return {
 				gav: {},
 				needsMavenFallback: true,
@@ -66,23 +79,31 @@ export async function parsePomForGAV(pomPath: string): Promise<ParsePomResult> {
 		const {project} = pomData;
 		const gav: PomGAV = {};
 
-		if (project.groupId) {
+		if (project.groupId)
+		{
 			gav.groupId = project.groupId;
-		} else if (project.parent?.groupId) {
+		}
+		else if (project.parent?.groupId)
+		{
 			gav.groupId = project.parent.groupId;
 		}
 
-		if (project.artifactId) {
+		if (project.artifactId)
+		{
 			gav.artifactId = project.artifactId;
 		}
 
-		if (project.version) {
+		if (project.version)
+		{
 			gav.version = project.version;
-		} else if (project.parent?.version) {
+		}
+		else if (project.parent?.version)
+		{
 			gav.version = project.parent.version;
 		}
 
-		if (!gav.groupId || !gav.artifactId || !gav.version) {
+		if (!gav.groupId || !gav.artifactId || !gav.version)
+		{
 			return {
 				gav,
 				needsMavenFallback: true,
@@ -92,7 +113,8 @@ export async function parsePomForGAV(pomPath: string): Promise<ParsePomResult> {
 
 		const hasPlaceholders = [gav.groupId, gav.artifactId, gav.version].some((coord) => coord.includes("${"));
 
-		if (hasPlaceholders) {
+		if (hasPlaceholders)
+		{
 			return {
 				gav,
 				needsMavenFallback: true,
@@ -104,7 +126,9 @@ export async function parsePomForGAV(pomPath: string): Promise<ParsePomResult> {
 			gav,
 			needsMavenFallback: false,
 		};
-	} catch (error) {
+	}
+	catch (error)
+	{
 		return {
 			gav: {},
 			needsMavenFallback: true,
@@ -117,17 +141,23 @@ export async function parsePomForGAV(pomPath: string): Promise<ParsePomResult> {
  * Parses module declarations directly from POM XML without invoking Maven.
  * This is much faster than using Maven to evaluate the modules.
  */
-export async function parsePomForModules(pomPath: string): Promise<ParseModulesResult> {
-	try {
+export async function parsePomForModules(pomPath: string): Promise<ParseModulesResult>
+{
+	try
+	{
 		const pomContent = await fs.readFile(pomPath, "utf8");
 
-		const pomData = await parseXML(pomContent, {
-			explicitArray: false,
-			ignoreAttrs: true,
-			trim: true,
-		});
+		const pomData = await parseXML(
+			pomContent,
+			{
+				explicitArray: false,
+				ignoreAttrs: true,
+				trim: true,
+			},
+		);
 
-		if (!pomData?.project) {
+		if (!pomData?.project)
+		{
 			return {
 				modules: [],
 				success: true,
@@ -136,7 +166,8 @@ export async function parsePomForModules(pomPath: string): Promise<ParseModulesR
 
 		const {project} = pomData;
 
-		if (!project.modules?.module) {
+		if (!project.modules?.module)
+		{
 			return {
 				modules: [],
 				success: true,
@@ -150,7 +181,9 @@ export async function parsePomForModules(pomPath: string): Promise<ParseModulesR
 			modules: modules.filter((m): m is string => typeof m === "string" && m.length > 0),
 			success: true,
 		};
-	} catch (error) {
+	}
+	catch (error)
+	{
 		return {
 			modules: [],
 			success: false,
@@ -162,23 +195,31 @@ export async function parsePomForModules(pomPath: string): Promise<ParseModulesR
 /**
  * Parses packaging type directly from POM XML without invoking Maven.
  */
-export async function parsePomForPackaging(pomPath: string): Promise<string> {
-	try {
+export async function parsePomForPackaging(pomPath: string): Promise<string>
+{
+	try
+	{
 		const pomContent = await fs.readFile(pomPath, "utf8");
 
-		const pomData = await parseXML(pomContent, {
-			explicitArray: false,
-			ignoreAttrs: true,
-			trim: true,
-		});
+		const pomData = await parseXML(
+			pomContent,
+			{
+				explicitArray: false,
+				ignoreAttrs: true,
+				trim: true,
+			},
+		);
 
-		if (!pomData?.project) {
+		if (!pomData?.project)
+		{
 			return "jar";
 		}
 
 		const packaging = pomData.project.packaging ?? "";
 		return packaging === "" ? "jar" : packaging;
-	} catch {
+	}
+	catch
+	{
 		return "jar";
 	}
 }

@@ -1,5 +1,6 @@
 {
-	"compilerOptions": {
+	"compilerOptions":
+	{
 		"declaration": true,
 		"module": "Node16",
 		"outDir": "../dist",

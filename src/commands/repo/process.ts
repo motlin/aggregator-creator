@@ -9,12 +9,18 @@ import {type MavenValidationResult, validateMavenRepo} from "../../utils/maven-v
 import {type TopicSingleRepoResult, topicSingleRepository} from "../../utils/topic-single-repo.js";
 
 /** A repository from flags (name and owner only) or from stdin (the full repo:list shape). */
-type RepoInfo = Partial<Omit<Repository, "name" | "owner">> & {
+type RepoInfo = Partial<Omit<Repository, "name" | "owner">> &
+{
 	name: string;
-	owner: {login: string; type?: string};
+	owner:
+	{
+		login: string;
+		type?: string;
+	};
 };
 
-interface ProcessResult extends RepoInfo {
+interface ProcessResult extends RepoInfo
+{
 	path: string;
 	cloned: boolean;
 	valid: boolean;
@@ -22,12 +28,16 @@ interface ProcessResult extends RepoInfo {
 	error: string | null;
 }
 
-export default class RepoProcess extends Command {
-	static override args = {
-		"output-directory": Args.string({
-			description: "Directory where the repository will be cloned",
-			required: true,
-		}),
+export default class RepoProcess extends Command
+{
+	static override args =
+	{
+		"output-directory": Args.string(
+			{
+				description: "Directory where the repository will be cloned",
+				required: true,
+			},
+		),
 	};
 
 	static override description = "Process a single repository: clone, validate, and add github topic if valid";
@@ -43,35 +53,47 @@ export default class RepoProcess extends Command {
 done`,
 	];
 
-	static override flags = {
-		owner: Flags.string({
-			char: "o",
-			description: "GitHub username or organization",
-			required: false,
-		}),
-		name: Flags.string({
-			char: "n",
-			description: "Repository name",
-			required: false,
-		}),
-		topic: Flags.string({
-			char: "t",
-			description: "GitHub topic to add to validated Maven repositories",
-			required: true,
-		}),
-		dryRun: Flags.boolean({
-			char: "d",
-			description: "Show what would be done without making actual changes",
-			default: false,
-		}),
-		verbose: Flags.boolean({
-			char: "v",
-			description: "Show verbose output during operation",
-			default: false,
-		}),
+	static override flags =
+	{
+		owner: Flags.string(
+			{
+				char: "o",
+				description: "GitHub username or organization",
+				required: false,
+			},
+		),
+		name: Flags.string(
+			{
+				char: "n",
+				description: "Repository name",
+				required: false,
+			},
+		),
+		topic: Flags.string(
+			{
+				char: "t",
+				description: "GitHub topic to add to validated Maven repositories",
+				required: true,
+			},
+		),
+		dryRun: Flags.boolean(
+			{
+				char: "d",
+				description: "Show what would be done without making actual changes",
+				default: false,
+			},
+		),
+		verbose: Flags.boolean(
+			{
+				char: "v",
+				description: "Show verbose output during operation",
+				default: false,
+			},
+		),
 	};
 
-	public async run(): Promise<ProcessResult> {
+	public async run(): Promise<ProcessResult>
+	{
 		const {args, flags} = await this.parse(RepoProcess);
 		const outputDir = args["output-directory"];
 		const {topic, dryRun, verbose} = flags;
@@ -79,12 +101,15 @@ done`,
 		// Get repository info from flags or stdin
 		const repoInfo = await this.getRepoInfo(flags);
 		const repoName = `${repoInfo.owner.login}/${repoInfo.name}`;
-		const execa = withDebugLogging(execa_, (message) => {
+		const execa = withDebugLogging(execa_, (message) =>
+		{
 			this.debug(message);
 		});
 
-		try {
-			if (verbose) {
+		try
+		{
+			if (verbose)
+			{
 				this.log(
 					`╭─── Processing repository ${chalk.yellow(repoInfo.owner.login)}/${chalk.yellow(repoInfo.name)}...`,
 				);
@@ -100,17 +125,22 @@ done`,
 				verbose ? this : undefined,
 			);
 
-			if (!cloneResult.cloned && !cloneResult.skipped) {
-				if (verbose) {
+			if (!cloneResult.cloned && !cloneResult.skipped)
+			{
+				if (verbose)
+				{
 					this.log(`├──╯ Failed to clone repository`);
 					this.log(`├──╯`);
 					this.log(`│`);
 					this.log(`╰─── Processing failed`);
-				} else {
+				}
+				else
+				{
 					this.log(`${repoName}: clone failed (${cloneResult.error ?? "Unknown error"})`);
 				}
 
-				const result = {
+				const result =
+				{
 					...repoInfo,
 					path: cloneResult.path,
 					cloned: false,
@@ -122,10 +152,14 @@ done`,
 				return result;
 			}
 
-			if (verbose) {
-				if (cloneResult.cloned) {
+			if (verbose)
+			{
+				if (cloneResult.cloned)
+				{
 					this.log(`├──╯ Repository cloned to ${chalk.cyan(cloneResult.path)}`);
-				} else if (cloneResult.skipped) {
+				}
+				else if (cloneResult.skipped)
+				{
 					this.log(`├──╯ Repository already exists at ${chalk.cyan(cloneResult.path)}`);
 				}
 
@@ -139,17 +173,22 @@ done`,
 				verbose ? this : undefined,
 			);
 
-			if (!validateResult.valid) {
-				if (verbose) {
+			if (!validateResult.valid)
+			{
+				if (verbose)
+				{
 					this.log(`├──╯ Repository is not a valid Maven project`);
 					this.log(`├──╯`);
 					this.log(`│`);
 					this.log(`╰─── Processing complete (repository not valid)`);
-				} else {
+				}
+				else
+				{
 					this.log(`${repoName}: not a valid Maven project`);
 				}
 
-				const result = {
+				const result =
+				{
 					...repoInfo,
 					path: cloneResult.path,
 					cloned: true,
@@ -161,45 +200,69 @@ done`,
 				return result;
 			}
 
-			if (verbose) {
+			if (verbose)
+			{
 				this.log(`├──╯ Repository is a valid Maven project`);
 				this.log(`│`);
 				this.log(`├──╮ Adding github topic to repository: ${chalk.cyan(topic)}...`);
 			}
 
-			const topicSingleResult: TopicSingleRepoResult = await topicSingleRepository({
-				owner: repoInfo.owner.login,
-				name: repoInfo.name,
-				topic,
-				dryRun,
-				verbose,
-				execa,
-				logger: {
-					log: this.log.bind(this),
-					warn: this.warn.bind(this),
-					error: (message: string, options?: {exit?: boolean}) => {
-						if (options?.exit) {
-							this.error(message);
-						} else {
-							this.error(message, {exit: false});
-						}
+			const topicSingleResult: TopicSingleRepoResult = await topicSingleRepository(
+				{
+					owner: repoInfo.owner.login,
+					name: repoInfo.name,
+					topic,
+					dryRun,
+					verbose,
+					execa,
+					logger:
+					{
+						log: this.log.bind(this),
+						warn: this.warn.bind(this),
+						error: (
+							message: string,
+							options?:
+							{
+								exit?: boolean;
+							},
+						) =>
+						{
+							if (options?.exit)
+							{
+								this.error(message);
+							}
+							else
+							{
+								this.error(
+									message,
+									{
+										exit: false,
+									},
+								);
+							}
+						},
 					},
 				},
-			});
+			);
 
-			if (!topicSingleResult.success) {
-				if (verbose) {
+			if (!topicSingleResult.success)
+			{
+				if (verbose)
+				{
 					this.log(
 						`├──╯ Failed to add github topic to repository: ${topicSingleResult.error ?? "Unknown error"}`,
 					);
 					this.log(`├──╯`);
 					this.log(`│`);
 					this.log(`╰─── Processing failed`);
-				} else {
+				}
+				else
+				{
 					this.log(`${repoName}: topic add failed (${topicSingleResult.error ?? "Unknown error"})`);
 				}
 
-				const result = {
+				const result =
+				{
 					...repoInfo,
 					path: cloneResult.path,
 					cloned: true,
@@ -211,34 +274,48 @@ done`,
 				return result;
 			}
 
-			const topicResult = {
+			const topicResult =
+			{
 				owner: topicSingleResult.owner,
 				name: topicSingleResult.name,
 				topics: topicSingleResult.topics ?? [],
 				topicAdded: !topicSingleResult.alreadyAdded && !dryRun,
 			};
 
-			if (verbose) {
-				if (topicResult.topicAdded) {
+			if (verbose)
+			{
+				if (topicResult.topicAdded)
+				{
 					this.log(`├──╯ Repository github topic added: ${chalk.cyan(topic)}`);
-				} else if (dryRun) {
+				}
+				else if (dryRun)
+				{
 					this.log(`├──╯ [DRY RUN] Would add github topic to repository: ${chalk.cyan(topic)}`);
-				} else {
+				}
+				else
+				{
 					this.log(`├──╯ Repository already has github topic: ${chalk.cyan(topic)}`);
 				}
 
 				this.log(`├──╯`);
 				this.log(`│`);
 				this.log(`╰─── Processing complete`);
-			} else if (topicResult.topicAdded) {
+			}
+			else if (topicResult.topicAdded)
+			{
 				this.log(`${repoName}: processed, topic added`);
-			} else if (dryRun) {
+			}
+			else if (dryRun)
+			{
 				this.log(`${repoName}: processed, would add topic`);
-			} else {
+			}
+			else
+			{
 				this.log(`${repoName}: processed, topic exists`);
 			}
 
-			const result = {
+			const result =
+			{
 				...repoInfo,
 				path: cloneResult.path,
 				cloned: cloneResult.cloned || cloneResult.skipped,
@@ -249,53 +326,76 @@ done`,
 			};
 
 			return result;
-		} catch (error) {
+		}
+		catch (error)
+		{
 			const errorMessage = error instanceof Error ? error.message : "Unknown error";
-			return this.error(`Failed to process repository: ${errorMessage}`, {exit: 1});
+			return this.error(
+				`Failed to process repository: ${errorMessage}`,
+				{
+					exit: 1,
+				},
+			);
 		}
 	}
 
-	private async getRepoInfo(flags: {owner?: string; name?: string}): Promise<RepoInfo> {
+	private async getRepoInfo(flags: {owner?: string; name?: string}): Promise<RepoInfo>
+	{
 		// If owner and name are provided via flags, use them
-		if (flags.owner && flags.name) {
+		if (flags.owner && flags.name)
+		{
 			return {
 				name: flags.name,
-				owner: {login: flags.owner},
+				owner:
+				{
+					login: flags.owner,
+				},
 			};
 		}
 
 		// If either flag is missing but we have stdin input, try to read from stdin
-		if (!process.stdin.isTTY) {
+		if (!process.stdin.isTTY)
+		{
 			const fullInput = await readStdin();
 
-			if (fullInput.trim()) {
-				try {
+			if (fullInput.trim())
+			{
+				try
+				{
 					const jsonData: unknown = JSON.parse(fullInput);
 					const validatedRepo = repositorySchema.parse(jsonData);
 					return validatedRepo;
-				} catch {
-					this.error("Invalid JSON input from stdin", {
-						exit: 1,
-						code: "INVALID_JSON",
-						suggestions: [
-							"Ensure the input is valid JSON",
-							'The input should contain "name" and "owner.login" fields',
-							'Example: echo \'{"name": "repo", "owner": {"login": "user"}}\' | aggregator repo:process ./output --topic maven',
-						],
-					});
+				}
+				catch
+				{
+					this.error(
+						"Invalid JSON input from stdin",
+						{
+							exit: 1,
+							code: "INVALID_JSON",
+							suggestions: [
+								"Ensure the input is valid JSON",
+								'The input should contain "name" and "owner.login" fields',
+								'Example: echo \'{"name": "repo", "owner": {"login": "user"}}\' | aggregator repo:process ./output --topic maven',
+							],
+						},
+					);
 				}
 			}
 		}
 
 		// No input provided
-		return this.error("No input provided. Provide --owner and --name flags or pipe JSON data from stdin.", {
-			exit: 1,
-			code: "NO_INPUT",
-			suggestions: [
-				"Provide --owner and --name flags",
-				"Or pipe repository JSON from stdin",
-				"Example: aggregator repo:process ./output --owner motlin --name JUnit-Java-8-Runner --topic maven",
-			],
-		});
+		return this.error(
+			"No input provided. Provide --owner and --name flags or pipe JSON data from stdin.",
+			{
+				exit: 1,
+				code: "NO_INPUT",
+				suggestions: [
+					"Provide --owner and --name flags",
+					"Or pipe repository JSON from stdin",
+					"Example: aggregator repo:process ./output --owner motlin --name JUnit-Java-8-Runner --topic maven",
+				],
+			},
+		);
 	}
 }

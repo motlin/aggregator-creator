@@ -3,14 +3,18 @@ import {execa as execa_} from "execa";
 import {withDebugLogging} from "../../utils/debug-execa.js";
 import {type MavenValidationResult, validateMavenRepo} from "../../utils/maven-validation.js";
 
-export default class RepoValidate extends Command {
+export default class RepoValidate extends Command
+{
 	static override id = "repo:validate";
 
-	static override args = {
-		repoPath: Args.string({
-			description: "Path to the repository to validate",
-			required: true,
-		}),
+	static override args =
+	{
+		repoPath: Args.string(
+			{
+				description: "Path to the repository to validate",
+				required: true,
+			},
+		),
 	};
 
 	static override description = "Validate a single Maven repository";
@@ -24,54 +28,73 @@ export default class RepoValidate extends Command {
 		"<%= config.bin %> <%= command.id %> ./my-maven-project --verbose",
 	];
 
-	static override flags = {
-		verbose: Flags.boolean({
-			char: "v",
-			description: "Show verbose output during validation",
-			default: false,
-		}),
+	static override flags =
+	{
+		verbose: Flags.boolean(
+			{
+				char: "v",
+				description: "Show verbose output during validation",
+				default: false,
+			},
+		),
 	};
 
-	public async run(): Promise<MavenValidationResult> {
+	public async run(): Promise<MavenValidationResult>
+	{
 		const {args, flags} = await this.parse(RepoValidate);
 		const {repoPath} = args;
 		const {verbose} = flags;
 
-		if (verbose) {
+		if (verbose)
+		{
 			this.log(`╭─── Validating Maven repository: ${repoPath}`);
 			this.log(`│`);
 		}
 
 		const validationResult = await validateMavenRepo(
 			repoPath,
-			withDebugLogging(execa_, (message) => {
+			withDebugLogging(execa_, (message) =>
+			{
 				this.debug(message);
 			}),
 			verbose ? this : undefined,
 		);
 
-		if (verbose) {
-			if (validationResult.valid) {
+		if (verbose)
+		{
+			if (validationResult.valid)
+			{
 				this.log(`├──╯ Repository is valid Maven project`);
-			} else if (validationResult.hasPom) {
+			}
+			else if (validationResult.hasPom)
+			{
 				this.log(
 					`├──╯ Repository has pom.xml but validation failed: ${validationResult.error ?? "Unknown error"}`,
 				);
-			} else {
+			}
+			else
+			{
 				this.log(`├──╯ Repository is not a Maven project: ${validationResult.error ?? "No pom.xml found"}`);
 			}
 
 			this.log(`│`);
 			this.log(`╰─── Validation complete`);
-		} else if (validationResult.valid) {
+		}
+		else if (validationResult.valid)
+		{
 			this.log(`${repoPath}: valid`);
-		} else if (validationResult.hasPom) {
+		}
+		else if (validationResult.hasPom)
+		{
 			this.log(`${repoPath}: invalid (${validationResult.error ?? "validation failed"})`);
-		} else {
+		}
+		else
+		{
 			this.log(`${repoPath}: not a Maven project (${validationResult.error ?? "No pom.xml found"})`);
 		}
 
-		if (!validationResult.valid) {
+		if (!validationResult.valid)
+		{
 			this.exit(1);
 		}
 

@@ -4,19 +4,24 @@ import fs from "fs-extra";
 import path from "node:path";
 import {parsePomForGAV} from "../../src/utils/pom-parser.js";
 
-describe("pom-parser", () => {
+describe("pom-parser", () =>
+{
 	const testDir = path.join(process.cwd(), "test", "temp", "pom-parser");
 
-	beforeAll(async () => {
+	beforeAll(async () =>
+	{
 		await fs.ensureDir(testDir);
 	});
 
-	afterAll(async () => {
+	afterAll(async () =>
+	{
 		await fs.remove(testDir);
 	});
 
-	describe("parsePomForGAV", () => {
-		it("should extract GAV coordinates from a simple POM", async () => {
+	describe("parsePomForGAV", () =>
+	{
+		it("should extract GAV coordinates from a simple POM", async () =>
+		{
 			const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -36,7 +41,8 @@ describe("pom-parser", () => {
 			expect(result.gav.version).to.equal("1.0.0");
 		});
 
-		it("should indicate Maven fallback needed for property placeholders", async () => {
+		it("should indicate Maven fallback needed for property placeholders", async () =>
+		{
 			// oxlint-disable-next-line no-template-curly-in-string
 			const versionPlaceholder = "${project.version}";
 			const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
@@ -62,7 +68,8 @@ describe("pom-parser", () => {
 			expect(result.gav.version).to.equal(versionPlaceholder);
 		});
 
-		it("should indicate Maven fallback needed for inherited coordinates", async () => {
+		it("should indicate Maven fallback needed for inherited coordinates", async () =>
+		{
 			const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -85,7 +92,8 @@ describe("pom-parser", () => {
 			expect(result.gav.version).to.equal("1.0.0");
 		});
 
-		it("should indicate Maven fallback needed for missing coordinates", async () => {
+		it("should indicate Maven fallback needed for missing coordinates", async () =>
+		{
 			const pomContent = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -104,7 +112,8 @@ describe("pom-parser", () => {
 			expect(result.gav.version).to.equal(undefined);
 		});
 
-		it("should handle invalid XML gracefully", async () => {
+		it("should handle invalid XML gracefully", async () =>
+		{
 			const pomContent = `<invalid xml content`;
 
 			const pomPath = path.join(testDir, "invalid-pom.xml");
@@ -116,7 +125,8 @@ describe("pom-parser", () => {
 			expect(result.reason).to.include("XML parsing failed");
 		});
 
-		it("should handle missing files gracefully", async () => {
+		it("should handle missing files gracefully", async () =>
+		{
 			const nonExistentPath = path.join(testDir, "does-not-exist.xml");
 
 			const result = await parsePomForGAV(nonExistentPath);

@@ -1,5 +1,6 @@
 {
-	"compilerOptions": {
+	"compilerOptions":
+	{
 		"noEmit": true,
 		"skipLibCheck": true,
 		"skipDefaultLibCheck": true,

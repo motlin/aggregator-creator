@@ -7,21 +7,25 @@ import {DependencyRewriter} from "../../src/utils/dependency-rewriter.js";
 import MavenGAVCoords from "../../src/maven-gav.js";
 import {createSandbox, type SinonStub} from "sinon";
 
-describe("DependencyRewriter", () => {
+describe("DependencyRewriter", () =>
+{
 	let tempDir: string;
 	let mockExeca: SinonStub;
 
-	beforeEach(async () => {
+	beforeEach(async () =>
+	{
 		tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "dep-rewriter-test-"));
 		const sandbox = createSandbox();
 		mockExeca = sandbox.stub();
 	});
 
-	afterEach(async () => {
+	afterEach(async () =>
+	{
 		await fs.remove(tempDir);
 	});
 
-	it("should rewrite dependencies in child poms", async () => {
+	it("should rewrite dependencies in child poms", async () =>
+	{
 		// Create test structure
 		const module1Dir = path.join(tempDir, "module1");
 		const module2Dir = path.join(tempDir, "module2");
@@ -39,7 +43,13 @@ describe("DependencyRewriter", () => {
 		];
 
 		// Mock successful executions
-		mockExeca.resolves({exitCode: 0, stdout: "", stderr: ""});
+		mockExeca.resolves(
+			{
+				exitCode: 0,
+				stdout: "",
+				stderr: "",
+			},
+		);
 
 		const rewriter = new DependencyRewriter(
 			{
@@ -69,7 +79,8 @@ describe("DependencyRewriter", () => {
 		expect(mockExeca.getCall(0).args[1]).to.include("-DdepVersion=1.0.0");
 	});
 
-	it("should handle missing pom files gracefully", async () => {
+	it("should handle missing pom files gracefully", async () =>
+	{
 		const gavs = [new MavenGAVCoords("com.example", "lib1", "1.0.0")];
 
 		const rewriter = new DependencyRewriter(
@@ -90,7 +101,8 @@ describe("DependencyRewriter", () => {
 		expect(mockExeca.callCount).to.equal(0);
 	});
 
-	it("should handle Maven errors gracefully", async () => {
+	it("should handle Maven errors gracefully", async () =>
+	{
 		// Create test module
 		const moduleDir = path.join(tempDir, "module1");
 		await fs.ensureDir(moduleDir);
@@ -119,7 +131,8 @@ describe("DependencyRewriter", () => {
 		expect(result.errors).to.deep.equal([]);
 	});
 
-	it("should skip when no GAVs provided", async () => {
+	it("should skip when no GAVs provided", async () =>
+	{
 		const rewriter = new DependencyRewriter(
 			{
 				aggregatorPath: tempDir,

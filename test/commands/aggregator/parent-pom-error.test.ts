@@ -9,11 +9,13 @@ import {createSandbox} from "sinon";
 
 const root = path.join(import.meta.dirname, "../../..");
 
-describe("aggregator:create with parent POM resolution errors", () => {
+describe("aggregator:create with parent POM resolution errors", () =>
+{
 	let tempDir: string;
 	const sandbox = createSandbox();
 
-	beforeEach(async () => {
+	beforeEach(async () =>
+	{
 		tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "aggregator-parent-pom-error-test-"));
 
 		const validRepo1 = path.join(tempDir, "valid-repo1");
@@ -53,28 +55,38 @@ describe("aggregator:create with parent POM resolution errors", () => {
 		await fs.writeFile(path.join(problematicRepo, "pom.xml"), problematicPom);
 	});
 
-	afterEach(async () => {
+	afterEach(async () =>
+	{
 		await fs.remove(tempDir);
 		sandbox.restore();
 	});
 
-	it("should continue processing when Maven parent POM resolution errors occur", async () => {
-		const mockResponse = {
+	it("should continue processing when Maven parent POM resolution errors occur", async () =>
+	{
+		const mockResponse =
+		{
 			statusCode: 200,
-			on(event: string, callback: (data?: string) => void) {
-				if (event === "data") {
+			on(event: string, callback: (data?: string) => void)
+			{
+				if (event === "data")
+				{
 					callback(
-						JSON.stringify({
-							response: {
-								docs: [
-									{
-										latestVersion: "2.1.1",
-									},
-								],
+						JSON.stringify(
+							{
+								response:
+								{
+									docs: [
+										{
+											latestVersion: "2.1.1",
+										},
+									],
+								},
 							},
-						}),
+						),
 					);
-				} else if (event === "end") {
+				}
+				else if (event === "end")
+				{
 					callback();
 				}
 
@@ -82,13 +94,16 @@ describe("aggregator:create with parent POM resolution errors", () => {
 			},
 		};
 
-		sandbox.stub(https, "get").callsFake((url, options, callback) => {
-			if (typeof options === "function") {
+		sandbox.stub(https, "get").callsFake((url, options, callback) =>
+		{
+			if (typeof options === "function")
+			{
 				callback = options;
 			}
 			callback!(mockResponse as Parameters<typeof https.get>[2] extends (res: infer R) => void ? R : never);
 			return {
-				on() {
+				on()
+				{
 					return this;
 				},
 			} as unknown as ReturnType<typeof https.get>;
@@ -97,30 +112,34 @@ describe("aggregator:create with parent POM resolution errors", () => {
 		const {stdout} = await runCommand(["aggregator:create", tempDir, "--yes", "--json"], root);
 		const output = JSON.parse(stdout);
 
-		expect(output).to.deep.equal({
-			success: true,
-			pomPath: path.join(tempDir, "pom.xml"),
-			modules: [
+		expect(output).to.deep.equal(
+			{
+				success: true,
+				pomPath: path.join(tempDir, "pom.xml"),
+				modules: [
+					{
+						path: "problematic-repo",
+						valid: true,
+					},
+					{
+						path: "valid-repo1",
+						valid: true,
+					},
+				],
+				stats:
 				{
-					path: "problematic-repo",
-					valid: true,
+					totalScanned: 2,
+					validRepositories: 2,
+					skippedRepositories: 0,
 				},
+				mavenCoordinates:
 				{
-					path: "valid-repo1",
-					valid: true,
+					groupId: "com.example",
+					artifactId: "aggregator",
+					version: "1.0.0-SNAPSHOT",
 				},
-			],
-			stats: {
-				totalScanned: 2,
-				validRepositories: 2,
-				skippedRepositories: 0,
 			},
-			mavenCoordinates: {
-				groupId: "com.example",
-				artifactId: "aggregator",
-				version: "1.0.0-SNAPSHOT",
-			},
-		});
+		);
 
 		const pomPath = path.join(tempDir, "pom.xml");
 		expect(fs.existsSync(pomPath)).to.equal(true);
