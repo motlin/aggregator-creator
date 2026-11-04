@@ -181,8 +181,8 @@ importers:
         specifier: 4.11.6
         version: 4.11.6
       '@oclif/plugin-help':
-        specifier: 7.0.5
-        version: 7.0.5
+        specifier: 7.0.6
+        version: 7.0.6
       chalk:
         specifier: 6.0.1
         version: 6.0.1
@@ -868,8 +868,12 @@ packages:
     resolution: {integrity: sha512-K1b3zdmbwANV9Jk+QN8aFvnXY/IhfWRnmhWn/V57h7alzbtck2je2DVVf0EkA01FokreF7Tpe+7hiGS87q30SA==}
     engines: {node: '>=22.0.0'}
 
-  '@oclif/plugin-help@7.0.5':
-    resolution: {integrity: sha512-yhDWRNRRgCPXmmlNQoqlVMF75M/6MkLWiSYsxSyCCG3o1cn8NW5pmAzU71LwN/7SVUyqm1ou0y51pQ2CScVvkQ==}
+  '@oclif/core@5.1.9':
+    resolution: {integrity: sha512-jZfN6pxHkgDpHD0dk4nhtaUtYdK39oZoWJCfmkpp7CUE+6mUZSb3WDrdBHnxI5n6CJIiWBrLchM7rBvuV0lRSA==}
+    engines: {node: '>=22.0.0'}
+
+  '@oclif/plugin-help@7.0.6':
+    resolution: {integrity: sha512-0p9fM8OtQAZi68arvkfvUzbgiVpXGu6fIgkcvTc2wbuIHfDCs6benPU2uxXxfU2yJ0BWJw6cJbCZQN9cK4H6HA==}
     engines: {node: '>=22.0.0'}
 
   '@oclif/plugin-not-found@4.0.4':
@@ -3844,9 +3848,30 @@ snapshots:
       wrap-ansi: 7.0.0
       wsl-utils: 0.4.0
 
-  '@oclif/plugin-help@7.0.5':
+  '@oclif/core@5.1.9':
     dependencies:
-      '@oclif/core': 5.1.8
+      ansi-escapes: 4.3.2
+      ansis: 3.17.0
+      clean-stack: 3.0.1
+      cli-spinners: 2.9.2
+      debug: 4.4.3(supports-color@8.1.1)
+      ejs: 6.0.1
+      get-package-type: 0.1.0
+      indent-string: 4.0.0
+      lilconfig: 3.1.3
+      minimatch: 10.2.5
+      semver: 7.8.5
+      string-width: 4.2.3
+      supports-color: 8.1.1
+      tinyglobby: 0.2.17
+      widest-line: 3.1.0
+      wordwrap: 1.0.0
+      wrap-ansi: 7.0.0
+      wsl-utils: 0.4.0
+
+  '@oclif/plugin-help@7.0.6':
+    dependencies:
+      '@oclif/core': 5.1.9
 
   '@oclif/plugin-not-found@4.0.4(@types/node@26.6.5)':
     dependencies:
@@ -5405,7 +5430,7 @@ snapshots:
       '@inquirer/input': 2.3.0
       '@inquirer/select': 2.5.0
       '@oclif/core': 5.1.8
-      '@oclif/plugin-help': 7.0.5
+      '@oclif/plugin-help': 7.0.6
       '@oclif/plugin-not-found': 4.0.4(@types/node@26.6.5)
       '@oclif/plugin-warn-if-update-available': 4.0.3(supports-color@8.1.1)
       ansis: 3.17.0
